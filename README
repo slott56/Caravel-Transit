@@ -1,0 +1,11 @@
+###########
+  Caravel
+###########
+
+Anaylze real-time bus position data.
+
+This is a Python 2.7 project. http://www.python.org
+
+It depends on Sphinx to produce the full suite of documentation.
+http://sphinx.pocoo.org
+
