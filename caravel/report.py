@@ -1,8 +1,20 @@
-"""Read HRT Bus Information.
+#!/usr/bin/env python2.7
+"""Caravel Report object construction.
+
+This reads one (or more) YYYYMMDDHHMM.rpt raw files and creates
+a sequence of Report instances.  The subclasses include
+
+-   Location - a simple location report; rte is None and dwell is None.
+
+-   Dwell - a Report with route/direction/stop and dwell time;
+    rte is not None and dwell is not None.
+
+-   Arrival - a Report with route/direction/stop arrived instead of dwell time
+    rte is not None and dwell is None.
+
+The fourth possible combination (rte is None and dwell is not None) cannot occur.
 """
 from __future__ import print_function, division
-import ftplib
-from contextlib import closing
 import datetime
 from collections import namedtuple, defaultdict, Callable
 import csv
@@ -10,70 +22,75 @@ import pprint
 import re
 import logging
 import sys
-import glob
 import os.path
+import json
 
-Directory = namedtuple( "Directory", ['name', 'timestamp', 'size'] )
-
-def get_files( **access ):
-    if not access:
-        access = dict(host='216.54.15.3', user='anonymous', passwd='slott56@gmail.com')
-    log= logging.getLogger( 'get_files' )
-    file_status = {}
-    def get_directory( line ):
-        date, time, size_str, name = tuple(l.strip() for l in line.split())
-        timestamp= datetime.datetime.strptime( date+time, "%m-%d-%y%I:%M%p" )
-        size= int(size_str)
-        file_status[name]= Directory( name, timestamp, size )
-    with closing(ftplib.FTP(**access)) as data:
-        data.dir("Anrd", get_directory)
-        try:
-            local_timestamp= datetime.datetime.fromtimestamp(os.path.getmtime( 'vid.csv' ) )
-        except Exception:
-            local_timestamp= None
-        if not local_timestamp or file_status['vid.csv'].timestamp > local_timestamp:
-            log.info( "Getting vid.csv" )
-            with open( "vid.csv", 'wb') as target:
-                data.retrbinary("RETR Anrd/vid.csv", target.write) # Slowly Changing
-        name= file_status['hrtrtf.txt'].timestamp.strftime( "%Y%m%d%H%M.rpt")
-        with open( name, 'w' ) as target:
-            log.info( "Getting {0}".format( name ) )
-            def writeline( line ):
-                print( line, file=target )
-            data.retrlines("RETR Anrd/hrtrtf.txt", writeline ) # Real Time
-
-def get_vehicle_route():
-    with open("vid.csv",'rb') as vehicles:
-        rdr= csv.DictReader( vehicles )
-        #return dict( (v['VehID'], v['RID']) for v in rdr )
-        return dict( (v['RID'], v['VehID']) for v in rdr )
+logger= logging.getLogger( __name__ )
 
 class Report( object ):
+    """Abstract superclass of the various kinds of reports."""
+    headings = [
+        '__class__', 'adher', 'adher_valid', 'blk', 'dgps', 'dir', 'dwell',
+        'fom', 'id', 'lat', 'll_valid', 'lon', 'odom', 'odom_valid', 'rte',
+        'stop', 'svc', 'time', 'timestamp', 'tp'
+    ]
     def __init__( self, timestamp, id ):
         self.timestamp= timestamp
         self.id= id
 
 class Location( Report ):
-    def __init__( self, timestamp, id, lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom ):
+    """A Location report for a given vehicle."""
+    def __init__( self, timestamp, id, lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom, **kwargs ):
         super( Location, self ).__init__( timestamp, id )
         self.lat= lat
         self.lon= lon
         self.ll_valid= ll_valid
         self.adher= adher
+        self.adher_valid= adher_valid
         self.odom= odom
+        self.odom_valid= odom_valid
         self.dgps= dgps
         self.fom= fom
+        self.time= None
         self.dwell= None
         self.rte= None
         self.dir= None
         self.stop= None
+        self.tp= None
+        self.svc= None
+        self.blk= None
+        if kwargs:
+            assert all( kwargs[k] is None for k in kwargs ), "Extra {0!r}".format(kwargs)
     def __repr__( self ):
-        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat!r}, {0.lon!r} )".format( self )
+        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat!r}, {0.lon!r}, ll_valid={0.ll_valid!r}, odom_valid={0.odom_valid!r} )".format( self )
+    def as_dict( self ):
+        return dict(
+            timestamp= self.timestamp,
+            id= self.id,
+            lat= self.lat,
+            lon= self.lon,
+            ll_valid= self.ll_valid,
+            adher= self.adher,
+            adher_valid= self.adher_valid,
+            odom= self.odom,
+            odom_valid= self.odom_valid,
+            dgps= self.dgps,
+            fom= self.fom,
+            time= self.time,
+            dwell= self.dwell,
+            rte= self.rte,
+            dir= self.dir,
+            stop= self.stop,
+            tp= self.tp,
+            svc= self.svc,
+            blk= self.blk,
+            __class__= self.__class__.__name__
+        )
 
 class Arrival( Location ):
     """At a given stop on a route?"""
     def __init__( self, timestamp, id, lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom,
-            time, rte, dir, tp, stop, svc, blk ):
+            time, rte, dir, tp, stop, svc, blk, **kwargs):
         super( Arrival, self ).__init__( timestamp, id, lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom )
         self.time = time
         self.dwell= None
@@ -106,6 +123,12 @@ class ReportFactory( Callable ):
     """
     vehicle_pat= re.compile( r"V\.\d+\.(\d+)" )
     def __init__( self, year=None ):
+        """Build a ReportFactory with a given default year.
+
+        The year is required because the timestamps only have month and day.
+
+        :param year: Year extracted from file name.
+        """
         self.log= logging.getLogger( self.__class__.__name__ )
         if year:
             self.year= year
@@ -150,23 +173,24 @@ class ReportFactory( Callable ):
             odom_valid = fields[5] == "[Valid]"
             label, _, dgps = fields[6].partition(":")
             assert label == "DGPS"
-            if len(fields) > 8:
-                fom= self.label_int( fields[7], 'FOM' )
-            else:
-                fom= None
+            fom= self.label_int( fields[7], 'FOM' )
             return lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom
         except Exception:
             self.log.error( "Invalid Common Fields {0!r}".format(fields) )
             raise
 
     def __call__( self, fields ):
-        """Parse the fields, returning Arrival, Dwell or Location."""
+        """Parse the fields, returning Arrival, Dwell or Location.
+
+        :param fields: tuple of fields, already split and stripped.
+        :returns: Report instance, if possible.  ``None`` if the fields can't be parsed.
+        """
         try:
             partial_ts= datetime.datetime.strptime( fields[0]+fields[1], "%H:%M:%S"+"%m/%d" )
             timestamp= partial_ts.replace( year=self.year )
             vehicle= self.vehicle_pat.match( fields[2] ).group(1)
             assert fields[4] in ('MT_TIMEPOINTCROSSING', 'MT_LOCATION')
-            assert len(fields) >= (20 if fields[4] == 'MT_TIMEPOINTCROSSING' else 12)
+            assert len(fields) == (21 if fields[4] == 'MT_TIMEPOINTCROSSING' else 13)
         except Exception as e:
             self.log.error( "Invalid {0!r}".format(fields) )
             return
@@ -204,51 +228,51 @@ class ReportFactory( Callable ):
             self.log.error( "Unrecognized {0!r}".format(fields) )
 
 def report_iter( report_factory, files ):
+    """An iterator which applies the report_factory to all lines
+    in all of the named files.
+
+    :param report_factory: a function (or callable object) which parses
+        input lines and creates Report instances.
+    :param: files an iterable over file names.  To process
+        a single file, use ``report_iter( report_factor, [one_file] )``
+    """
     for report_file in files:
         ts= datetime.datetime.fromtimestamp(os.path.getmtime( report_file ) )
         report_factory.year= ts.year
-        with open(report_file) as real_time:
-            for line in real_time:
+        with open(report_file) as source:
+            for line in source:
                 if not line: continue
                 fields= tuple( f.strip() for f in line.rstrip().split() )
                 report= report_factory( fields )
-                if report is None: continue
                 yield report
 
-def route_dir_stop():
-    log= logging.getLogger( "route_dir_stop" )
+class JSONEncoder( json.JSONEncoder ):
+    def default( self, obj ):
+        if isinstance(obj, Report):
+            as_dict= obj.as_dict()
+            as_dict['timestamp']= obj.timestamp.strftime("%x %X")
+            if as_dict.get('time'):
+                as_dict['time']= obj.time.strftime("%X")
+            return as_dict
+        super( JSONEncoder, self ).default( obj )
 
-    # Accumulate Route/Direction/Stop history
-    started= datetime.datetime.now()
-    report_factory= ReportFactory()
-    route_dir= defaultdict(list)
-    count= 0
-    for rpt in report_iter( report_factory, glob.glob("*.rpt") ):
-        count += 1
-        if rpt.rte and rpt.dir:
-            route_dir[rpt.rte,rpt.dir,rpt.stop].append( rpt )
-    finished= datetime.datetime.now()
-    log.info( "{0:d} reports in {1:s} seconds".format( count, finished-started ) )
-
-    print( "History By Route, Direction, Stop")
-    print( "=================================")
-    for r,d,s in sorted(route_dir):
-        print( "{0:3d} {1:1d} {2:3d} {3:s}".format(r,d,s, route_dir[r,d,s]) )
-
-def grid_size( ):
-    """Profile lat/lon to get the extent of HRT services."""
-    lat = []
-    lon = []
-    report_factory= ReportFactory()
-    for rpt in report_iter( report_factory, glob.glob("*.rpt") ):
-        if rpt.ll_valid:
-            lat.append( rpt.lat )
-            lon.append( rpt.lon )
-    print( "Latitude", min(lat), max(lat) )
-    print( "Longitude", min(lon), max(lon) )
-
-if __name__ == "__main__":
-    logging.basicConfig( stream=sys.stderr, level=logging.INFO )
-    #get_files()
-    route_dir_stop()
-    #grid_size()
+class JSONDecoder( json.JSONDecoder ):
+    def __init__( self, *args, **kwargs ):
+        super( JSONDecoder, self ).__init__( *args, object_hook=self.make_report, **kwargs )
+    def make_report( self, as_dict ):
+        if "__class__" in as_dict:
+            try:
+                cn= eval(as_dict.pop('__class__'))
+                timestamp= datetime.datetime.strptime(as_dict['timestamp'],"%x %X")
+                as_dict['timestamp']= timestamp
+                if as_dict.get('time'):
+                    timestamp= datetime.datetime.strptime(as_dict.get('time'),"%X")
+                    as_dict['time']= timestamp
+                return cn(**as_dict)
+            except TypeError:
+                print( cn, as_dict, cn.__init__.__code__.co_varnames )
+                print( set(as_dict.keys()) -  set(cn.__init__.__code__.co_varnames) )
+                print( set(cn.__init__.__code__.co_varnames) - set(as_dict.keys()) )
+                raise
+        else:
+            return as_dict
