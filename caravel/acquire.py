@@ -2,6 +2,9 @@
 """Caravel raw file acquire.
 
 Checks FTP status and downloads latest versions of source files.
+
+..  autofunction:: get_files
+
 """
 from __future__ import print_function, division
 import ftplib
@@ -15,7 +18,7 @@ logger= logging.getLogger( __name__ )
 
 Directory = namedtuple( "Directory", ['name', 'timestamp', 'size'] )
 
-def get_files( connection=ftplib.FTP, target_dir='.', **access ):
+def get_files( connection=None, target_dir='.', **access ):
     """Get the lastest files.
 
     Check for latest versions of "vid.csv" and download it only if it changed.
@@ -23,19 +26,21 @@ def get_files( connection=ftplib.FTP, target_dir='.', **access ):
     Download the current version of  ``hrtrtf.txt`` file;
     naming it with a ``YYYYMMDDHHMM.rpt`` name.
 
-    :param connection: Override to default of ftplib.FTP
+    :param connection: Override to the default of ftplib.FTP
     :param target_dir: Working directory for result files
     :param host: IP address or name of the FTP host.
     :param user: FTP username
     :param passwd: FTP password
     """
+    if not connection:
+        connection= ftplib.FTP
     if not access:
         access = dict(host='216.54.15.3', user='anonymous', passwd='slott56@gmail.com')
 
     file_status = {}
     def get_directory( line ):
         if not line: return
-        date, time, size_str, name = tuple(l.strip() for l in line.split())
+        date, time, size_str, name = line.strip().split()
         timestamp= datetime.datetime.strptime( date+time, "%m-%d-%y%I:%M%p" )
         size= int(size_str)
         file_status[name]= Directory( name, timestamp, size )

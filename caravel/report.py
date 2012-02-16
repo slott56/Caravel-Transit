@@ -13,6 +13,28 @@ a sequence of Report instances.  The subclasses include
     rte is not None and dwell is None.
 
 The fourth possible combination (rte is None and dwell is not None) cannot occur.
+
+Report Objects
+=================
+
+..  autoclass:: Report
+..  autoclass:: Location
+..  autoclass:: Arrival
+..  autoclass:: Dwell
+
+Report Factory
+================
+
+..  autoclass:: ReportFactory
+    :members:
+
+..  autofunction:: report_iter
+
+JSON Codec
+================
+
+..  autoclass:: JSONEncoder
+..  autoclass:: JSONDecoder
 """
 from __future__ import print_function, division
 import datetime
@@ -118,8 +140,15 @@ class Dwell( Arrival ):
         self.blk = blk
 
 class ReportFactory( Callable ):
-    """Emit Report items (Location, Arrival, Dwell).
+    """Emit Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).
     A subclass can implement different parsing rules.
+
+    This is a callable objects, generally something like the following is done::
+
+        factory= ReportFactory()
+        for line in some_file:
+            fields = line.strip().split()
+            obj= factory( fields )
     """
     vehicle_pat= re.compile( r"V\.\d+\.(\d+)" )
     def __init__( self, year=None ):
@@ -137,42 +166,79 @@ class ReportFactory( Callable ):
             self.year= today.year
 
     def label_str( self, field, expected ):
+        """Split a "label:value" field, doing no further conversion.
+        If the label is not as expected, raise an exception.
+
+        :param field: a "label:value field
+        :param expected: the expected label.
+        :returns: the string value
+        """
         label, _, value = field.partition(":")
         assert expected == label, "expected {0!r} not actual {1!r}".format( expected, label )
         return value
 
     def label_int( self, field, expected ):
+        """Split a "label:value" field, attempting an integer conversion.
+        If the label is not as expected, raise an exception.
+
+        :param field: a "label:value field
+        :param expected: the expected label.
+        :returns: the integer value
+        """
         value= self.label_str( field, expected )
         if value:
             return int(value)
         return None
 
     def label_lat_lon( self, field, expected="Lat/Lon" ):
+        """Split a "label:lat/lon" field, attempting an fairly complex conversion.
+        If the label is not as expected, raise an exception.
+
+        :param field: a "label:lat/lon field
+        :param expected: the expected label.
+        :returns: (lat, lon) 2-tuple
+        """
         latlon= self.label_str( field, expected )
         lat_st, _, lon_st = latlon.partition('/')
         lat= int(lat_st)/10000000
         lon= int(lon_st)/10000000
         return lat, lon
 
-    def label_time( self, field, expected ):
+    def label_time( self, field, expected, format="%H:%M:%S" ):
+        """Split a "label:time" field, attempting an fairly complex conversion.
+        If the label is not as expected, raise an exception.
+
+        :param field: a "label:time field
+        :param expected: the expected label.
+        :param format: the format, default value is "%H:%M:%S".
+        :returns: datetime.time() object.
+        """
         value= self.label_str( field, expected )
-        return datetime.datetime.strptime( value, "%H:%M:%S" ).time()
+        return datetime.datetime.strptime( value, format ).time()
 
     def common_fields( self, fields ):
-        """Fields 13-20 of MT_TIMEPOINTCROSSING
-        Fields 5-12 of MT_LOCATION
+        """Parse the common set of fields.
+        These are Fields 13-20 of MT_TIMEPOINTCROSSING.
+        They are also Fields 5-12 of MT_LOCATION.
+
+        These fields are
+
+        -   "Lat/Lon" and the following "[Valid]"/"[Invalid]" flag.
+        -   "Adher" and the following "[Valid]"/"[Invalid]" flag.
+        -   "Odom" and the following "[Valid]"/"[Invalid]" flag.
+        -   "DGPS"
+        -   "FOM"
 
         :returns: tuple of (lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom)
         """
         try:
-            lat, lon = self.label_lat_lon( fields[0] )
+            lat, lon = self.label_lat_lon( fields[0], "Lat/Lon" )
             ll_valid= fields[1] == "[Valid]"
             adher= self.label_int( fields[2], 'Adher' )
             adher_valid= fields[3] == "[Valid]"
             odom= self.label_int( fields[4], 'Odom' )
             odom_valid = fields[5] == "[Valid]"
-            label, _, dgps = fields[6].partition(":")
-            assert label == "DGPS"
+            dgps = self.label_str( fields[6], "DGPS" )
             fom= self.label_int( fields[7], 'FOM' )
             return lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom
         except Exception:
@@ -242,11 +308,12 @@ def report_iter( report_factory, files ):
         with open(report_file) as source:
             for line in source:
                 if not line: continue
-                fields= tuple( f.strip() for f in line.rstrip().split() )
+                fields= line.rstrip().split()
                 report= report_factory( fields )
                 yield report
 
 class JSONEncoder( json.JSONEncoder ):
+    """Encode any of the Report subclasses into JSON."""
     def default( self, obj ):
         if isinstance(obj, Report):
             as_dict= obj.as_dict()
@@ -257,6 +324,7 @@ class JSONEncoder( json.JSONEncoder ):
         super( JSONEncoder, self ).default( obj )
 
 class JSONDecoder( json.JSONDecoder ):
+    """Decode any of the Report subclasses from JSON."""
     def __init__( self, *args, **kwargs ):
         super( JSONDecoder, self ).__init__( *args, object_hook=self.make_report, **kwargs )
     def make_report( self, as_dict ):

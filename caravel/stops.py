@@ -10,6 +10,9 @@ Description:
 For each source file, filter the invalid Reports.  Summarize the
 Arrival and Dwell reports.
 
+..  autofunction:: stops
+
+..  autofunction:: get_args
 """
 from __future__ import print_function, division
 from collections import defaultdict, namedtuple
@@ -69,6 +72,9 @@ def stops( report_iter ):
     return counts
 
 def get_args():
+    """Parse command-line arguments.
+    :returns: Arguments object.
+    """
     parser= argparse.ArgumentParser( )
     parser.add_argument( 'files', action='store', nargs='*' )
     parser.add_argument( '--debug', '-d', action='store_true', default=False )

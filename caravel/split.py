@@ -10,6 +10,9 @@ Description:
 For each source file, filter the invalid Reports.  Split into two CSV files.
 One file gets Arrival and Dwell reports.  The other file gets Location reports.
 
+..  autofunction:: split
+
+..  autofunction:: get_args
 """
 from __future__ import print_function, division
 import csv
@@ -67,6 +70,9 @@ def split( report_iter, location_csv, arrival_csv ):
     return counts
 
 def get_args():
+    """Parse command-line arguments.
+    :returns: Arguments object.
+    """
     parser= argparse.ArgumentParser( )
     parser.add_argument( 'files', action='store', nargs='*' )
     parser.add_argument( '--location', '-l', action='store', default='location.csv' )

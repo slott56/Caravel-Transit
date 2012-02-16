@@ -124,10 +124,10 @@ locate the next repeat of the route.
 
 ..  math::
 
-    \rho( PT_v, \delta r ) = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land \land t^{\prime}_n = {\lfloor P_v \rfloor}_n \land t_n \approx t^{\prime}_n + \delta r \rangle
+    \rho( PT_v, \delta r ) = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land t^{\prime}_n = {\lfloor P_v \rfloor}_n \land t_n \approx t^{\prime}_n + \delta r \rangle
 
 This generalizes nicely for any integer number of repeats of the route.
 
 ..  math::
 
-    \rho( PT_v, k \delta r ) = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land \land t^{\prime}_n = {\lfloor P_v \rfloor}_n \land t_n \approx t^{\prime}_n + k \delta r \rangle
+    \rho( PT_v, k \delta r ) = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land t^{\prime}_n = {\lfloor P_v \rfloor}_n \land t_n \approx t^{\prime}_n + k \delta r \rangle

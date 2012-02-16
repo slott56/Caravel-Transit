@@ -22,7 +22,7 @@ def get_files( **access ):
     file_status = {}
     def get_directory( line ):
         print( repr(line) )
-        date, time, size_str, name = tuple(l.strip() for l in line.split())
+        date, time, size_str, name = line.strip().split()
         timestamp= datetime.datetime.strptime( date+time, "%m-%d-%y%I:%M%p" )
         size= int(size_str)
         file_status[name]= Directory( name, timestamp, size )
@@ -208,7 +208,7 @@ def report_iter( report_factory, files ):
         with open(report_file) as real_time:
             for line in real_time:
                 if not line: continue
-                fields= tuple( f.strip() for f in line.rstrip().split() )
+                fields= line.rstrip().split()
                 report= report_factory( fields )
                 if report is None: continue
                 yield report

@@ -46,7 +46,7 @@ data.  There are several issues.
     rapid distance approximations using an Equirectangular Approximation.
 
 Short Term FIFO
-=================
+------------------
 
 Each Route/Direction FIFO contains the last stop's Dwell or Arrival report followed by
 any Location reports for the same vehicle.
@@ -68,7 +68,7 @@ data is required to compute an expected arrival time.
 **Delete**.  Happens when an Arrival or Dwell report is inserted.
 
 Daily
-======
+-------
 
 Each Route/Direction/Stop contains the Dwell and Arrival data accumulated today.
 
@@ -90,11 +90,10 @@ The arrival times throughout the day will fit into one of two patterns.
     in any variance.
 
 History
-=============
+---------
 
 Each Route/Direction/Stop contains all Dwell and Arrival data.
 
 This is simply accumulated to discover route details.
 
 See :ref:`design.routes`.
-

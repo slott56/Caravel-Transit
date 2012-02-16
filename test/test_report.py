@@ -14,7 +14,7 @@ location="07:04:42 02/15  V.1.2233  H.0.0  MT_LOCATION    Lat/Lon:370620935/-763
 class Test_Parse_Good_Location( unittest.TestCase ):
     def setUp( self ):
         self.factory= caravel.report.ReportFactory()
-        self.fields= tuple( f.strip() for f in location.rstrip().split() )
+        self.fields= location.rstrip().split()
         self.json_enc= caravel.report.JSONEncoder()
         self.json_dec= caravel.report.JSONDecoder()
 
@@ -38,7 +38,7 @@ trunc_location="09:32:04 02/15  V.1.3505  H.0.0  MT_LOCATION    Lat/Lon:36865221
 class Test_Parse_Bad_Location( unittest.TestCase ):
     def setUp( self ):
         self.factory= caravel.report.ReportFactory()
-        self.fields= tuple( f.strip() for f in trunc_location.rstrip().split() )
+        self.fields= trunc_location.rstrip().split()
     def test_should_reject_bad( self ):
         rpt= self.factory( self.fields )
         self.assertIsNone( rpt )
@@ -48,7 +48,7 @@ arrival="07:04:42 02/15  V.1.2236  H.0.0  MT_TIMEPOINTCROSSING   Time:07:04:36  
 class Test_Parse_Arrive( unittest.TestCase ):
     def setUp( self ):
         self.factory= caravel.report.ReportFactory()
-        self.fields= tuple( f.strip() for f in arrival.rstrip().split() )
+        self.fields= arrival.rstrip().split()
         self.json_enc= caravel.report.JSONEncoder()
         self.json_dec= caravel.report.JSONDecoder()
     def test_should_parse( self ):
@@ -77,7 +77,7 @@ dwell="07:04:42 02/15  V.1.3515  H.0.0  MT_TIMEPOINTCROSSING   Time:07:04:37  Dw
 class Test_Parse_Dwell( unittest.TestCase ):
     def setUp( self ):
         self.factory= caravel.report.ReportFactory()
-        self.fields= tuple( f.strip() for f in dwell.rstrip().split() )
+        self.fields= dwell.rstrip().split()
         self.json_enc= caravel.report.JSONEncoder()
         self.json_dec= caravel.report.JSONDecoder()
     def test_should_parse( self ):
