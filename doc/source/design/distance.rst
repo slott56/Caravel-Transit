@@ -1,3 +1,5 @@
+..  _design.distance:
+
 Distance Calculations
 =======================
 
@@ -26,7 +28,7 @@ A mathematically equivalent formula, which is less subject to rounding error for
     c &= 2 \arcsin { \sqrt{ a }  }
 
 The angle, *c*, is in radians.  It needs to be converted to degrees and then distance.
-For nautical miles it's :math:`c\times(60\times 180\div \pi)`, about 3,437.746.
+For nautical miles it's :math:`c\times(60\times 180\div \pi) = 3,437.746`.
 
 From http://www.movable-type.co.uk/scripts/latlong.html
 
@@ -39,6 +41,12 @@ The angle, *c*, is in radians.  It can be converted to distance by multiplying b
 the earth's mean radius;  6,378.1 kilometers, 3,961.3 miles and
 3,440.07 Nautical miles (nm).
 
+..  note:: Inaccuracy?
+
+    The standard mapping from 60 degrees to 1 nm implies a radius of 3,437.75 nm.
+    The measured radius is closer to 3,440.07 nm.  This is only 2.32nm,
+    an error of 0.00067.  This is less than the GPS error of 0.003 nm.
+
 The Equirectangular Approximation is the following.
 
 ..  math::
@@ -49,8 +57,8 @@ The Equirectangular Approximation is the following.
 
 The angle, *c*, is in radians.
 
-DGPS is only theoretically accurate to 5m (16.4 ft.);
+DGPS is only *theoretically* accurate to 5m (16.4 ft.);
 this is 0.0027 nm (0.0031 mile).  Therefore, we only really
 need an accuracy of about 1/380.
 
-Two lat/lon points are coincident if :math:`d \leq 0.003`.
+Two lat/lon points are coincident if :math:`d \leq 0.003` nm, or :math:`7.8\times10^{-7}` radians.

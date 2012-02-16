@@ -14,7 +14,7 @@ Contents:
     usecase/index
     design/index
     implementation/index
-
+    
 
 Indices and tables
 ==================

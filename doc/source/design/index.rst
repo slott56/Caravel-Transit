@@ -1,3 +1,4 @@
+==============
 Design Notes
 ==============
 
@@ -5,5 +6,6 @@ Design Notes
     :maxdepth: 2
 
     data_acquisition
+    data_stores
     distance
     route_details
