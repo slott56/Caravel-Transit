@@ -10,6 +10,17 @@ Description:
 For each source file, filter the invalid Reports.  Summarize the
 Arrival and Dwell reports.
 
+
+Options:
+
+.. option:: --debug, -d
+
+    Set logging level.
+
+.. option:: source...
+
+    List of source files to process.
+
 ..  autofunction:: stops
 
 ..  autofunction:: get_args

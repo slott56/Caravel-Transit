@@ -3,12 +3,30 @@
 
 Synopsis:
 
-    python2.7 -m caravel.split [-l location] [-a arrival] source...
+    python2.7 -m caravel.split [--new] [-l location] [-a arrival] source...
 
 Description:
 
 For each source file, filter the invalid Reports.  Split into two CSV files.
 One file gets Arrival and Dwell reports.  The other file gets Location reports.
+
+Options:
+
+.. option:: --new, -n
+
+    Get a new, live report file.
+
+.. option:: --location <file>, -l <file>
+
+    The name of the Location reports ('location.csv' is the default)
+
+.. option:: --arrival <file>, -l <file>
+
+    The name of the Arrival/Dwell reports ('arrival.csv' is the default)
+
+.. option:: source...
+
+    List of source files to process.
 
 ..  autofunction:: split
 
@@ -21,6 +39,7 @@ import logging
 import sys
 import argparse
 import caravel.report
+import caravel.acquire
 
 logger= logging.getLogger( __name__ )
 
@@ -75,6 +94,7 @@ def get_args():
     """
     parser= argparse.ArgumentParser( )
     parser.add_argument( 'files', action='store', nargs='*' )
+    parser.add_argument( '--new', '-n', action='store_true', default=False, dest='acquire' )
     parser.add_argument( '--location', '-l', action='store', default='location.csv' )
     parser.add_argument( '--arrival', '-a', action='store', default='arrival.csv' )
     parser.add_argument( '--debug', '-d', action='store_true', default=False )
@@ -86,9 +106,13 @@ if __name__ == "__main__":
     args= get_args()
     if args.debug:
         logging.getLogger().setLevel( logging.DEBUG )
+    if args.acquire:
+        files= [caravel.acquire.get_files()] + args.files
+    else:
+        files= args.files
     factory= caravel.report.ReportFactory()
     counts= split(
-        caravel.report.report_iter( factory, args.files ),
+        caravel.report.report_iter( factory, files ),
         args.location,
         args.arrival )
     logger.info( "Counts {0}".format( pprint.pformat( counts ) ) )
