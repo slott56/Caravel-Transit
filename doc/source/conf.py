@@ -40,7 +40,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'Caravel'
+project = u'Caravel-Transit'
 copyright = u'2012, S.Lott'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -183,7 +183,7 @@ latex_elements = {
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, documentclass [howto/manual]).
 latex_documents = [
-  ('index', 'Caravel.tex', u'Caravel Documentation',
+  ('index', 'Caravel.tex', u'Caravel-Transit Documentation',
    u'S.Lott', 'manual'),
 ]
 
@@ -213,7 +213,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'caravel', u'Caravel Documentation',
+    ('index', 'caravel', u'Caravel-Transit Documentation',
      [u'S.Lott'], 1)
 ]
 
@@ -227,7 +227,7 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'Caravel', u'Caravel Documentation',
+  ('index', 'Caravel', u'Caravel-Transit Documentation',
    u'S.Lott', 'Caravel', 'Read and Analyze Transit GPS Data.',
    'Miscellaneous'),
 ]

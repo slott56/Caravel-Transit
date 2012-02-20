@@ -1,5 +1,5 @@
-Data Stores
-==============
+Data Store Hierarchy
+=======================
 
 There are three tiers of storage.
 

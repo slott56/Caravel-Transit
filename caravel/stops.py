@@ -21,12 +21,14 @@ Options:
 
     List of source files to process.
 
-..  autofunction:: stops
+..  autofunction:: group_by_rte_dir_stop
+
+..  autofunction:: display
 
 ..  autofunction:: get_args
 """
 from __future__ import print_function, division
-from collections import defaultdict, namedtuple
+from collections import defaultdict, namedtuple, OrderedDict
 import datetime
 import pprint
 import logging
@@ -38,7 +40,7 @@ logger= logging.getLogger( __name__ )
 
 Details = namedtuple( 'Details', [ 'rte', 'dir', 'stop', 'id', 'dwell', 'time' ])
 
-def stops( report_iter ):
+def group_by_rte_dir_stop( report_iter ):
     """Accumulate stops from a sequence of Arrivals.
 
     Generally, the report_iter is an instance of :func:`caravel.report.report_iter`.
@@ -52,6 +54,9 @@ def stops( report_iter ):
     all Report objects.
 
     :param report_iter: an iterator over :class:`caravel.report.Report` instances.
+    :returns: two values: (counts, route).  The counts is a dictinary of input, excluded, invalid
+        and arrivals actually processed.
+        The route is an OrderedDict, keyed by Route/Dir/Stop with sequence of arrival times.
     """
     counts= {'source':0, 'excluded': 0, 'invalid':0, 'arrival':0}
     route_dir= defaultdict(list)
@@ -74,11 +79,22 @@ def stops( report_iter ):
         dtl= Details( item.rte, item.dir, item.stop, item.id, item.dwell, item.time )
         route_dir[dtl.rte,dtl.dir,dtl.stop].append( dtl )
 
-    print( "History By Route, Direction, Stop")
-    print( "=================================")
-    for r,d,s in sorted(route_dir):
+    for rds in route_dir:
+        route_dir[rds].sort()
+
+    return counts, OrderedDict( sorted( route_dir.items() ) )
+
+def display( route_dir ):
+    """Display the accumulated raw data.
+
+    :param route_dir: OrderedDict, keyed by Route/Dir/Stop with sequence of arrival times.
+    """
+    print( "Route, Direction, Stop, Time and Dwell")
+    print( "  R D    S Time and Dwell")
+    print( "=== = ==== ==============")
+    for r,d,s in route_dir:
         times= tuple( "{0.time} {0.dwell!r}".format(rpt) for rpt in route_dir[r,d,s] )
-        print( "{0:3d} {1:1d} {2:3d} {3:s}".format(r,d,s, times) )
+        print( "{0:3d} {1:1d} {2:4d} {3:s}".format(r,d,s, times) )
 
     return counts
 
@@ -99,8 +115,9 @@ if __name__ == "__main__":
         logging.getLogger().setLevel( logging.DEBUG )
     started= datetime.datetime.now()
     factory= caravel.report.ReportFactory()
-    counts= stops(
+    counts, route = group_by_rte_dir_stop(
         caravel.report.report_iter( factory, args.files ) )
+    display( route )
     finished= datetime.datetime.now()
     logger.info( "Time {0}; Counts {1}".format( finished-started, pprint.pformat( counts ) ) )
     logging.shutdown()

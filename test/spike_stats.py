@@ -179,7 +179,7 @@ def group_by_rte_dir_stop( data ):
         reports[rpt.rte, rpt.dir, rpt.stop][rpt.time.date()].add( rpt.time )
     return reports
 
-def cluster_times( reports ):
+def cluster_times( reports, epsilon=480 ):
     """Correlate arrival times across the various days in the data set to
     create a cluster of times for each R/D/S with a minimal deviation.
 
@@ -246,11 +246,10 @@ def cluster_times( reports ):
             stops= tuple( sorted( (r-datetime_current).seconds for r in reports[r,d,s][date_current] ) )
             ##print( r, d, s, date_current, stops )
             for stop in stops:
-                deltas = []
-                for i in range(len(visits)):
-                    deltas.append( (math.sqrt(sum( (v-stop)**2 for v in visits[i] )/len(visits[i])), i) )
+                deltas = [ (math.sqrt(sum( (v-stop)**2 for v in visits[i] )/len(visits[i])), i)
+                    for i in range(len(visits))]
                 min_value, index = min(deltas)
-                if min_value < 480: # Assumption: 10 minutes between stops plus or minus 2.
+                if min_value < epsilon:
                     visits[index].append(stop)
                 else:
                     visits.append( [stop] )
@@ -288,6 +287,15 @@ def build_route( schedule ):
     return route
 
 def main():
+    """Demonstrate the essential three-step route discovery algorithm.
+
+    1.  Organize raw data by route/direction/stop.  :func:`group_by_rte_dir_stop`.
+
+    2.  Correlate times to discover repeat visits to a stop.  :func:`cluster_times`.
+
+    3.  Transform to a route/direction structure with a time-ordered
+        sequence of stops that spans the entire day.  :func:`build_route`.
+    """
     # Step 1.  Organize raw data by route/direction/stop.
     reports = group_by_rte_dir_stop( synth_data_iter() )
     ##pprint.pprint( dict(reports) )
@@ -298,7 +306,7 @@ def main():
     #pprint.pprint( schedule )
     #schedule_iter= schedule.items()
 
-    # Step 3. Transform to a route/direction structure with a time-ordered
+    # Step 3.  Transform to a route/direction structure with a time-ordered
     # sequence of stops that spans the entire day.
     route= build_route( schedule_iter )
 

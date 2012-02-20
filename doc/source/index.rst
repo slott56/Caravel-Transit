@@ -3,10 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Caravel -- Analyze Transit GPS Data
-===================================
+Caravel Transit -- Analyze Transit GPS Data
+==============================================
 
-Caravel reads and analyses transit GPS coordinates to discover routes and
+Caravel-Transit reads and analyses transit GPS coordinates to discover routes and
 predict next bus arrival times.
 
 ..  toctree::
@@ -16,6 +16,8 @@ predict next bus arrival times.
     design/index
     implementation/index
 
+Not to be confused with Caravel CMS (http://www.caravelcms.org/)
+or Caravel Games (http://caravelgames.com/)
 
 Indices and tables
 ==================
