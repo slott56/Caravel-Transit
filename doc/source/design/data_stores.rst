@@ -94,6 +94,7 @@ History
 
 Each Route/Direction/Stop contains all Dwell and Arrival data.
 
-This is simply accumulated to discover route details.
+This is simply accumulated to discover any long-term trends.
 
+Also, the historical data can be used to discover routes.
 See :ref:`design.routes`.

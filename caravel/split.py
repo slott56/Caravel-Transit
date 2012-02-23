@@ -1,18 +1,22 @@
 #!/usr/bin/env python2.7
 """Caravel raw file filter and split.
 
-Synopsis:
+Synopsis
+
+::
 
     python2.7 -m caravel.split [--new] [-l location] [-a arrival] source...
 
-Description:
+Description
 
 For each source file, filter the invalid Reports.  Split into two CSV files.
 One file gets Arrival and Dwell reports.  The other file gets Location reports.
 
-Options:
+Options
 
-.. option:: --new, -n
+..  program:: split
+
+..  option:: --new, -n
 
     Get a new, live report file.
 
@@ -20,7 +24,7 @@ Options:
 
     The name of the Location reports ('location.csv' is the default)
 
-.. option:: --arrival <file>, -l <file>
+.. option:: --arrival <file>, -a <file>
 
     The name of the Arrival/Dwell reports ('arrival.csv' is the default)
 

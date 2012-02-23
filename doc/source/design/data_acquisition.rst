@@ -52,10 +52,10 @@ For MT_TIMEPOINTCROSSING some additional fields are present.
 
 5.  Actual Time in ``""Time:%H:%M:%S"`` format
 6.  "Dwell:%d" or "Arrival"
-7.  ``Rte:65`` - Route
-8.  ``Dir:2`` - Direction 1 or 2
+7.  ``Rte:65`` - Does not match routes.txt
+8.  ``Dir:2`` - Direction 1 or 2; trips.txt uses 0 or 1
 9.  ``TP:352``
-10. ``Stop:69`` - Stop
+10. ``Stop:69``
 11. ``Svc:1`` or ``Svc:4``
 12. ``Blk:203``
 13. Location in ``"Lat/Lon:%d/%d"`` format.

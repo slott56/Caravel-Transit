@@ -71,15 +71,17 @@ sequential stop times, :math:`0 \leq y < s`, on each day, :math:`0 \leq y < d`, 
     \dotsb \\
     T_{p,y=d-1} &= \langle T_{p,0,d-1}, T_{p,1,d-1}, \dotsc, T_{p,s-1,d-1} \rangle
 
-Note that there may be gaps (and duplicates) in each vector.  We'll
-address that below in the clustering algorithm.
 
 We can compute a mean (and other descriptive statistics) "down the colum" to get a
 set of average arrival times throughout a given day.  These are the :math:`T_{p,x,w_n}`
 values for a given stop, :math:`p`, and sequential visit, :math:`0 \leq x < s`.
 
-We have to count only the valid data; we'll use :math:`\lvert T_{p,x,w_n} \rvert` as
-the "valid count".  Ideally, all :math:`w_n` values are valid, but pragmatically,
+If the data was complete and consistent, this would be relatively easy to
+work this.  Pragmatically, there may be gaps (and duplicates) in each vector.  We'll
+address that below in the `Clustering`_ section.
+
+We have to count only the valid data; we'll use :math:`\lvert T_{p,x,y} \rvert` as
+the "valid count".  Ideally, all :math:`d` values down the column are valid, but pragmatically,
 there may be duplications or omissions.
 
 Each distinct arrival sequence number, :math:`x`, will have an average arrival,
@@ -133,13 +135,13 @@ missing data.
     \end{vmatrix}
 
 The sequence of stops is shown horizontally from :math:`0 \leq x < s`.
-The various days, :math:`y \in \{ w_0, w_1, w_2, \dotsc, w_6\}`, are shown vertically.
+The various days, :math:`0 \leq y < d`, are shown vertically.
 
 There may also be duplicates.  These are trivial to detect and exclude, so we won't
 discuss them further.
 
-This can be handled by an algorithm which clusters the visit times.
-This algorithm will allow for missing or duplicate visit reports.
+This can be handled by an algorithm which clusters the arrival times.
+This algorithm will allow for missing reports of arrival times.
 
 The goal is to minimize the deviations in the clusters of arrival times.
 

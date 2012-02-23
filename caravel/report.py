@@ -123,7 +123,7 @@ class Arrival( Location ):
         self.svc = svc
         self.blk = blk
     def __repr__( self ):
-        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, time='{0.time!s}', rte={0.rte!r}, dir={0.dir!r}, tp={0.tp!r}, stop={0.stop!r}, svc={0.svc!r}, blk={0.blk!r}, dwell={0.dwell!r} )".format( self )
+        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid={0.ll_valid}, time='{0.time!s}', rte={0.rte!r}, dir={0.dir!r}, tp={0.tp!r}, stop={0.stop!r}, svc={0.svc!r}, blk={0.blk!r}, dwell={0.dwell!r} )".format( self )
 
 class Dwell( Arrival ):
     """Paused in traffic?"""
@@ -204,17 +204,17 @@ class ReportFactory( Callable ):
         lon= int(lon_st)/10000000
         return lat, lon
 
-    def label_time( self, field, expected, format="%H:%M:%S" ):
-        """Split a "label:time" field, attempting an fairly complex conversion.
+    def label_time( self, field, expected ):
+        """Split a "label:time" field, to create a seconds-after-midnight value.
         If the label is not as expected, raise an exception.
 
         :param field: a "label:time field
         :param expected: the expected label.
-        :param format: the format, default value is "%H:%M:%S".
         :returns: datetime.time() object.
         """
         value= self.label_str( field, expected )
-        return datetime.datetime.strptime( value, format ).time()
+        hh, mm, ss = map( int, value.split(":") )
+        return (hh*60+mm)*60+ss
 
     def common_fields( self, fields ):
         """Parse the common set of fields.
@@ -267,10 +267,10 @@ class ReportFactory( Callable ):
             # Fields 13-20 repeat fields 5-12 of MT_LOCATION
             lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom = self.common_fields( fields[13:] )
             time= self.label_time( fields[5], "Time" )
-            rte= self.label_int( fields[7], "Rte" )
+            rte= self.label_str( fields[7], "Rte" )
             dir= self.label_int( fields[8], "Dir" )
             tp= self.label_str( fields[9], "TP" )
-            stop= self.label_int( fields[10], "Stop" )
+            stop= self.label_str( fields[10], "Stop" )
             svc= self.label_str( fields[11], "Svc" )
             blk= self.label_str( fields[12], "Blk" )
             if fields[6] == "Arrival":
@@ -319,7 +319,10 @@ class JSONEncoder( json.JSONEncoder ):
             as_dict= obj.as_dict()
             as_dict['timestamp']= obj.timestamp.strftime("%x %X")
             if as_dict.get('time'):
-                as_dict['time']= obj.time.strftime("%X")
+                hh= obj.time//3600
+                mm= obj.time-(hh*3600)//60
+                ss= obj.time-hh*3600-mm*60
+                as_dict['time']= "{0:2d}:{1:2d}:{2:2d}".format( hh, mm, ss )
             return as_dict
         super( JSONEncoder, self ).default( obj )
 
@@ -334,8 +337,8 @@ class JSONDecoder( json.JSONDecoder ):
                 timestamp= datetime.datetime.strptime(as_dict['timestamp'],"%x %X")
                 as_dict['timestamp']= timestamp
                 if as_dict.get('time'):
-                    timestamp= datetime.datetime.strptime(as_dict.get('time'),"%X")
-                    as_dict['time']= timestamp
+                    hh, mm, ss = map( int, as_dict.get('time').split(":") )
+                    as_dict['time']= (hh*60+mm)*60+ss
                 return cn(**as_dict)
             except TypeError:
                 print( cn, as_dict, cn.__init__.__code__.co_varnames )
