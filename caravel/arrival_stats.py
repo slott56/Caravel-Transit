@@ -29,13 +29,13 @@ def arrival_stats( conn, base='.' ):
     for report in caravel.report.report_iter( factory, glob.glob( os.path.join(base,'*.rpt') ) ):
         if report and report.rte: # Arrival or Dwell
             count += 1
-            services= tuple( conn.get_services_today( report.timestamp.date() ) )
+            services= tuple( transit_system.get_services_today(conn, report.timestamp.date() ) )
             if not services:
                 print( "***Services could not be found for {0!r}".format(report) )
                 continue
             #print()
             #print( arrival, services )
-            candidates = list( conn.get_candidate_stops(report, services, max_dist=1.0) )
+            candidates = list( transit_system.get_candidate_stops(conn, (report.lat, report.lon), report.time, services, max_dist=1.0) )
             #print( [ (c.distance,c.time,c.stop.stop_id) for c in candidates ] )
 
             if len(candidates) == 0:

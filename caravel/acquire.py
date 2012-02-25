@@ -3,6 +3,12 @@
 
 Checks FTP status and downloads latest versions of source files.
 
+::
+
+    host='216.54.15.3'
+    user='anonymous'
+    passwd='slott56@gmail.com'
+
 ..  autofunction:: get_files
 
 """

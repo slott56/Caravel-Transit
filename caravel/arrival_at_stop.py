@@ -5,7 +5,7 @@ Synopsis
 
 ::
 
-    python2.7 -m caraval.arrival_at_stop -t hrt_20120218_0425 *.rpt
+    python -m caraval.arrival_at_stop -t hrt_20120218_0425 *.rpt
 
 Description
 
@@ -82,18 +82,18 @@ def arrival_at_stop( conn, files, no_stop=print, stop=print ):
         if not (report and report.rte): # Arrival or Dwell
             counts['excluded'] += 1
             continue
-        services= tuple( conn.get_services_today( report.timestamp.date() ) )
+        services= tuple( transit_system.get_services_today( conn, report.timestamp.date() ) )
         if not services:
             no_stop( "Bad Date", report, None, None )
             counts['bad date'] += 1
             continue
 
         # Some analysis seems to indicate that 528 feet is far enough away.
-        candidates = list( conn.get_candidate_stops(report, services, max_dist=0.10) )
+        candidates = list( transit_system.get_candidate_stops(conn, (report.lat, report.lon), report.time, services, max_dist=0.10) )
 
         if len(candidates) == 0:
             wider= 0.5 # # Search out as far as 2640 feet away.
-            candidates = list( conn.get_candidate_stops(report, services, max_dist=wider) )
+            candidates = list( transit_system.get_candidate_stops(conn, (report.lat, report.lon), report.time, services, max_dist=wider) )
             try:
                 dist_fit= min( candidates, key=lambda x: x.distance )
                 time_fit= min( candidates, key=lambda x: abs(x.time) )
@@ -112,8 +112,8 @@ def arrival_at_stop( conn, files, no_stop=print, stop=print ):
 
         #print( '  fit', best_fit )
         stop( report, best_fit.distance, best_fit.time, best_fit.stop, best_fit.stop_time,
-            conn.routes[conn.trips[best_fit.stop_time.trip_id].route_id],
-            conn.trips[best_fit.stop_time.trip_id] )
+            transit_system.get_route_from_stop_time( conn, best_fit.stop_time ),
+            transit_system.get_trip_from_stop_time( conn, best_fit.stop_time ), )
         counts['good']  += 1
     return counts
 

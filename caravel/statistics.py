@@ -4,6 +4,7 @@
     :members:
 
 """
+from __future__ import division
 import math
 from collections import defaultdict
 

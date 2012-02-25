@@ -45,6 +45,10 @@ Given a date, the subset of allowed trips can be located.
 From the subset of allowed trips in the future only, the distinct routes
 can be determined as well as the distinct stops.
 
+:samp:`/route/`
+
+    The route list.  All 70.
+
 :samp:`/route/{id}/`
 
     All stops along the route, each stop decorated with direction and service.
@@ -74,9 +78,13 @@ Stop Access
 
 Some candidate RESTful requests for stop information.
 
+:samp:`/stop/`
+
+    All stops.  3210 of 'em.
+
 :samp:`/stop/{id}/`
 
-    A specific stop and all stop times (and services) for this stop.
+    A specific stop.
 
 :samp:`/stop/{id}/?date={date}`
 
@@ -87,7 +95,7 @@ Some candidate RESTful requests for stop information.
     All stop times at this stop, filtered by services available on the given date
     on or after the given time
 
-Rely on GPS
+Location Search
 ---------------
 
 Given a GPS coordinates and a date, the closest stop can be located irrespective

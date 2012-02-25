@@ -13,7 +13,7 @@ Rider Use Cases
 
 The rider really only has one use case.
 
-    As a HR rider, I want to know when will the next bus get here
+    As an HRT rider, I want to know when will the next bus get here
     so I can decide how to spend my time or whether I want to use
     an alternate form of transportation.
 
@@ -52,5 +52,5 @@ averages.  These are organized by position (route, direction and stop).
 
 The short-term history also includes the last few minutes of location reports.
 Ideally, it's just location reports since the last stop.  However, this
-can be complex to filter.  A window of the last 30 minutes of reports 
+can be complex to filter.  A window of the last 30 minutes of reports
 may be sufficient.
