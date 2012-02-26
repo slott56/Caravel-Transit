@@ -55,7 +55,7 @@ can be determined as well as the distinct stops.
     The time-of-day details for a given trip are not provided; they are associated
     with a specific stop.
 
-:samp:`/route/{id}/{dir}`
+:samp:`/route/{id}/{dir}/`
 
     All stops in a particular direction along the route.  The direction is
     more-or-less inoound or outbound, and is actually a foreign key to a direction
@@ -98,36 +98,41 @@ Some candidate RESTful requests for stop information.
 Location Search
 ---------------
 
-Given a GPS coordinates and a date, the closest stop can be located irrespective
+Given a GPS coordinates (and an optional date), the closest stop can be located irrespective
 of bus schedule.
 
 :samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}`
 
     This can find the nearest stops to this coordinate.
 
+:samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&dir={dir}`
+
+    This can find the nearest stops for all routes heading in this direction.
+
 :samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}`
 
-    This finds the nearest stop with a service that is active on the given date.
+    This finds the nearest stops with a service that is active on the given date.
 
-:samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}&time={time}`
+:samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&time={time}`
 
-    This finds the nearest stop with a service that is active on the given date
+    This finds the nearest stops with a service that is active on the given date
     and on or after the given time.
+
 
 :samp:`/route/{id}/?latlng={nn.nnnnnn,mm.mmmmmm}`
 
     This can find the nearest stops on the given route to this coordinate.
 
-:samp:`/route/{id}/{d}/?latlng={nn.nnnnnn,mm.mmmmmm}`
+:samp:`/route/{id}/{dir}/?latlng={nn.nnnnnn,mm.mmmmmm}`
 
     This can find the nearest stops on the given route and direction to this coordinate.
 
-:samp:`/route/{id}/{d}/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}`
+:samp:`/route/{id}/{dir}/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}`
 
     This can find the nearest stops on the given route and direction to this coordinate
     active on the given date.
 
-:samp:`/route/{id}/{d}/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}&time={time}`
+:samp:`/route/{id}/{dir}/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}&time={time}`
 
     This can find the nearest stops on the given route and direction to this coordinate
     active on the given date and on or after the given time.

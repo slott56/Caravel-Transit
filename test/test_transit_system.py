@@ -188,14 +188,16 @@ class Test_GetServicesToday( unittest.TestCase ):
         date = datetime.date( 2012, 12, 29 ) # Saturday
         self.assertEqual( ['SA'], list(caravel.transit_system.get_services_today( self.connection, date )) )
 
-class Test_GetClosestStops( unittest.TestCase ):
+class Sample_Transit_Data( unittest.TestCase ):
     def setUp( self ):
         start= datetime.datetime.strptime('20120122',"%Y%m%d").date()
         end= datetime.datetime.strptime('20121229',"%Y%m%d").date()
         self.connection= caravel.transit_system.Connection()
         self.connection.calendar_dates = {}
-        self.connection.calendar = [ caravel.transit_system.Calendar( 'WE','1','1','1','1','1','0','0',start,end ),
-            ]
+        self.connection.calendar = [
+            caravel.transit_system.Calendar( 'WE','1','1','1','1','1','0','0',start,end ),
+            caravel.transit_system.Calendar( 'MR','1','1','1','1','0','0','0',start,end ),
+        ]
         self.connection.stops = {
             '0001': caravel.transit_system.Stop('0001','CHARLOTTE & MONTICELLO',36.85192,-76.28732),
             '0020': caravel.transit_system.Stop('0020','GRANBY & 33RD',36.87707,-76.28177),
@@ -224,6 +226,7 @@ class Test_GetClosestStops( unittest.TestCase ):
         self.half_mile= (.5 * 180/math.pi)/3961.3
         self.feet250= ((250./5280) * 180/math.pi)/3961.3
 
+class Test_GetClosestStops( Sample_Transit_Data ):
     def test_should_rank_distances( self ):
         ranked= caravel.transit_system.get_closest_stops( self.connection, (36.85192,-76.28732) )
         self.assertEqual( 4, len(ranked) )
@@ -239,7 +242,7 @@ class Test_GetClosestStops( unittest.TestCase ):
         dist, stop = ranked[0]
         self.assertAlmostEqual( 0.5, dist )
         self.assertEqual( self.connection.stops['0001'], stop )
-    def test_should_filter_difference( self ):
+    def test_should_filter_distance( self ):
         ranked= caravel.transit_system.get_closest_stops( self.connection, (36.85192+self.half_mile,-76.28732), max_dist=0.6 )
         self.assertEqual( 1, len(ranked) )
         dist, stop = ranked[0]
@@ -248,8 +251,26 @@ class Test_GetClosestStops( unittest.TestCase ):
 
         ranked= caravel.transit_system.get_closest_stops( self.connection, (36.85192+self.half_mile,-76.28732), max_dist=0.4 )
         self.assertEqual( 0, len(ranked) )
+    def test_should_filter_direction( self ):
+        ranked_iter= caravel.transit_system.get_closest_stops_filtered( self.connection, (36.85192+self.half_mile,-76.28732), max_dist=0.6, dir='0' )
+        ranked= list(ranked_iter)
+        #print( ranked )
+        self.assertEqual( 1, len(list(ranked)) )
+        ranked= caravel.transit_system.get_closest_stops_filtered( self.connection, (36.85192+self.half_mile,-76.28732), max_dist=0.6, dir='1' )
+        self.assertEqual( 0, len(list(ranked)) )
+    def test_should_filter_date( self ):
+        ranked= caravel.transit_system.get_closest_stops_filtered( self.connection, (36.85192+self.half_mile,-76.28732), max_dist=0.6, date=datetime.date(2012,1,23) )
+        self.assertEqual( 1, len(list(ranked)) )
+        ranked= caravel.transit_system.get_closest_stops_filtered( self.connection, (36.85192+self.half_mile,-76.28732), max_dist=0.6, date=datetime.date(2012,1,22) )
+        self.assertEqual( 0, len(list(ranked)) )
+    def test_should_filter_date_and_time( self ):
+        ranked= caravel.transit_system.get_closest_stops_filtered( self.connection, (36.85192+self.half_mile,-76.28732), max_dist=0.6, date=datetime.date(2012,1,23), time=(6*60+33)*60 )
+        self.assertEqual( 1, len(list(ranked)) )
+        ranked= caravel.transit_system.get_closest_stops_filtered( self.connection, (36.85192+self.half_mile,-76.28732), max_dist=0.6, date=datetime.date(2012,1,23), time=(7*60+15)*60 )
+        self.assertEqual( 0, len(list(ranked)) )
 
-class Test_GetClosestTimesInService( Test_GetClosestStops ):
+
+class Test_GetClosestTimesInService( Sample_Transit_Data ):
     def test_should_rank_times( self ):
         ranked= caravel.transit_system.get_closest_times_in_service( self.connection, '0001', 23580, ['MR'] )
         self.assertEqual( 1, len(ranked) )
@@ -257,7 +278,7 @@ class Test_GetClosestTimesInService( Test_GetClosestStops ):
         self.assertEqual( 0, time )
         self.assertEqual( self.connection.stop_times['0001'][0], stop_time )
 
-class Test_GetCandidateStops( Test_GetClosestStops ):
+class Test_GetCandidateStops( Sample_Transit_Data ):
     def test_should_not_find_half_mile( self ):
         ranked= list(caravel.transit_system.get_candidate_stops( self.connection, (36.85192+self.half_mile,-76.28732),  23580, ['MR'] ))
         self.assertEqual( 0, len(ranked) )
@@ -270,7 +291,33 @@ class Test_GetCandidateStops( Test_GetClosestStops ):
         self.assertTrue( 249 <= dist <= 250 )
         self.assertEqual( self.connection.stops['0001'], stop )
 
-class Test_Other_Queries( Test_GetClosestStops ):
+class Test_GetClosestRoutes( Sample_Transit_Data ):
+    def test_should_filter_direction( self ):
+        ranked_iter= caravel.transit_system.get_closest_routes_filtered( self.connection, (36.85192+self.half_mile,-76.28732), '004', max_dist=0.6, dir='0' )
+        ranked= list(ranked_iter)
+        #print( ranked )
+        self.assertEqual( 1, len(list(ranked)) )
+        ranked= caravel.transit_system.get_closest_routes_filtered( self.connection, (36.85192+self.half_mile,-76.28732), '004', max_dist=0.6, dir='1' )
+        self.assertEqual( 0, len(list(ranked)) )
+    def test_should_exclude_remote_routes( self ):
+        ranked_iter= caravel.transit_system.get_closest_routes_filtered( self.connection, (36.85192+self.half_mile,-76.28732), '090', max_dist=0.6, dir='0' )
+        ranked= list(ranked_iter)
+        #print( ranked )
+        self.assertEqual( 0, len(list(ranked)) )
+        ranked= caravel.transit_system.get_closest_routes_filtered( self.connection, (36.85192+self.half_mile,-76.28732), '090', max_dist=0.6, dir='1' )
+        self.assertEqual( 0, len(list(ranked)) )
+    def test_should_filter_date( self ):
+        ranked= caravel.transit_system.get_closest_routes_filtered( self.connection, (36.85192+self.half_mile,-76.28732), '004', max_dist=0.6, date=datetime.date(2012,1,23) )
+        self.assertEqual( 1, len(list(ranked)) )
+        ranked= caravel.transit_system.get_closest_routes_filtered( self.connection, (36.85192+self.half_mile,-76.28732), '004', max_dist=0.6, date=datetime.date(2012,1,22) )
+        self.assertEqual( 0, len(list(ranked)) )
+    def test_should_filter_date_and_time( self ):
+        ranked= caravel.transit_system.get_closest_routes_filtered( self.connection, (36.85192+self.half_mile,-76.28732), '004', max_dist=0.6, date=datetime.date(2012,1,23), time=(6*60+33)*60 )
+        self.assertEqual( 1, len(list(ranked)) )
+        ranked= caravel.transit_system.get_closest_routes_filtered( self.connection, (36.85192+self.half_mile,-76.28732), '004', max_dist=0.6, date=datetime.date(2012,1,23), time=(7*60+15)*60 )
+        self.assertEqual( 0, len(list(ranked)) )
+
+class Test_Other_Queries( Sample_Transit_Data ):
     def test_should_get_route( self ):
         r = caravel.transit_system.get_route_from_stop_time( self.connection, self.connection.stop_times['0001'][0] )
         self.assertEqual( r, self.connection.routes['004'] )
@@ -321,7 +368,25 @@ class Test_Other_Queries( Test_GetClosestStops ):
         self.assertEqual( '090', r.route_id )
         sl= list(sl_iter)
         self.assertEqual( 0, len(sl) )
-
+    def test_should_get_stop_times( self ):
+        s, st_list= caravel.transit_system.get_stop_times( self.connection, '0001' )
+        self.assertEqual( '0001', s.stop_id )
+        self.assertEqual( 1, len(st_list) )
+    def test_should_get_stop_times_direction( self ):
+        s, st_list_iter= caravel.transit_system.get_stop_times( self.connection, '0001', dir='0' )
+        self.assertEqual( '0001', s.stop_id )
+        st_list= list(st_list_iter)
+        self.assertEqual( 1, len(st_list) )
+    def test_should_get_stop_times_date( self ):
+        s, st_list_iter= caravel.transit_system.get_stop_times( self.connection, '0001', date=datetime.date(2012,1,23) )
+        self.assertEqual( '0001', s.stop_id )
+        st_list= list(st_list_iter)
+        self.assertEqual( 1, len(st_list) )
+    def test_should_get_stop_times_date_time( self ):
+        s, st_list_iter= caravel.transit_system.get_stop_times( self.connection, '0001', date=datetime.date(2012,1,23), time=(8*60+15)*60 )
+        self.assertEqual( '0001', s.stop_id )
+        st_list= list(st_list_iter)
+        self.assertEqual( 1, len(st_list) )
 
 if __name__ == "__main__":
     logging.basicConfig( stream=sys.stderr, level=logging.WARN )

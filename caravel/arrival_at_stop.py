@@ -189,7 +189,7 @@ if __name__ == "__main__":
     if args.debug:
         logging.getLogger().setLevel( logging.DEBUG )
     if args.acquire:
-        latest= caravel.acquire.get_files()
+        latest= caravel.acquire.get_reports()
         files= [latest] + args.files
     else:
         files= args.files

@@ -58,6 +58,9 @@ Query Functions
 ..  autofunction:: get_route
 ..  autofunction:: get_stop
 ..  autofunction:: get_route_stops
+..  autofunction:: get_stop_times
+..  autofunction:: get_closest_stops_filtered
+..  autofunction:: get_closest_routes_filtered
 
 """
 from __future__ import print_function, division
@@ -274,6 +277,12 @@ def get_services_today( conn, today=None ):
 def get_closest_stops( conn, lat_lon, max_dist=None ):
     """Given a lat/lon pair, locate nearby stops.
 
+    Handles the following REST requests.
+
+    :samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}`
+
+        This can find the nearest stops to this coordinate.
+
     :param conn: An open :class:`Connection`.
     :param lat_lon: A (lat,lon) 2-tuple
     :param max_dist: An upper limit on distances to examine
@@ -365,7 +374,7 @@ def get_trip_from_stop_time( conn, stop_time ):
 
 def get_route( conn, id=None ):
     """Returns route or list of routes.
-    Handles the following cases
+    Handles the following REST requests.
 
     :samp:`/route/`
 
@@ -391,7 +400,7 @@ def get_route( conn, id=None ):
 
 def get_stop( conn, id=None ):
     """Returns stop or list of stops.
-    Handles the following cases
+    Handles the following REST requests.
 
     :samp:`/stop/`
 
@@ -410,6 +419,7 @@ def get_stop( conn, id=None ):
 
 def get_route_stops( conn, id, dir=None, date=None, time=None ):
     """Returns a route with a list of stops on that route.
+    Handles the following REST requests.
 
     :samp:`/route/{id}/{dir}`
 
@@ -448,3 +458,117 @@ def get_route_stops( conn, id, dir=None, date=None, time=None ):
     else:
         stop_ids = set( st.stop_id for t in trips for st in conn.trip_times[t.trip_id]  )
     return conn.routes[id], (conn.stops[stop_id] for stop_id in stop_ids)
+
+def get_stop_times( conn, id, dir=None, date=None, time=None ):
+    """Returns a stop with a list of stop times.
+    Handles the following REST requests.
+
+    :samp:`/stop/{id}/?dir={dir}`
+
+        All stop times for this stop constrained by trip direction.
+
+    :samp:`/stop/{id}/?dir={dir}&date={date}`
+
+        All stop times for this stop constrained by services on the specific date.
+
+    :samp:`/stop/{id}/?dir={dir}&date={date}&time={time}`
+
+    All stop times at this stop, filtered by services available on the given date
+    on or after the given time
+
+    :param conn: An open :class:`Connection`.
+    :param id: stop id.
+    :param dir: optional route direction, codes are '1' and '0'.
+    :param date: a datetime.date object; the services available on this date
+        are used to filter the results.
+    :param time: a seconds-after-midnight time.
+    """
+    if dir:
+        times= list( (st,conn.trips[st.trip_id]) for st in conn.stop_times[id] if conn.trips[st.trip_id].direction_id == dir )
+    elif date:
+        services= set(get_services_today( conn, date ))
+        times= list( (st,conn.trips[st.trip_id]) for st in conn.stop_times[id] if conn.trips[st.trip_id].service_id in services )
+    else:
+        times= list( (st,conn.trips[st.trip_id]) for st in conn.stop_times[id] )
+    return  conn.stops[id], times
+
+def filter_stops_by_dir( conn, stops, dir ):
+    return ( s for s in stops if s.stop_id in set( st.stop_id for st in conn.stop_times[s.stop_id] if conn.trips[st.trip_id].direction_id == dir ) )
+
+def filter_stops_by_date( conn, stops, date ):
+    services= set(get_services_today( conn, date ))
+    return ( s for s in stops if s.stop_id in set( st.stop_id for st in conn.stop_times[s.stop_id] if conn.trips[st.trip_id].service_id in services ) )
+
+def filter_stops_by_time( conn, stops, time ):
+    return ( s for s in stops if s.stop_id in set( st.stop_id for st in conn.stop_times[s.stop_id] if st.arrival_time >= time ) )
+
+def get_closest_stops_filtered( conn, lat_lon, max_dist=None, dir=None, date=None, time=None ):
+    """Given a lat/lon pair, locate nearby stops.
+
+    Handles the following REST requests.
+
+    :samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&dir={dir}`
+
+        This can find the nearest stops for all routes heading in this direction.
+
+    :samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}`
+
+        This finds the nearest stops with a service that is active on the given date.
+
+    :samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&time={time}`
+
+        This finds the nearest stops with a service that is active on the given date
+        and on or after the given time.
+
+
+    :param conn: An open :class:`Connection`.
+    :param lat_lon: A (lat,lon) 2-tuple
+    :param dir: A trip direction_id
+    :param max_dist: An upper limit on distances to examine
+    :return: iterator over (distance,stop) pairs ordered from nearest to
+        the specified max_dist value.
+    """
+    stops= ( s for d,s in get_closest_stops( conn, lat_lon, max_dist ) )
+    if dir:
+        stops= filter_stops_by_dir( conn, stops, dir )
+    elif date:
+        stops= filter_stops_by_date( conn, stops, date )
+    if time:
+        return filter_stops_by_time( conn, stops, time )
+    else:
+        return stops
+
+def get_closest_routes_filtered( conn, lat_lon, id, dir=None, max_dist=None, date=None, time=None ):
+    """Given a lat/lon pair, locate nearby stops on a given route.
+
+    Handles the following REST requests.
+
+    :samp:`/route/{id}/?latlng={nn.nnnnnn,mm.mmmmmm}`
+
+        This can find the nearest stops on the given route to this coordinate.
+
+    :samp:`/route/{id}/{dir}/?latlng={nn.nnnnnn,mm.mmmmmm}`
+
+        This can find the nearest stops on the given route and direction to this coordinate.
+
+    :samp:`/route/{id}/{dir}/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}`
+
+        This can find the nearest stops on the given route and direction to this coordinate
+        active on the given date.
+
+    :samp:`/route/{id}/{dir}/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}&time={time}`
+
+        This can find the nearest stops on the given route and direction to this coordinate
+        active on the given date and on or after the given time.
+
+    :param conn: An open :class:`Connection`.
+    :param lat_lon: A (lat,lon) 2-tuple
+    :paran id: route id
+    :param dir: A trip direction_id
+    :param max_dist: An upper limit on distances to examine
+    :return: iterator over (distance,stop) pairs ordered from nearest to
+        the specified max_dist value.
+    """
+    r, stops1_iter= get_route_stops( conn, id, dir, date, time )
+    stops2= get_closest_stops_filtered( conn, lat_lon, max_dist, dir, date, time )
+    return ( s for s in stops2 if s in set(stops1_iter) )

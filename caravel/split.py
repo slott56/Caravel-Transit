@@ -111,7 +111,7 @@ if __name__ == "__main__":
     if args.debug:
         logging.getLogger().setLevel( logging.DEBUG )
     if args.acquire:
-        files= [caravel.acquire.get_files()] + args.files
+        files= [caravel.acquire.get_reports()] + args.files
     else:
         files= args.files
     factory= caravel.report.ReportFactory()

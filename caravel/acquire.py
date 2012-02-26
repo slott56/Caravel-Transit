@@ -1,7 +1,7 @@
 #!/usr/bin/env python2.7
 """Caravel raw file acquire.
 
-Checks FTP status and downloads latest versions of source files.
+Checks FTP status and downloads latest versions of locations.
 
 ::
 
@@ -9,7 +9,11 @@ Checks FTP status and downloads latest versions of source files.
     user='anonymous'
     passwd='slott56@gmail.com'
 
-..  autofunction:: get_files
+Also.  Gets route information from http://googletf.gohrt.com/google_transit.zip
+
+..  autofunction:: get_reports
+
+..  autofunction:: get_route
 
 """
 from __future__ import print_function, division
@@ -17,6 +21,7 @@ import ftplib
 from contextlib import closing
 import datetime
 from collections import namedtuple
+import urlparse
 import os.path
 import logging
 
@@ -24,8 +29,8 @@ logger= logging.getLogger( __name__ )
 
 Directory = namedtuple( "Directory", ['name', 'timestamp', 'size'] )
 
-def get_files( connection=None, target_dir='.', **access ):
-    """Get the lastest files.
+def get_reports( connection=None, target_dir='.', **access ):
+    """Get the lastest position report "file".
 
     Check for latest versions of "vid.csv" and download it only if it changed.
 
@@ -72,4 +77,23 @@ def get_files( connection=None, target_dir='.', **access ):
         with open(name, 'w' ) as target:
             logger.info( "Getting {0}".format(name) )
             server.retrlines("RETR Anrd/hrtrtf.txt", lambda line: print( line, file=target ) )
+    return name
+
+
+def get_route( connection=None, target_dir='.', url="http://googletf.gohrt.com/google_transit.zip" ):
+    """Get the lastest Route Definition ZIP Archive.
+
+    :param connection: Override to the default of urllib2.OpenerDirector.
+    :param target_dir: Working directory for result file
+    :param url: URL for the file (http://googletf.gohrt.com/google_transit.zip)
+    """
+    if not connection:
+        connection= urllib2.OpenerDirector
+
+    download=  urlparse.urlparse(url)
+    dir, name = os.path.split( download.path )
+
+    with closing( connection().open( url ) ) as source:
+        with open(os.path.join(target_dir,name),'wb') as target:
+            target.write( source.read() )
     return name
