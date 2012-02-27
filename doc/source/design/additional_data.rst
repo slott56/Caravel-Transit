@@ -21,7 +21,6 @@ Per the GTFS standard, this contains the following files:
 -   stops.txt
 -   trips.txt
 
-
 Agency
 --------
 
