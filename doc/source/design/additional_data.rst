@@ -1,11 +1,15 @@
 ..  _design.transit:
 
-Transit System Route and Stop Data
+General Transit Feed Data
 =====================================
 
 See http://googletf.gohrt.com/google_transit.zip
 
-This contains the following files:
+See http://www.gtfs-data-exchange.com/agency/hampton-roads-transit-hrt/
+
+See https://developers.google.com/transit/gtfs/reference
+
+Per the GTFS standard, this contains the following files:
 
 -   agency.txt
 -   calendar.txt
@@ -17,7 +21,6 @@ This contains the following files:
 -   stops.txt
 -   trips.txt
 
-These are all CSV files with additional information.
 
 Agency
 --------
@@ -158,15 +161,22 @@ The stop time for each trip around a route.
 
 The timepoint is a 0/1 flag of some kind.
 
-Data Model
---------------
+GTFS Data Model
+----------------
 
-We'll ignore Agency, Fare Attributes and Fare Rules.
+The GTFS is a normalied, relational model.  This can, however, be restructured into
+hierarchical "document" model that's more useful.  First, we'll
+look at the normalized view.
 
-It appears that `Calendar`_ defines a class of service (WE, SA, SU, MR, FR) and the
+We can ignore Agency, Fare Attributes and Fare Rules for the purposes of
+determining bus arrival times.
+
+The `Calendar`_ defines a class of service (WE, SA, SU, MR, FR) and the
 days on which that class of service is offered.
 
 The `Calendar Dates`_ provides for two kinds of exceptions, coded ``1`` and ``2``.
+A value of 1 indicates that service has been added for the specified date.
+A value of 2 indicates that service has been removed for the specified date.
 
 For a given class of service, the `Trips`_ defines the routes that apply.  Each
 route may have several trips during the day.
@@ -184,4 +194,46 @@ A YUML (http://www.yuml.me) specification::
 
 ..  figure:: 600cd99.png
 
-    Logical View of Additional Data.
+    Logical View of GFTS Data.
+
+Hierarchical Document Model
+----------------------------
+
+We have a collection of hierarchies that are closely intertwined.  All of these
+are needed for different kinds of requests and processing.  Unlike a normalized
+view, there is no canonical document structure.
+
+Note that we have two different taxonomies:
+
+-   By Geography -- route, direction and stop.
+
+-   By Time -- weekday service class and time of day.
+
+[Route [Direction [Stop]]].
+
+    This is a sequence of routes. Each route has a pair of directions.
+    Each direction has a sequence of stop references.
+    This is a union of stops from all trips.
+    This must be coupled with a simple mapping of stop details.
+
+    This is a summary of each route.
+
+[Route [Direction [(Service, Stop-Time, Stop)]]]
+
+    This is a sequence of routes. Each route has a pair of directions.
+    Each direction has a sequence of stop-time and stop references.
+    This includes all trips.
+    This must be coupled with a simple mapping of stop details.
+
+    This can be filtered to get route by date, weekly service id,
+    or even time-of-day.
+
+[Stop [Route [Direction [(Service, Stop-Time)]]]]
+
+    This is a dictionary of stops, providing service, stop-time and route
+    data for that stop.  Generally a stop belongs to one route,
+    but the times belong to a particular direction of the trip.
+
+[Service [Route [Direction [(Stop-Time, Stop)]]]]
+
+    Given a service, this is all active routes and all stops on that
