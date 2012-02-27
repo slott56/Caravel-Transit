@@ -1,0 +1,161 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.acquire &mdash; Caravel-Transit v1.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.acquire</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel raw file acquire.</span>
+
+<span class="sd">Checks FTP status and downloads latest versions of source files.</span>
+
+<span class="sd">..  autofunction:: get_files</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">ftplib</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">closing</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">import</span> <span class="nn">os.path</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="n">__name__</span> <span class="p">)</span>
+
+<span class="n">Directory</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span> <span class="s">&quot;Directory&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;timestamp&#39;</span><span class="p">,</span> <span class="s">&#39;size&#39;</span><span class="p">]</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="get_files"><a class="viewcode-back" href="../../implementation/index.html#caravel.acquire.get_files">[docs]</a><span class="k">def</span> <span class="nf">get_files</span><span class="p">(</span> <span class="n">connection</span><span class="o">=</span><span class="n">ftplib</span><span class="o">.</span><span class="n">FTP</span><span class="p">,</span> <span class="n">target_dir</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">access</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get the lastest files.</span>
+
+<span class="sd">    Check for latest versions of &quot;vid.csv&quot; and download it only if it changed.</span>
+
+<span class="sd">    Download the current version of  ``hrtrtf.txt`` file;</span>
+<span class="sd">    naming it with a ``YYYYMMDDHHMM.rpt`` name.</span>
+
+<span class="sd">    :param connection: Override to default of ftplib.FTP</span>
+<span class="sd">    :param target_dir: Working directory for result files</span>
+<span class="sd">    :param host: IP address or name of the FTP host.</span>
+<span class="sd">    :param user: FTP username</span>
+<span class="sd">    :param passwd: FTP password</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">access</span><span class="p">:</span>
+        <span class="n">access</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="s">&#39;216.54.15.3&#39;</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s">&#39;anonymous&#39;</span><span class="p">,</span> <span class="n">passwd</span><span class="o">=</span><span class="s">&#39;slott56@gmail.com&#39;</span><span class="p">)</span>
+
+    <span class="n">file_status</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">def</span> <span class="nf">get_directory</span><span class="p">(</span> <span class="n">line</span> <span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span> <span class="k">return</span>
+        <span class="n">date</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">size_str</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+        <span class="n">timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">date</span><span class="o">+</span><span class="n">time</span><span class="p">,</span> <span class="s">&quot;%m-</span><span class="si">%d</span><span class="s">-%y%I:%M%p&quot;</span> <span class="p">)</span>
+        <span class="n">size</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">size_str</span><span class="p">)</span>
+        <span class="n">file_status</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">=</span> <span class="n">Directory</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">size</span> <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">get_newest</span><span class="p">(</span> <span class="n">server</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">destination</span> <span class="p">):</span>
+        <span class="n">name</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span> <span class="n">destination</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">local_timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+            <span class="n">local_timestamp</span><span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">local_timestamp</span> <span class="ow">or</span> <span class="n">file_status</span><span class="p">[</span><span class="n">destination</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span> <span class="o">&gt;</span> <span class="n">local_timestamp</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Getting newer {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">source</span><span class="p">)</span> <span class="p">)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">target</span><span class="p">:</span>
+                <span class="n">server</span><span class="o">.</span><span class="n">retrbinary</span><span class="p">(</span><span class="s">&quot;RETR {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">source</span><span class="p">),</span> <span class="n">target</span><span class="o">.</span><span class="n">write</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">closing</span><span class="p">(</span><span class="n">connection</span><span class="p">(</span><span class="o">**</span><span class="n">access</span><span class="p">))</span> <span class="k">as</span> <span class="n">server</span><span class="p">:</span>
+        <span class="n">server</span><span class="o">.</span><span class="n">dir</span><span class="p">(</span><span class="s">&quot;Anrd&quot;</span><span class="p">,</span> <span class="n">get_directory</span><span class="p">)</span>
+
+        <span class="n">get_newest</span><span class="p">(</span> <span class="n">server</span><span class="p">,</span> <span class="s">&quot;Anrd/vid.csv&quot;</span><span class="p">,</span> <span class="s">&#39;vid.csv&#39;</span> <span class="p">)</span>
+
+        <span class="n">name</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span>
+            <span class="n">file_status</span><span class="p">[</span><span class="s">&#39;hrtrtf.txt&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span> <span class="s">&quot;%Y%m</span><span class="si">%d</span><span class="s">%H%M.rpt&quot;</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s">&#39;w&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Getting {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">server</span><span class="o">.</span><span class="n">retrlines</span><span class="p">(</span><span class="s">&quot;RETR Anrd/hrtrtf.txt&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">line</span><span class="p">:</span> <span class="k">print</span><span class="p">(</span> <span class="n">line</span><span class="p">,</span> <span class="nb">file</span><span class="o">=</span><span class="n">target</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">name</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../caravel.html">
+              <img class="logo" src="../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

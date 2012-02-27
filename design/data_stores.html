@@ -1,0 +1,215 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Data Store Hierarchy &mdash; Caravel-Transit v1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../index.html" />
+    <link rel="up" title="Design Notes" href="index.html" />
+    <link rel="next" title="Distance Calculations" href="distance.html" />
+    <link rel="prev" title="General Transit Feed Data" href="additional_data.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="distance.html" title="Distance Calculations"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="additional_data.html" title="General Transit Feed Data"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="data-store-hierarchy">
+<h1>Data Store Hierarchy<a class="headerlink" href="#data-store-hierarchy" title="Permalink to this headline">¶</a></h1>
+<p>There are three tiers of storage.</p>
+<ol class="arabic simple">
+<li>Since Last Stop on this route.  These are location reports
+that reflect a vehicle&#8217;s progress since the last stop.
+With some care, this can be extrapolated to an arrival time
+at all subsequent stops on the route.</li>
+<li>Today&#8217;s History.  These are arrival and dwell reports for
+today. These create a localized trend that conforms to or deviates from the
+historical average arrival times for a given route/direction/stop.</li>
+<li>Long-Term History.  The overall history of route/direction/stop arrival
+times effectively describes the actual routes and schedules.</li>
+</ol>
+<p>Note that the standard relational model isn&#8217;t an ideal fit for this
+data.  There are several issues.</p>
+<ul>
+<li><p class="first">The route is a graph with nodes and edges corresponding to stops
+and driving segments.  Because nodes and edges are duals, only one is
+sufficient for a relational model.  Stops, for example, are easy
+to discern from the data.  Segments, however, are where slowdowns
+occur and where vehicle location reports are found.  It&#8217;s difficult
+to choose one representation for the relational model.  It&#8217;s also
+difficult to attempt to use both and keep them synchronized.</p>
+</li>
+<li><p class="first">The historical data can be normalized, but it&#8217;s of little value
+to do this.  A hierarchical collection might be considerably
+more efficient than normalizing the route/direction/stop hierarchy</p>
+</li>
+<li><p class="first">The bulk of the access is
+to gather the short-term historical records associated with a
+a given route/direction/stop; this forms a short vector of times.
+This is transient data that forms a kind of FIFO.
+Fairly complex database queries are required to insert, delete and
+query a FIFO structure.
+A simple web service which avoids database overheads makes more sense.</p>
+</li>
+<li><p class="first">Geospatial queries.  Locating stops and vehicles based on Lat/Lon
+is irksome because there&#8217;s no simple database indexing scheme
+that permits rapid distance calculations.</p>
+<p>However.  See <a class="reference internal" href="distance.html#design-distance"><em>Distance Calculations</em></a> for more information on
+rapid distance approximations using an Equirectangular Approximation.</p>
+</li>
+</ul>
+<div class="section" id="last-stop-fifo">
+<h2>Last-Stop FIFO<a class="headerlink" href="#last-stop-fifo" title="Permalink to this headline">¶</a></h2>
+<p>Each Route/Direction FIFO contains the last stop&#8217;s Dwell or Arrival report followed by
+any Location reports for the same vehicle.</p>
+<p>The CRUD transactions work like this.</p>
+<p><strong>Create</strong>.</p>
+<ul class="simple">
+<li>Location reports are appended to a FIFO.</li>
+<li>Arrival and Dwell reports clear the FIFO prior to insert.</li>
+</ul>
+<p><strong>Update</strong>.  Does not happen.</p>
+<p><strong>Retrieve</strong>.  Given a request for a route/direction, the short term
+data is available to discover immediate location.  Daily data and Historical
+data is required to compute an expected arrival time.</p>
+<p><strong>Delete</strong>.  Happens when an Arrival or Dwell report is inserted.</p>
+</div>
+<div class="section" id="today">
+<h2>Today<a class="headerlink" href="#today" title="Permalink to this headline">¶</a></h2>
+<p>Each Route/Direction/Stop contains the Dwell and Arrival data accumulated today.</p>
+<p>This has two parts.</p>
+<ul class="simple">
+<li>A status with simple variance and confidence factor.</li>
+<li>A sequence of reports.  Each Insert
+updates the status with a time variance and a confidence window.</li>
+</ul>
+<p>The arrival times throughout the day will fit into one of two patterns.</p>
+<ul class="simple">
+<li>Statistically significant departure from historical averages.
+This may indicate a route change or a significant systemic delay
+(e.g. construction or accident.)   This increases the confidence
+in any variance.</li>
+<li>Confirmation of historical averages.  This decreases the confidence
+in any variance.</li>
+</ul>
+</div>
+<div class="section" id="history">
+<h2>History<a class="headerlink" href="#history" title="Permalink to this headline">¶</a></h2>
+<p>Each Route/Direction/Stop contains all Dwell and Arrival data.</p>
+<p>This is simply accumulated to discover any long-term trends.</p>
+<p>Also, the historical data can be used to discover routes.
+See <a class="reference internal" href="route_details.html#design-routes"><em>Route Discovery</em></a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Data Store Hierarchy</a><ul>
+<li><a class="reference internal" href="#last-stop-fifo">Last-Stop FIFO</a></li>
+<li><a class="reference internal" href="#today">Today</a></li>
+<li><a class="reference internal" href="#history">History</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="additional_data.html"
+                        title="previous chapter">General Transit Feed Data</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="distance.html"
+                        title="next chapter">Distance Calculations</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/design/data_stores.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="distance.html" title="Distance Calculations"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="additional_data.html" title="General Transit Feed Data"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>

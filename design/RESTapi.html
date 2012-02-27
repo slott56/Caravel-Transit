@@ -1,0 +1,239 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>RESTful API &mdash; Caravel-Transit v1.1 documentation</title>
+    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../index.html" />
+    <link rel="up" title="Design Notes" href="index.html" />
+    <link rel="next" title="Data Acquisition" href="data_acquisition.html" />
+    <link rel="prev" title="Design Notes" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="data_acquisition.html" title="Data Acquisition"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Design Notes"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="restful-api">
+<h1>RESTful API<a class="headerlink" href="#restful-api" title="Permalink to this headline">¶</a></h1>
+<p>The central use case expands into a few closely-related scenarios.</p>
+<ol class="arabic">
+<li><p class="first">User picks route and stop from a menu.</p>
+<p>For example, they are at a stop and can read the signage to figure out where
+they are.  Or, they is getting ready to go outside to wait
+for a bus.</p>
+</li>
+<li><p class="first">User is relying on smartphone GPS to pick nearest route and stop.</p>
+</li>
+<li><p class="first">User has a destination in mind and needs to know closest stop
+relevant to a route that gets to the desired destination.  This means
+that alterantive stops, routes, transfers and run times all need
+to be calculated.  This is rather complex.</p>
+</li>
+</ol>
+<div class="section" id="data-model">
+<h2>Data Model<a class="headerlink" href="#data-model" title="Permalink to this headline">¶</a></h2>
+<p>Stops are identified by a name and GPS coordinates.</p>
+<p>A stop is associated with a route via two intermediate relationships:
+stop-time and trip.</p>
+<p>A stop is associated a stop_time.  A stop_time is associated with a trip.</p>
+<p>The trip is a particular pass along a route.  It&#8217;s constrained by the
+kinds of service (usually day-of-week).</p>
+<p>See <a class="reference internal" href="additional_data.html#design-transit"><em>General Transit Feed Data</em></a> for details.</p>
+<p>Note that the trip and stop-time information is essential for navigating
+the data structure, but not interesting to a person trying to catch
+the bus.</p>
+</div>
+<div class="section" id="route-access">
+<h2>Route Access<a class="headerlink" href="#route-access" title="Permalink to this headline">¶</a></h2>
+<p>Some candidate RESTful requests for route information.</p>
+<p>Given a date, the subset of allowed trips can be located.
+From the subset of allowed trips in the future only, the distinct routes
+can be determined as well as the distinct stops.</p>
+<p><tt class="samp docutils literal"><span class="pre">/route/</span></tt></p>
+<blockquote>
+<div>The route list.  All 70.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span></tt></p>
+<blockquote>
+<div>All stops along the route, each stop decorated with direction and service.
+The time-of-day details for a given trip are not provided; they are associated
+with a specific stop.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span><em><span class="pre">dir</span></em><span class="pre">/</span></tt></p>
+<blockquote>
+<div>All stops in a particular direction along the route.  The direction is
+more-or-less inoound or outbound, and is actually a foreign key to a direction
+table.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/?date=</span><em><span class="pre">date</span></em></tt></p>
+<blockquote>
+<div>All stops along the route filtered by services available on the given date.
+Day of week is generally sufficient, but there are calendar overrides,
+so full date is required.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/?date=</span><em><span class="pre">date</span></em><span class="pre">&amp;time=</span><em><span class="pre">time</span></em></tt></p>
+<blockquote>
+<div>All stops along the route, filtered by services available on the given date
+on or after the given time.  If these are ordered by distance (along the route&#8217;s
+direction) it should provide a tidy summary of the route.</div></blockquote>
+</div>
+<div class="section" id="stop-access">
+<h2>Stop Access<a class="headerlink" href="#stop-access" title="Permalink to this headline">¶</a></h2>
+<p>Some candidate RESTful requests for stop information.</p>
+<p><tt class="samp docutils literal"><span class="pre">/stop/</span></tt></p>
+<blockquote>
+<div>All stops.  3210 of &#8216;em.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/stop/</span><em><span class="pre">id</span></em><span class="pre">/</span></tt></p>
+<blockquote>
+<div>A specific stop.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/stop/</span><em><span class="pre">id</span></em><span class="pre">/?date=</span><em><span class="pre">date</span></em></tt></p>
+<blockquote>
+<div>All stop times for this stop constrained by services on the specific date.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/stop/</span><em><span class="pre">id</span></em><span class="pre">/?date=</span><em><span class="pre">date</span></em><span class="pre">&amp;time=</span><em><span class="pre">time</span></em></tt></p>
+<blockquote>
+<div>All stop times at this stop, filtered by services available on the given date
+on or after the given time</div></blockquote>
+</div>
+<div class="section" id="location-search">
+<h2>Location Search<a class="headerlink" href="#location-search" title="Permalink to this headline">¶</a></h2>
+<p>Given a GPS coordinates (and an optional date), the closest stop can be located irrespective
+of bus schedule.</p>
+<p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em></tt></p>
+<blockquote>
+<div>This can find the nearest stops to this coordinate.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;dir=</span><em><span class="pre">dir</span></em></tt></p>
+<blockquote>
+<div>This can find the nearest stops for all routes heading in this direction.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;date=</span><em><span class="pre">date</span></em></tt></p>
+<blockquote>
+<div>This finds the nearest stops with a service that is active on the given date.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;time=</span><em><span class="pre">time</span></em></tt></p>
+<blockquote>
+<div>This finds the nearest stops with a service that is active on the given date
+and on or after the given time.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em></tt></p>
+<blockquote>
+<div>This can find the nearest stops on the given route to this coordinate.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span><em><span class="pre">dir</span></em><span class="pre">/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em></tt></p>
+<blockquote>
+<div>This can find the nearest stops on the given route and direction to this coordinate.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span><em><span class="pre">dir</span></em><span class="pre">/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;date=</span><em><span class="pre">date</span></em></tt></p>
+<blockquote>
+<div>This can find the nearest stops on the given route and direction to this coordinate
+active on the given date.</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span><em><span class="pre">dir</span></em><span class="pre">/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;date=</span><em><span class="pre">date</span></em><span class="pre">&amp;time=</span><em><span class="pre">time</span></em></tt></p>
+<blockquote>
+<div>This can find the nearest stops on the given route and direction to this coordinate
+active on the given date and on or after the given time.</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">RESTful API</a><ul>
+<li><a class="reference internal" href="#data-model">Data Model</a></li>
+<li><a class="reference internal" href="#route-access">Route Access</a></li>
+<li><a class="reference internal" href="#stop-access">Stop Access</a></li>
+<li><a class="reference internal" href="#location-search">Location Search</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Design Notes</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="data_acquisition.html"
+                        title="next chapter">Data Acquisition</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/design/RESTapi.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="data_acquisition.html" title="Data Acquisition"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Design Notes"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>
