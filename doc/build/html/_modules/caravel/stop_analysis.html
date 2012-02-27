@@ -1,0 +1,217 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.stop_analysis &mdash; Caravel-Transit v1.1 documentation</title>
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.stop_analysis</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel route and stop analysis.</span>
+
+<span class="sd">Synopsis:</span>
+
+<span class="sd">    python2.7 -m caravel.stop_analysis source...</span>
+
+<span class="sd">Description:</span>
+
+<span class="sd">For each source file, filter the invalid Reports.  Summarize the</span>
+<span class="sd">Arrival and Dwell reports.</span>
+
+
+<span class="sd">Options:</span>
+
+<span class="sd">.. option:: --debug, -d</span>
+
+<span class="sd">    Set logging level.</span>
+
+<span class="sd">.. option:: source...</span>
+
+<span class="sd">    List of source files to process.</span>
+
+<span class="sd">..  autofunction:: group_by_rte_dir_stop</span>
+
+<span class="sd">..  autofunction:: display</span>
+
+<span class="sd">..  autofunction:: get_args</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">OrderedDict</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">caravel.report</span>
+
+<span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="n">__name__</span> <span class="p">)</span>
+
+<span class="n">Details</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span> <span class="s">&#39;Details&#39;</span><span class="p">,</span> <span class="p">[</span> <span class="s">&#39;rte&#39;</span><span class="p">,</span> <span class="s">&#39;dir&#39;</span><span class="p">,</span> <span class="s">&#39;stop&#39;</span><span class="p">,</span> <span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;dwell&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span> <span class="p">])</span>
+
+<div class="viewcode-block" id="group_by_rte_dir_stop"><a class="viewcode-back" href="../../implementation/index.html#caravel.stop_analysis.group_by_rte_dir_stop">[docs]</a><span class="k">def</span> <span class="nf">group_by_rte_dir_stop</span><span class="p">(</span> <span class="n">report_iter</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Accumulate stops from a sequence of Arrivals.</span>
+
+<span class="sd">    Generally, the report_iter is an instance of :func:`caravel.report.report_iter`.</span>
+
+<span class="sd">    It&#39;s usually built like this::</span>
+
+<span class="sd">        factory= caravel.report.ReportFactory()</span>
+<span class="sd">        rpt_iter= caravel.report.report_iter( factory, [list,of,files] )</span>
+
+<span class="sd">    This iterator will examine all the files in the list, extracting</span>
+<span class="sd">    all Report objects.</span>
+
+<span class="sd">    :param report_iter: an iterator over :class:`caravel.report.Report` instances.</span>
+<span class="sd">    :returns: two values: (counts, route).  The counts is a dictinary of input, excluded, invalid</span>
+<span class="sd">        and arrivals actually processed.</span>
+<span class="sd">        The route is an OrderedDict, keyed by Route/Dir/Stop with sequence of arrival times.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">counts</span><span class="o">=</span> <span class="p">{</span><span class="s">&#39;source&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;excluded&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;invalid&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="s">&#39;arrival&#39;</span><span class="p">:</span><span class="mi">0</span><span class="p">}</span>
+    <span class="n">route_dir</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">report_iter</span><span class="p">:</span>
+        <span class="n">counts</span><span class="p">[</span><span class="s">&#39;source&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="p">:</span>
+            <span class="n">counts</span><span class="p">[</span><span class="s">&#39;invalid&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">item</span><span class="o">.</span><span class="n">ll_valid</span> <span class="ow">and</span> <span class="n">item</span><span class="o">.</span><span class="n">odom_valid</span><span class="p">):</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span> <span class="s">&#39;Excluded {0!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">counts</span><span class="p">[</span><span class="s">&#39;excluded&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">rte</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span> <span class="s">&#39;Excluded {0!r}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">counts</span><span class="p">[</span><span class="s">&#39;excluded&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">continue</span>
+        <span class="n">counts</span><span class="p">[</span><span class="s">&#39;arrival&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="n">dtl</span><span class="o">=</span> <span class="n">Details</span><span class="p">(</span> <span class="n">item</span><span class="o">.</span><span class="n">rte</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">dwell</span><span class="p">,</span> <span class="n">item</span><span class="o">.</span><span class="n">time</span> <span class="p">)</span>
+        <span class="n">route_dir</span><span class="p">[</span><span class="n">dtl</span><span class="o">.</span><span class="n">rte</span><span class="p">,</span><span class="n">dtl</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span><span class="n">dtl</span><span class="o">.</span><span class="n">stop</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">dtl</span> <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">rds</span> <span class="ow">in</span> <span class="n">route_dir</span><span class="p">:</span>
+        <span class="n">route_dir</span><span class="p">[</span><span class="n">rds</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">counts</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">(</span> <span class="nb">sorted</span><span class="p">(</span> <span class="n">route_dir</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">)</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="display"><a class="viewcode-back" href="../../implementation/index.html#caravel.stop_analysis.display">[docs]</a><span class="k">def</span> <span class="nf">display</span><span class="p">(</span> <span class="n">route_dir</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Display the accumulated raw data.</span>
+
+<span class="sd">    :param route_dir: OrderedDict, keyed by Route/Dir/Stop with sequence of arrival times.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Route, Direction, Stop, Time and Dwell&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span> <span class="s">&quot;  R D    S Time and Dwell&quot;</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span> <span class="s">&quot;=== = ==== ==============&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">r</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">s</span> <span class="ow">in</span> <span class="n">route_dir</span><span class="p">:</span>
+        <span class="n">times</span><span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span> <span class="s">&quot;{0.time} {0.dwell!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">rpt</span><span class="p">)</span> <span class="k">for</span> <span class="n">rpt</span> <span class="ow">in</span> <span class="n">route_dir</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">s</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span> <span class="s">&quot;{0:3d} {1:1d} {2:4d} {3:s}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">s</span><span class="p">,</span> <span class="n">times</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">counts</span>
+</div>
+<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../implementation/index.html#caravel.stop_analysis.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Parse command-line arguments.</span>
+<span class="sd">    :returns: Arguments object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span><span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;files&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&#39;*&#39;</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--debug&#39;</span><span class="p">,</span> <span class="s">&#39;-d&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span> <span class="p">)</span>
+    <span class="n">args</span><span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">args</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span> <span class="n">stream</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span> <span class="p">)</span>
+    <span class="n">args</span><span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="p">)</span>
+    <span class="n">started</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="n">factory</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportFactory</span><span class="p">()</span>
+    <span class="n">counts</span><span class="p">,</span> <span class="n">route</span> <span class="o">=</span> <span class="n">group_by_rte_dir_stop</span><span class="p">(</span>
+        <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_iter</span><span class="p">(</span> <span class="n">factory</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="n">display</span><span class="p">(</span> <span class="n">route</span> <span class="p">)</span>
+    <span class="n">finished</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Time {0}; Counts {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">finished</span><span class="o">-</span><span class="n">started</span><span class="p">,</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span> <span class="n">counts</span> <span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../index.html">
+              <img class="logo" src="../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" size="18" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+    </div>
+  </body>
+</html>
