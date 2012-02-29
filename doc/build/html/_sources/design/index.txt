@@ -13,4 +13,5 @@ This section contains design notes and explanations.
     data_stores
     distance
     location_finding
+    arrival_processing
     route_details

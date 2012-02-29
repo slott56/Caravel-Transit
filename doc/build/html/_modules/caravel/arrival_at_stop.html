@@ -3,13 +3,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.arrival_at_stop &mdash; Caravel-Transit v1.1 documentation</title>
+    <title>caravel.arrival_at_stop &mdash; Caravel-Transit 1.1 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -35,7 +38,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -94,16 +97,20 @@
 <span class="sd">    Stops file to which Report, Stop, Stop Time, Route and Trip information</span>
 <span class="sd">    is written.</span>
 
+<span class="sd">Components</span>
+
 <span class="sd">..  autofunction:: arrival_at_stop</span>
 
 <span class="sd">..  autofunction:: prefix_fields</span>
 <span class="sd">..  autofunction:: prefix_dict</span>
 
-<span class="sd">..  autoclass: Stop</span>
+<span class="sd">..  autoclass:: Stop</span>
 <span class="sd">    :members:</span>
+<span class="sd">    :special-members:</span>
 
-<span class="sd">..  autoclass: NoStop</span>
+<span class="sd">..  autoclass:: NoStop</span>
 <span class="sd">    :members:</span>
+<span class="sd">    :special-members:</span>
 
 <span class="sd">..  autofunction:: get_args</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -114,14 +121,52 @@
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">caravel.report</span>
-<span class="kn">import</span> <span class="nn">transit_system</span>
+<span class="kn">import</span> <span class="nn">caravel.transit_system</span>
 <span class="kn">import</span> <span class="nn">pprint</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
 
 <span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="n">__name__</span> <span class="p">)</span>
 
 <div class="viewcode-block" id="arrival_at_stop"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.arrival_at_stop">[docs]</a><span class="k">def</span> <span class="nf">arrival_at_stop</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">no_stop</span><span class="o">=</span><span class="k">print</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="k">print</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Locate closest stop to the Report objects in the given file(s).</span>
+<span class="sd">    Create two outputs via callback functions.</span>
+
+<span class="sd">    -   ``no_stop`` is called with reports to which a stop could not be reliably assigned.</span>
+<span class="sd">        This function is called with four positional parameters.</span>
+
+<span class="sd">        ..  function:: no_stop( message, report, candidate_1, candidate_2 )</span>
+
+<span class="sd">            Callback function to write a report that could not be matched</span>
+<span class="sd">            reliably to a stop.</span>
+
+<span class="sd">            :param message: Short string explanation</span>
+<span class="sd">            :param report: :class:`caravel.report.Report` object</span>
+<span class="sd">            :param candidate_1: :class:`caravel.transit_system.Stop` object or ``None``</span>
+<span class="sd">            :param candidate_2: :class:`caravel.transit_system.Stop` object or ``None``</span>
+
+<span class="sd">    -   ``stop`` is called with the reports to which a stop could be assigned.</span>
+
+<span class="sd">        ..  function:: stop( report, distance, time, stop, stop_time, route, trip )</span>
+
+<span class="sd">            Callback function to write a report was matched</span>
+<span class="sd">            reliably to a stop.</span>
+
+<span class="sd">            :param report: :class:`caravel.report.Report` object</span>
+<span class="sd">            :param distance: number of feet from the stop</span>
+<span class="sd">            :param time: number of seconds from the stop (&lt;0 means early)</span>
+<span class="sd">            :param stop: :class:`caravel.transit_system.Stop` object</span>
+<span class="sd">            :param stop_time: :class:`caravel.transit_system.Stop_Time` object</span>
+<span class="sd">            :param route: :class:`caravel.transit_system.Route` object</span>
+<span class="sd">            :param trip: :class:`caravel.transit_system.Trip` object</span>
+
+<span class="sd">    :param conn: An open :class:`caravel.transit_system.Connection`.</span>
+<span class="sd">    :param files: a sequence of report files.</span>
+<span class="sd">    :param no_stop: an open file to which 4-tuples are written.</span>
+<span class="sd">    :param stop: an open file to which 7-tuples are written.</span>
+<span class="sd">    :returns: dictionary of counts</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">counts</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span> <span class="nb">int</span> <span class="p">)</span>
     <span class="n">factory</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportFactory</span><span class="p">()</span>
     <span class="k">for</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_iter</span><span class="p">(</span> <span class="n">factory</span><span class="p">,</span> <span class="n">files</span> <span class="p">):</span>
@@ -129,18 +174,18 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">report</span> <span class="ow">and</span> <span class="n">report</span><span class="o">.</span><span class="n">rte</span><span class="p">):</span> <span class="c"># Arrival or Dwell</span>
             <span class="n">counts</span><span class="p">[</span><span class="s">&#39;excluded&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">continue</span>
-        <span class="n">services</span><span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span> <span class="n">conn</span><span class="o">.</span><span class="n">get_services_today</span><span class="p">(</span> <span class="n">report</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="n">services</span><span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">get_services_today</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">report</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="p">)</span> <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">services</span><span class="p">:</span>
             <span class="n">no_stop</span><span class="p">(</span> <span class="s">&quot;Bad Date&quot;</span><span class="p">,</span> <span class="n">report</span><span class="p">,</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span> <span class="p">)</span>
             <span class="n">counts</span><span class="p">[</span><span class="s">&#39;bad date&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="k">continue</span>
 
         <span class="c"># Some analysis seems to indicate that 528 feet is far enough away.</span>
-        <span class="n">candidates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">conn</span><span class="o">.</span><span class="n">get_candidate_stops</span><span class="p">(</span><span class="n">report</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="mf">0.10</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">candidates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">get_candidate_stops</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span> <span class="n">report</span><span class="o">.</span><span class="n">lon</span><span class="p">),</span> <span class="n">report</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="mf">0.10</span><span class="p">)</span> <span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">wider</span><span class="o">=</span> <span class="mf">0.5</span> <span class="c"># # Search out as far as 2640 feet away.</span>
-            <span class="n">candidates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">conn</span><span class="o">.</span><span class="n">get_candidate_stops</span><span class="p">(</span><span class="n">report</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="n">wider</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">candidates</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">get_candidate_stops</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="p">(</span><span class="n">report</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span> <span class="n">report</span><span class="o">.</span><span class="n">lon</span><span class="p">),</span> <span class="n">report</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="n">wider</span><span class="p">)</span> <span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">dist_fit</span><span class="o">=</span> <span class="nb">min</span><span class="p">(</span> <span class="n">candidates</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">distance</span> <span class="p">)</span>
                 <span class="n">time_fit</span><span class="o">=</span> <span class="nb">min</span><span class="p">(</span> <span class="n">candidates</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">time</span><span class="p">)</span> <span class="p">)</span>
@@ -159,31 +204,64 @@
 
         <span class="c">#print( &#39;  fit&#39;, best_fit )</span>
         <span class="n">stop</span><span class="p">(</span> <span class="n">report</span><span class="p">,</span> <span class="n">best_fit</span><span class="o">.</span><span class="n">distance</span><span class="p">,</span> <span class="n">best_fit</span><span class="o">.</span><span class="n">time</span><span class="p">,</span> <span class="n">best_fit</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="n">best_fit</span><span class="o">.</span><span class="n">stop_time</span><span class="p">,</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">routes</span><span class="p">[</span><span class="n">conn</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">best_fit</span><span class="o">.</span><span class="n">stop_time</span><span class="o">.</span><span class="n">trip_id</span><span class="p">]</span><span class="o">.</span><span class="n">route_id</span><span class="p">],</span>
-            <span class="n">conn</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">best_fit</span><span class="o">.</span><span class="n">stop_time</span><span class="o">.</span><span class="n">trip_id</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">get_route_from_stop_time</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">best_fit</span><span class="o">.</span><span class="n">stop_time</span> <span class="p">),</span>
+            <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">get_trip_from_stop_time</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">best_fit</span><span class="o">.</span><span class="n">stop_time</span> <span class="p">),</span> <span class="p">)</span>
         <span class="n">counts</span><span class="p">[</span><span class="s">&#39;good&#39;</span><span class="p">]</span>  <span class="o">+=</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">counts</span>
 </div>
 <div class="viewcode-block" id="prefix_fields"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.prefix_fields">[docs]</a><span class="k">def</span> <span class="nf">prefix_fields</span><span class="p">(</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">nt_class</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return the list of field names from a namedtuple with a prefix.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">prefix</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">nt_class</span><span class="o">.</span><span class="n">_fields</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="prefix_dict"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.prefix_dict">[docs]</a><span class="k">def</span> <span class="nf">prefix_dict</span><span class="p">(</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">nt_obj</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Create a dictionary from a namedtuple applying a prefix to the field names.&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
         <span class="p">(</span><span class="n">prefix</span><span class="o">+</span><span class="s">&#39;_&#39;</span><span class="o">+</span><span class="n">f</span><span class="p">,</span><span class="nb">getattr</span><span class="p">(</span><span class="n">nt_obj</span><span class="p">,</span><span class="n">f</span><span class="p">))</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">nt_obj</span><span class="o">.</span><span class="n">_fields</span>
     <span class="p">)</span>
 </div>
-<span class="k">class</span> <span class="nc">Stop</span><span class="p">(</span> <span class="n">Callable</span> <span class="p">):</span>
+<div class="viewcode-block" id="Stop"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.Stop">[docs]</a><span class="k">class</span> <span class="nc">Stop</span><span class="p">(</span> <span class="n">Callable</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A specialized writer for reports that have been matched to a stop.</span>
+<span class="sd">    This creates a CSV-format file attributes from</span>
+<span class="sd">    :class:`caravel.report.Report`,</span>
+<span class="sd">    :class:`caravel.transit_system.Stop`,</span>
+<span class="sd">    :class:`caravel.transit_system.Stop_Time`,</span>
+<span class="sd">    :class:`caravel.transit_system.Route`, and</span>
+<span class="sd">    :class:`caravel.transit_system.Trip`.</span>
+
+<span class="sd">    Generally, you&#39;ll use this as a stand-in for :func:`print`.</span>
+<span class="sd">    ::</span>
+
+<span class="sd">        with open( args.stop, &#39;wb&#39;) as nstop_file:</span>
+<span class="sd">            stop= Stop( stop_file )</span>
+
+<span class="sd">    This creates a callable ``stop`` function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">heading</span><span class="o">=</span> <span class="p">(</span>
         <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">Report</span><span class="o">.</span><span class="n">headings</span>
         <span class="o">+</span> <span class="p">[</span> <span class="s">&#39;distance&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="p">]</span>
-        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;stop&#39;</span><span class="p">,</span> <span class="n">transit_system</span><span class="o">.</span><span class="n">Stop</span><span class="p">)</span>
-        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;stop_time&#39;</span><span class="p">,</span> <span class="n">transit_system</span><span class="o">.</span><span class="n">Stop_Time</span><span class="p">)</span>
-        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;route&#39;</span><span class="p">,</span> <span class="n">transit_system</span><span class="o">.</span><span class="n">Route</span><span class="p">)</span>
-        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;trip&#39;</span><span class="p">,</span> <span class="n">transit_system</span><span class="o">.</span><span class="n">Trip</span><span class="p">)</span> <span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;stop&#39;</span><span class="p">,</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">Stop</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;stop_time&#39;</span><span class="p">,</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">Stop_Time</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;route&#39;</span><span class="p">,</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">Route</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;trip&#39;</span><span class="p">,</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">Trip</span><span class="p">)</span> <span class="p">)</span>
+<div class="viewcode-block" id="Stop.__init__"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.Stop.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the CSV writer around the target file.</span>
+
+<span class="sd">        :param target: file-like object suitable to CSV writer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wtr</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span> <span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">heading</span> <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wtr</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">report</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">,</span> <span class="n">route</span><span class="p">,</span> <span class="n">trip</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="o">=</span> <span class="mi">0</span></div>
+<div class="viewcode-block" id="Stop.__call__"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.Stop.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">report</span><span class="p">,</span> <span class="n">distance</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">,</span> <span class="n">route</span><span class="p">,</span> <span class="n">trip</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write a row.</span>
+
+<span class="sd">        :param report: :class:`caravel.report.Report` object</span>
+<span class="sd">        :param distance: number of feet from the stop</span>
+<span class="sd">        :param time: number of seconds from the stop (&lt;0 means early)</span>
+<span class="sd">        :param stop: :class:`caravel.transit_system.Stop` object</span>
+<span class="sd">        :param stop_time: :class:`caravel.transit_system.Stop_Time` object</span>
+<span class="sd">        :param route: :class:`caravel.transit_system.Route` object</span>
+<span class="sd">        :param trip: :class:`caravel.transit_system.Trip` object</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">row</span><span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
         <span class="n">row</span><span class="p">[</span><span class="s">&#39;distance&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">distance</span>
         <span class="n">row</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">time</span>
@@ -192,17 +270,43 @@
         <span class="n">row</span><span class="o">.</span><span class="n">update</span><span class="p">(</span> <span class="n">prefix_dict</span><span class="p">(</span><span class="s">&#39;route&#39;</span><span class="p">,</span> <span class="n">route</span> <span class="p">)</span> <span class="p">)</span>
         <span class="n">row</span><span class="o">.</span><span class="n">update</span><span class="p">(</span> <span class="n">prefix_dict</span><span class="p">(</span><span class="s">&#39;trip&#39;</span><span class="p">,</span> <span class="n">trip</span> <span class="p">)</span> <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wtr</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span> <span class="n">row</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+</div></div>
+<div class="viewcode-block" id="NoStop"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.NoStop">[docs]</a><span class="k">class</span> <span class="nc">NoStop</span><span class="p">(</span> <span class="n">Callable</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A specialized writer for reports that have been matched to a stop.</span>
+<span class="sd">    This creates a CSV-format file attributes from</span>
+<span class="sd">    :class:`caravel.report.Report`, and</span>
+<span class="sd">    :class:`caravel.transit_system.Stop`.</span>
 
-<span class="k">class</span> <span class="nc">NoStop</span><span class="p">(</span> <span class="n">Callable</span> <span class="p">):</span>
+<span class="sd">    Generally, you&#39;ll use this as a stand-in for :func:`print`.</span>
+<span class="sd">    ::</span>
+
+<span class="sd">        with open( args.reject, &#39;wb&#39;) as no_stop_file:</span>
+<span class="sd">            no_stop= NoStop( no_stop_file )</span>
+
+<span class="sd">    This creates a callable ``no_stop`` function.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">heading</span><span class="o">=</span> <span class="p">(</span> <span class="p">[</span><span class="s">&#39;status&#39;</span><span class="p">]</span>
         <span class="o">+</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">Report</span><span class="o">.</span><span class="n">headings</span>
-        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;candidate_1&#39;</span><span class="p">,</span> <span class="n">transit_system</span><span class="o">.</span><span class="n">Candidate</span><span class="p">)</span>
-        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;candidate_2&#39;</span><span class="p">,</span> <span class="n">transit_system</span><span class="o">.</span><span class="n">Candidate</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;candidate_1&#39;</span><span class="p">,</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">Candidate</span><span class="p">)</span>
+        <span class="o">+</span> <span class="n">prefix_fields</span><span class="p">(</span><span class="s">&#39;candidate_2&#39;</span><span class="p">,</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">Candidate</span><span class="p">)</span>
         <span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="NoStop.__init__"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.NoStop.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">target</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Create the CSV writer around the target file.</span>
+
+<span class="sd">        :param target: file-like object suitable to CSV writer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wtr</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span> <span class="n">target</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">heading</span> <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wtr</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">report</span><span class="p">,</span> <span class="n">dist_fit</span><span class="p">,</span> <span class="n">time_fit</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="o">=</span> <span class="mi">0</span></div>
+<div class="viewcode-block" id="NoStop.__call__"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.NoStop.__call__">[docs]</a>    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">status</span><span class="p">,</span> <span class="n">report</span><span class="p">,</span> <span class="n">dist_fit</span><span class="p">,</span> <span class="n">time_fit</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write a row.</span>
+
+<span class="sd">        :param message: Short string explanation</span>
+<span class="sd">        :param report: :class:`caravel.report.Report` object</span>
+<span class="sd">        :param candidate_1: :class:`caravel.transit_system.Stop` object or ``None``</span>
+<span class="sd">        :param candidate_2: :class:`caravel.transit_system.Stop` object or ``None``</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">row</span><span class="o">=</span> <span class="n">report</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
         <span class="n">row</span><span class="p">[</span><span class="s">&#39;status&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">status</span>
         <span class="k">if</span> <span class="n">dist_fit</span><span class="p">:</span>
@@ -210,7 +314,8 @@
         <span class="k">if</span> <span class="n">time_fit</span><span class="p">:</span>
             <span class="n">row</span><span class="o">.</span><span class="n">update</span><span class="p">(</span> <span class="n">prefix_dict</span><span class="p">(</span><span class="s">&#39;candidate_2&#39;</span><span class="p">,</span> <span class="n">time_fit</span> <span class="p">)</span> <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">wtr</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span> <span class="n">row</span> <span class="p">)</span>
-
+        <span class="bp">self</span><span class="o">.</span><span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+</div></div>
 <div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../implementation/index.html#caravel.arrival_at_stop.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Parse command-line arguments.</span>
 <span class="sd">    :returns: Arguments object.</span>
@@ -228,15 +333,23 @@
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span> <span class="n">stream</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span> <span class="p">)</span>
 
-    <span class="n">conn</span><span class="o">=</span> <span class="n">transit_system</span><span class="o">.</span><span class="n">Connection</span><span class="p">(</span> <span class="p">)</span>
-    <span class="n">data</span> <span class="o">=</span> <span class="s">&#39;hampton-roads-transit-hrt_20120218_0425&#39;</span> <span class="c"># pre-unzipped is faster</span>
-    <span class="n">conn</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="n">data</span> <span class="p">)</span>
+    <span class="n">args</span><span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">acquire</span><span class="p">:</span>
+        <span class="n">latest</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">acquire</span><span class="o">.</span><span class="n">get_reports</span><span class="p">()</span>
+        <span class="n">files</span><span class="o">=</span> <span class="p">[</span><span class="n">latest</span><span class="p">]</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">files</span><span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span>
 
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="s">&#39;stop.csv&#39;</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">stop_file</span><span class="p">:</span>
-        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="s">&#39;no_stop.csv&#39;</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">no_stop_file</span><span class="p">:</span>
+    <span class="n">conn</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">transit_system</span><span class="o">.</span><span class="n">Connection</span><span class="p">(</span> <span class="p">)</span>
+    <span class="n">conn</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="n">args</span><span class="o">.</span><span class="n">transit</span> <span class="p">)</span>
+
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">args</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">stop_file</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">args</span><span class="o">.</span><span class="n">reject</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">no_stop_file</span><span class="p">:</span>
             <span class="n">stop</span><span class="o">=</span> <span class="n">Stop</span><span class="p">(</span> <span class="n">stop_file</span> <span class="p">)</span>
             <span class="n">no_stop</span><span class="o">=</span> <span class="n">NoStop</span><span class="p">(</span> <span class="n">no_stop_file</span> <span class="p">)</span>
-            <span class="n">counts</span><span class="o">=</span> <span class="n">arrival_at_stop</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span> <span class="s">&#39;*.rpt&#39;</span> <span class="p">),</span> <span class="n">no_stop</span><span class="o">=</span> <span class="n">no_stop</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop</span> <span class="p">)</span>
+            <span class="n">counts</span><span class="o">=</span> <span class="n">arrival_at_stop</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">files</span><span class="p">,</span> <span class="n">no_stop</span><span class="o">=</span> <span class="n">no_stop</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop</span> <span class="p">)</span>
 
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Counts {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span> <span class="nb">dict</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
@@ -253,7 +366,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -276,13 +389,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, S.Lott.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

@@ -3,13 +3,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Location Finding &mdash; Caravel-Transit v1.1 documentation</title>
+    <title>Location Finding &mdash; Caravel-Transit 1.1 documentation</title>
+    
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../index.html" />
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
     <link rel="up" title="Design Notes" href="index.html" />
     <link rel="next" title="Route Discovery" href="route_details.html" />
     <link rel="prev" title="Distance Calculations" href="distance.html" /> 
@@ -43,7 +46,7 @@
         <li class="right" >
           <a href="distance.html" title="Distance Calculations"
              accesskey="P">previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
       </ul>
     </div>  
@@ -79,7 +82,7 @@ latitude and logitude attributes (<img class="math" src="../_images/math/46d5bf3
 <p>We have a distance function, <img class="math" src="../_images/math/9779fb6d6777790b6f0179c60d1d8e026a88fa5b.png" alt="\Delta(la_1, lo_1, la_2, lo_2) \to d"/>.
 See <a class="reference internal" href="distance.html#design-distance"><em>Distance Calculations</em></a> for alternatives.</p>
 <div class="math">
-<p><img src="../_images/math/1a9ad17b29c8bbee92817e8ceed77678a2805866.png" alt="D = \{ \langle \Delta(R.la,R.lo,s_i.la,s_i.lo), s_i \rangle \vert s_i \in S \}" /></p>
+<p><img src="../_images/math/1a9ad17b29c8bbee92817e8ceed77678a2805866.png" alt="D = \{ \langle \Delta(R.la,R.lo,s_i.la,s_i.lo), s_i \rangle \vert s_i \in S \}"/></p>
 </div><p>We can order <img class="math" src="../_images/math/9ffb448918db29f2a72f8f87f421b3b3cad18f95.png" alt="D"/> from closest to farthest.</p>
 </li>
 <li><p class="first">For each coordinate, find the stop times.</p>
@@ -87,7 +90,7 @@ See <a class="reference internal" href="distance.html#design-distance"><em>Dista
 given stop,
 <img class="math" src="../_images/math/fa7dbee3efc6fd5fd36730b7dbdaef4dd6638bfc.png" alt="(s_i).T = \{ t_0, t_1, \dotsc, t_{m-1} \}"/>.</p>
 <div class="math">
-<p><img src="../_images/math/7eaced77bd53c0b9fd3fb57ef408c9dc280e013c.png" alt="C = \{ \langle \lvert t-R.t \rvert, s_i, t \rangle \vert t \in (s_i).T \land s_i \in D \}" /></p>
+<p><img src="../_images/math/7eaced77bd53c0b9fd3fb57ef408c9dc280e013c.png" alt="C = \{ \langle \lvert t-R.t \rvert, s_i, t \rangle \vert t \in (s_i).T \land s_i \in D \}"/></p>
 </div><p>We can order <img class="math" src="../_images/math/c3355896da590fc491a10150a50416687626d7cc.png" alt="C"/> from closest in space and time to farthest.</p>
 <p>We have some choices for the time comparison.  We can use simple absolute value of the planned
 time, assuming the vehicle arrival times are normally distributed.  Or, we can
@@ -153,15 +156,15 @@ bins based on the accuracy of GPS coordinates.</p>
 <col width="33%" />
 </colgroup>
 <tbody valign="top">
-<tr><td>measure</td>
+<tr class="row-odd"><td>measure</td>
 <td>mean</td>
 <td>standard deviation</td>
 </tr>
-<tr><td>time (sec)</td>
+<tr class="row-even"><td>time (sec)</td>
 <td>96.2</td>
 <td>92.4</td>
 </tr>
-<tr><td>distance (ft)</td>
+<tr class="row-odd"><td>distance (ft)</td>
 <td>1061</td>
 <td>1947</td>
 </tr>
@@ -196,57 +199,57 @@ tabulated below.</p>
 <col width="25%" />
 </colgroup>
 <tbody valign="top">
-<tr><td>closer step</td>
+<tr class="row-odd"><td>closer step</td>
 <td>avg. distance</td>
 <td>std. distance</td>
 <td>count</td>
 </tr>
-<tr><td>0</td>
+<tr class="row-even"><td>0</td>
 <td>373</td>
 <td>575</td>
 <td>111</td>
 </tr>
-<tr><td>1</td>
+<tr class="row-odd"><td>1</td>
 <td>1183</td>
 <td>1167</td>
 <td>57</td>
 </tr>
-<tr><td>2</td>
+<tr class="row-even"><td>2</td>
 <td>1045</td>
 <td>700</td>
 <td>28</td>
 </tr>
-<tr><td>3</td>
+<tr class="row-odd"><td>3</td>
 <td>1822</td>
 <td>1138</td>
 <td>18</td>
 </tr>
-<tr><td>4</td>
+<tr class="row-even"><td>4</td>
 <td>1620</td>
 <td>1284</td>
 <td>23</td>
 </tr>
-<tr><td>5</td>
+<tr class="row-odd"><td>5</td>
 <td>1051</td>
 <td>538</td>
 <td>27</td>
 </tr>
-<tr><td>6</td>
+<tr class="row-even"><td>6</td>
 <td>694</td>
 <td>134</td>
 <td>5</td>
 </tr>
-<tr><td>7</td>
+<tr class="row-odd"><td>7</td>
 <td>982</td>
 <td>948</td>
 <td>5</td>
 </tr>
-<tr><td>8</td>
+<tr class="row-even"><td>8</td>
 <td>1541</td>
 <td>651</td>
 <td>3</td>
 </tr>
-<tr><td>9</td>
+<tr class="row-odd"><td>9</td>
 <td>832</td>
 <td>N/A</td>
 <td>1</td>
@@ -309,7 +312,7 @@ to the next stop &#8211; is a sensible upper bound for a matching stop.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -338,13 +341,13 @@ to the next stop &#8211; is a sensible upper bound for a matching stop.</p>
         <li class="right" >
           <a href="distance.html" title="Distance Calculations"
              >previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Design Notes</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, S.Lott.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

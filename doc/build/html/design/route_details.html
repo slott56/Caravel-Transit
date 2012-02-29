@@ -3,13 +3,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Route Discovery &mdash; Caravel-Transit v1.1 documentation</title>
+    <title>Route Discovery &mdash; Caravel-Transit 1.1 documentation</title>
+    
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../index.html" />
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
     <link rel="up" title="Design Notes" href="index.html" />
     <link rel="next" title="Implementation" href="../implementation/index.html" />
     <link rel="prev" title="Location Finding" href="location_finding.html" /> 
@@ -43,7 +46,7 @@
         <li class="right" >
           <a href="location_finding.html" title="Location Finding"
              accesskey="P">previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
       </ul>
     </div>  
@@ -69,19 +72,19 @@ We&#8217;ll often summarize the position as a RDS or R/D/S triple.</p>
 <img class="math" src="../_images/math/79dcea0de2feafd4ad76c9bc1a34cf967e69f1b1.png" alt="t.w"/> is the day of the week; <img class="math" src="../_images/math/93989092c457f31960c5f564185ae32709ee3009.png" alt="t.t"/> is time of day.</p>
 <p>The universe of data, is set of reports, <img class="math" src="../_images/math/eff43e84f8a3bcf7b6965f0a3248bc4d3a9d0cd4.png" alt="R"/>.</p>
 <div class="math">
-<p><img src="../_images/math/f8c100dc2c2fad40d339ab9706f7be8060aae4a6.png" alt="R = \{ \langle v_0, p_0, t_0 \rangle, \langle v_1, p_1, t_1 \rangle, \dotsc \}" /></p>
+<p><img src="../_images/math/f8c100dc2c2fad40d339ab9706f7be8060aae4a6.png" alt="R = \{ \langle v_0, p_0, t_0 \rangle, \langle v_1, p_1, t_1 \rangle, \dotsc \}"/></p>
 </div><div class="section" id="finding-scheduled-stops">
 <h2>Finding Scheduled Stops<a class="headerlink" href="#finding-scheduled-stops" title="Permalink to this headline">¶</a></h2>
 <p>For each position, <img class="math" src="../_images/math/36f73fc1312ee0349b3f3a0f3bd9eb5504339011.png" alt="p"/>, we have a subset of the universe of reports, <img class="math" src="../_images/math/eff43e84f8a3bcf7b6965f0a3248bc4d3a9d0cd4.png" alt="R"/>, for that position</p>
 <div class="math">
-<p><img src="../_images/math/61af78e3623e48520f1dd7fb85cb083b18127c5f.png" alt="T_p = \{ t_n \vert \langle v_n, p_n, t_n \rangle \in R \land p_n = p \}" /></p>
+<p><img src="../_images/math/61af78e3623e48520f1dd7fb85cb083b18127c5f.png" alt="T_p = \{ t_n \vert \langle v_n, p_n, t_n \rangle \in R \land p_n = p \}"/></p>
 </div><p>This position data does not include vehicle information, since we&#8217;re only
 trying to locate stops along a route and the schedule.</p>
 <p>We can partition the position data, <img class="math" src="../_images/math/3e491952b676db6942353d75fc8bd8e4e97f7016.png" alt="T_p"/>, into one-day slices.
 For each day, <img class="math" src="../_images/math/96ab646de7704969b91c76a214126b45f2b07b25.png" alt="d"/>, from the domain of available dates,
 <img class="math" src="../_images/math/5410713dd7c834b8040a948ced57dc3d6a022bf6.png" alt="d \in \{ t_n.d \vert t_n \in T_p\}"/>, we have this:</p>
 <div class="math">
-<p><img src="../_images/math/9a326e4aebd1bd96b7a382d91fce58583662193c.png" alt="T_{p,d} = \langle t_n.t \vert  t_n \in T_p \land t_n.d = d \rangle" /></p>
+<p><img src="../_images/math/9a326e4aebd1bd96b7a382d91fce58583662193c.png" alt="T_{p,d} = \langle t_n.t \vert  t_n \in T_p \land t_n.d = d \rangle"/></p>
 </div><p>Note that <img class="math" src="../_images/math/7b9116a8cc71d95050244a53ad3cc0902726190b.png" alt="T_{p,d}"/> is a vector of stop times at this position.
 Each index value is an arrival counter.  A vehicle will arrive a position
 several times during the day.</p>
@@ -101,7 +104,7 @@ sequential stop times, <img class="math" src="../_images/math/a9d319dd4754a84cb9
 T_{p,y=1} &amp;= \langle T_{p,0,1}, T_{p,1,1}, \dotsc, T_{p,s-1,1} \rangle \\
 T_{p,y=2} &amp;= \langle T_{p,0,2}, T_{p,1,2}, \dotsc, T_{p,s-1,2} \rangle \\
 \dotsb \\
-T_{p,y=d-1} &amp;= \langle T_{p,0,d-1}, T_{p,1,d-1}, \dotsc, T_{p,s-1,d-1} \rangle" /></p>
+T_{p,y=d-1} &amp;= \langle T_{p,0,d-1}, T_{p,1,d-1}, \dotsc, T_{p,s-1,d-1} \rangle"/></p>
 </div><p>We can compute a mean (and other descriptive statistics) &#8220;down the colum&#8221; to get a
 set of average arrival times throughout a given day.  These are the <img class="math" src="../_images/math/008e5ee4c304509b31b4d649abb7c7ba21988cdc.png" alt="T_{p,x,w_n}"/>
 values for a given stop, <img class="math" src="../_images/math/36f73fc1312ee0349b3f3a0f3bd9eb5504339011.png" alt="p"/>, and sequential visit, <img class="math" src="../_images/math/83664accc69abd076484c7d1da1893852242b97f.png" alt="0 \leq x &lt; s"/>.</p>
@@ -115,9 +118,9 @@ there may be duplications or omissions.</p>
 <img class="math" src="../_images/math/e38d1a371797c1fe145ae1cef1ca0d94f6f32d10.png" alt="\mu_{p,x}"/>, as
 well as a standard deviation, <img class="math" src="../_images/math/577047c55e7bb61064573025479c2687f61fa1c1.png" alt="\sigma_{p,x}"/>.</p>
 <div class="math">
-<p><img src="../_images/math/93f13fd27b31e242867254852e40b437fafbcb96.png" alt="\mu_{p,x} = \mu\{T_{p,x,y} \vert 0 \leq y &lt; d\} = \frac{\sum_y{T_{p,x,y}}}{\lvert T_{p,x,y} \rvert}" /></p>
+<p><img src="../_images/math/93f13fd27b31e242867254852e40b437fafbcb96.png" alt="\mu_{p,x} = \mu\{T_{p,x,y} \vert 0 \leq y &lt; d\} = \frac{\sum_y{T_{p,x,y}}}{\lvert T_{p,x,y} \rvert}"/></p>
 </div><div class="math">
-<p><img src="../_images/math/aed814f19801b1acbb0e1561a5ce89a7a11a819c.png" alt="\sigma_{p,x} = \sigma\{T_{p,x,y} \vert 0 \leq y &lt; d\} = \sqrt{\frac{1}{\lvert T_{p,x,y} \rvert-1}\sum_d{(T_{p,x,y}-\mu_{p,x})^2}}" /></p>
+<p><img src="../_images/math/aed814f19801b1acbb0e1561a5ce89a7a11a819c.png" alt="\sigma_{p,x} = \sigma\{T_{p,x,y} \vert 0 \leq y &lt; d\} = \sqrt{\frac{1}{\lvert T_{p,x,y} \rvert-1}\sum_d{(T_{p,x,y}-\mu_{p,x})^2}}"/></p>
 </div><p>The average arrival time, <img class="math" src="../_images/math/e38d1a371797c1fe145ae1cef1ca0d94f6f32d10.png" alt="\mu_{p,x}"/>, isn&#8217;t sufficient.  The standard
 deviation, <img class="math" src="../_images/math/577047c55e7bb61064573025479c2687f61fa1c1.png" alt="\sigma_{p,x}"/> is required to put a sensible confidence interval
 around the arrival time.</p>
@@ -150,7 +153,7 @@ T_{p,0,0} &amp; T_{p,1,0} &amp; \varnothing &amp; \dots &amp; T_{p,s-1,0} \\
 T_{p,0,2} &amp; \varnothing &amp; T_{p,2,2} &amp; \dots &amp; T_{p,s-1,2} \\
 \dotsb \\
 T_{p,0,d-1} &amp; T_{p,1,d-1} &amp; T_{p,2,d-1} &amp; \dots &amp; T_{p,s-1,d-1} \\
-\end{vmatrix}" /></p>
+\end{vmatrix}"/></p>
 </div><p>The sequence of stops is shown horizontally from <img class="math" src="../_images/math/83664accc69abd076484c7d1da1893852242b97f.png" alt="0 \leq x &lt; s"/>.
 The various days, <img class="math" src="../_images/math/9ac164e745f99ce53ea32ef5e68873534e320015.png" alt="0 \leq y &lt; d"/>, are shown vertically.</p>
 <p>There may also be duplicates.  These are trivial to detect and exclude, so we won&#8217;t
@@ -166,7 +169,7 @@ Therefore, the new time belongs with <img class="math" src="../_images/math/f4d0
 <p>We can formalize this goal to state that each deviation is the minimum of all
 alternative assignements of time to cluster.</p>
 <div class="math">
-<p><img src="../_images/math/0031945fb7724df5060bec8359a061dde639ed23.png" alt="\forall T_{p,x,y} \bigl( T_{p,x,y} \in C_i \land \sigma C_i = min \{ \sigma (C_j \cup T_{p,x,y}) \vert j \neq i \} \bigr)" /></p>
+<p><img src="../_images/math/0031945fb7724df5060bec8359a061dde639ed23.png" alt="\forall T_{p,x,y} \bigl( T_{p,x,y} \in C_i \land \sigma C_i = min \{ \sigma (C_j \cup T_{p,x,y}) \vert j \neq i \} \bigr)"/></p>
 </div><p>Interestingly, it&#8217;s trivial to acheive this by simply claiming that each cluster
 has only one arrival time.  This leads to another constraint on the clusters.</p>
 <p>The additional goal is to minimize the number of clusters, consistent with a &#8220;reasonable&#8221;
@@ -177,7 +180,7 @@ deviate too far from the planned schedule.</p>
 upper limit on the deviation allowed within a cluster.  Over some <img class="math" src="../_images/math/eaf4418fbe935c15a606516d8f55dc380cd8e822.png" alt="\epsilon"/>,
 the cluster must be divided.</p>
 <div class="math">
-<p><img src="../_images/math/871827a897acffeba03f2542cb5e534d7c8dbb09.png" alt="\forall C_i \bigl( \sigma C_i &lt; \epsilon \bigr)" /></p>
+<p><img src="../_images/math/871827a897acffeba03f2542cb5e534d7c8dbb09.png" alt="\forall C_i \bigl( \sigma C_i &lt; \epsilon \bigr)"/></p>
 </div><p>We can separate times to reduce the
 deviation (and increase the number of clusters).  This allows us to make somewhat
 more sensistive analyses of actual arrival times, different from the planned
@@ -196,14 +199,14 @@ as a candidate definition of the sequence of times.</p>
 <p>This creates an initial sequence of stop top clusters.
 Each cluster is a single time.</p>
 <div class="math">
-<p><img src="../_images/math/133fec5601ff64b7dc077019ecbb06b747cfafa0.png" alt="C \gets \langle  C_0, C_1, C_2, \dotsc, C_{s-1} \rangle" /></p>
+<p><img src="../_images/math/133fec5601ff64b7dc077019ecbb06b747cfafa0.png" alt="C \gets \langle  C_0, C_1, C_2, \dotsc, C_{s-1} \rangle"/></p>
 </div><p>Where</p>
 <div class="math">
 <p><img src="../_images/math/2d65d4faaa9f8601d3cab04d12a4906357cafe80.png" alt="C_0 &amp;= \{ T_{p,0,w_0} \} \\
 C_1 &amp;= \{ T_{p,1,w_0} \} \\
 C_2 &amp;= \{ T_{p,2,w_0} \} \\
 \dotsb \\
-C_{s-1} &amp;= \{ T_{p,s-1,w_0} \}" /></p>
+C_{s-1} &amp;= \{ T_{p,s-1,w_0} \}"/></p>
 </div><p>Given this initial definition,
 each subsequent day of data can be matched to the candidate list of clusters.</p>
 <p><strong>[Iterate through Days]</strong>.
@@ -218,10 +221,10 @@ merged into the candidate clusters.</p>
 A brute force approach matches the new stop time, <img class="math" src="../_images/math/5312996fa6b488a97dfb5d3dc555721268803bd2.png" alt="T_{p,x,y}"/>,
 against all candidate stop time clusters to compute deviation values.</p>
 <div class="math">
-<p><img src="../_images/math/275815b28a1cae767ce04d3d5be759037c3cbac9.png" alt="D \gets \bigl\{ \sigma(C_i \cup \{ T_{p,x,y} \}) \vert C_i \in C \bigr\}" /></p>
+<p><img src="../_images/math/275815b28a1cae767ce04d3d5be759037c3cbac9.png" alt="D \gets \bigl\{ \sigma(C_i \cup \{ T_{p,x,y} \}) \vert C_i \in C \bigr\}"/></p>
 </div><p><strong>[Minimum</strong>].  Get index of the minimum value.</p>
 <div class="math">
-<p><img src="../_images/math/c7c6fbfe650ff8d7de92fc06208831e23e6eaedf.png" alt="m \gets i \vert C_i = \min D" /></p>
+<p><img src="../_images/math/c7c6fbfe650ff8d7de92fc06208831e23e6eaedf.png" alt="m \gets i \vert C_i = \min D"/></p>
 </div><p>The minimum <img class="math" src="../_images/math/ab1a5a03a5c38a3d71d8d640f0bf95782580b1e8.png" alt="\sigma(C_m \cup \{ T_{p,x,y} \})"/> value shows that the
 new time belongs to stop <img class="math" src="../_images/math/f5047d1e0cbb50ec208923a22cd517c55100fa7b.png" alt="m"/>.</p>
 <p>Ideally, the sequence of stop numbers in each day&#8217;s vectors are the same, meaning that <img class="math" src="../_images/math/095f2602fa92085e1a7845955b9dcf60f3eb9e5c.png" alt="\sigma(C_x \cup \{ T_{p,x,y} \})"/>
@@ -233,16 +236,16 @@ There are two outcomes from examination of the deviation values.</p>
 this new time, <img class="math" src="../_images/math/5312996fa6b488a97dfb5d3dc555721268803bd2.png" alt="T_{p,x,y}"/>,  is then appended to the <img class="math" src="../_images/math/34857b3ba74ce5cd8607f3ebd23e9015908ada71.png" alt="i"/> cluster of times
 in the sequence of stops.</p>
 <div class="math">
-<p><img src="../_images/math/edb34ee81d85eb99f9f15563b59579ba90f9797f.png" alt="C^{\prime} = \langle C_0, C_1, \dotsc, C_m \cup \{ T_{p,x,y} \}, \dotsc, C_{s-1} \rangle" /></p>
+<p><img src="../_images/math/edb34ee81d85eb99f9f15563b59579ba90f9797f.png" alt="C^{\prime} = \langle C_0, C_1, \dotsc, C_m \cup \{ T_{p,x,y} \}, \dotsc, C_{s-1} \rangle"/></p>
 </div></li>
 <li><p class="first">If the minimal deviation is not small enough, <img class="math" src="../_images/math/19bd0f4261f986232f063a22bde42c40c9ef7f3b.png" alt="\sigma(C_m \cup \{ T_{p,x,y} \}) \geq \epsilon"/>,
 this new time is used to seed a new cluster.  It represents a gap in the previously
 clustered times.</p>
 <div class="math">
-<p><img src="../_images/math/f7e6362c574f303ce529e33679f0ded56c2d7669.png" alt="C^{\prime} = \langle C_0, C_1, \dotsc, C_i, \{ T_{p,x,y} \}, C_{i+1}, \dotsc, C_{s-1} \rangle" /></p>
+<p><img src="../_images/math/f7e6362c574f303ce529e33679f0ded56c2d7669.png" alt="C^{\prime} = \langle C_0, C_1, \dotsc, C_i, \{ T_{p,x,y} \}, C_{i+1}, \dotsc, C_{s-1} \rangle"/></p>
 </div><p>This maintains the sorted ordering, also.</p>
 <div class="math">
-<p><img src="../_images/math/f7c65839a55f42e2ee62620a36d528abe05e8240.png" alt="\max(C_i) &lt; T_{p,x,y} &lt; \min(C_{i+1})" /></p>
+<p><img src="../_images/math/f7c65839a55f42e2ee62620a36d528abe05e8240.png" alt="\max(C_i) &lt; T_{p,x,y} &lt; \min(C_{i+1})"/></p>
 </div></li>
 </ul>
 <p>In both cases, we have established that <img class="math" src="../_images/math/4cf38478c2a74b542b145d39886b623f4820376c.png" alt="\sigma C_m = min \{ \sigma (C_j \cup T_{p,x,y}) \vert j \neq m \}"/>.
@@ -250,7 +253,7 @@ The cluster creates a sequence of minimal deviations.  And the number of cluster
 is the minimal number of clusters that will assure that the deviations are all less than <img class="math" src="../_images/math/eaf4418fbe935c15a606516d8f55dc380cd8e822.png" alt="\epsilon"/>.</p>
 <p>This new collection of clusters is used for the next stop time.</p>
 <div class="math">
-<p><img src="../_images/math/14707a0dd021ccf7ef893b68b25972cd0e6c7448.png" alt="C \gets C^{\prime}" /></p>
+<p><img src="../_images/math/14707a0dd021ccf7ef893b68b25972cd0e6c7448.png" alt="C \gets C^{\prime}"/></p>
 </div></div></blockquote>
 <p><strong>[End of Stops in a Day]</strong>.  All <img class="math" src="../_images/math/a7eb055dd796dd30366462a7aea87548e4adc4aa.png" alt="T_{p,y}"/> have been merged in <img class="math" src="../_images/math/c3355896da590fc491a10150a50416687626d7cc.png" alt="C"/>.</p>
 </div></blockquote>
@@ -263,7 +266,7 @@ cluster.</p>
 <p>We should be able to assert the following:</p>
 <div class="math">
 <p><img src="../_images/math/6acb61fc95c0e4eb9e27a7bcc8dc49417336dce9.png" alt="\forall T_{p,x,y} &amp;\bigl( T_{p,x,y} \in C_i \land \sigma C_i = min \{ \sigma (C_j \cup T_{p,x,y}) \vert j \neq i \} \bigr)\\
-\forall C_i &amp;\bigl( \sigma C_i &lt; \epsilon \bigr)" /></p>
+\forall C_i &amp;\bigl( \sigma C_i &lt; \epsilon \bigr)"/></p>
 </div><p>All deviation assignments are minimized.  Any change to the allocation of an arrival time will
 lead to a cluster with a larger deviation than the above assignment.  Also, the number of
 clusters is minimized.  Any additional cluster most have a deviation larger than <img class="math" src="../_images/math/eaf4418fbe935c15a606516d8f55dc380cd8e822.png" alt="\epsilon"/>.</p>
@@ -272,7 +275,7 @@ ordering.  This may lead to an optimization to check only <strong>adjacent</stro
 <p>Rather than simply compute all <img class="math" src="../_images/math/c75dd73e9662e4fc2cd3fbfe4513d07bf71080fe.png" alt="\bigl\{ \sigma (C_i \cup \{T_{p,x,y}\}) \vert C_i \in C \bigr\}"/>,
 it&#8217;s easier to compute using <img class="math" src="../_images/math/8c325612684d41304b9751c175df7bcc0f61f64f.png" alt="k"/> adjacent stops.</p>
 <div class="math">
-<p><img src="../_images/math/2a41469126c6b94c7dbf993c04234f94d72cd431.png" alt="D \gets \bigl\{ \sigma (C_i \cup \{T_{p,x,y}\}) \vert C_i \in C \land x-k \leq i &lt; x+k \bigr\}" /></p>
+<p><img src="../_images/math/2a41469126c6b94c7dbf993c04234f94d72cd431.png" alt="D \gets \bigl\{ \sigma (C_i \cup \{T_{p,x,y}\}) \vert C_i \in C \land x-k \leq i &lt; x+k \bigr\}"/></p>
 </div><p>Of course, this can be optimized so that the first value that passes the
 <img class="math" src="../_images/math/aa77b59ce864b246a1566e9c7c9830ac90cc1822.png" alt="\sigma(C_{x\pm k} \cup \{ T_{p,x,y} \}) &lt; \epsilon"/> test stops the
 processing.</p>
@@ -283,22 +286,22 @@ processing.</p>
 it repeats throughout the day.</p>
 <p>A given vehicle, <img class="math" src="../_images/math/a9f23bf124b6b2b2a993eb313c72e678664ac74a.png" alt="v"/>, participates in a set of stops</p>
 <div class="math">
-<p><img src="../_images/math/d8d228b317b4e1f1803be2acd6589489e79f6366.png" alt="PT_v = \{ \langle p_n, t_n \rangle \vert \langle v_n, p_n, t_n \rangle \in R \land v_n = v \}" /></p>
+<p><img src="../_images/math/d8d228b317b4e1f1803be2acd6589489e79f6366.png" alt="PT_v = \{ \langle p_n, t_n \rangle \vert \langle v_n, p_n, t_n \rangle \in R \land v_n = v \}"/></p>
 </div><p>This can be analyzed as an ordered sequence of stops.</p>
 <p>We can use a least time, <img class="math" src="../_images/math/e055a1da91b8e9b26c6faea735ab41eb9294f7fb.png" alt="t_n = \min T_v = \forall_{x \in T_v} t_n \leq x"/>,
 as a filter for the first instance of a sequence of stops.</p>
 <div class="math">
-<p><img src="../_images/math/ee922df8efb623ef739119f0d3c32051d70887f3.png" alt="\lfloor P_v \rfloor = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land t_n = \min T_v \rangle" /></p>
+<p><img src="../_images/math/ee922df8efb623ef739119f0d3c32051d70887f3.png" alt="\lfloor P_v \rfloor = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land t_n = \min T_v \rangle"/></p>
 </div><p>The next repeat of this route will have the same vector, but the times will all be offset
 from the previous time
 by approximately the same amount, <img class="math" src="../_images/math/1c60f811cdd502c2cb753b8d2c07be01bc86f408.png" alt="\delta r"/>.  We can define a filter function,
 <img class="math" src="../_images/math/a82f94b2b9cd6cd99732d6b986ffce223cc96f12.png" alt="\rho( PT_v, \delta r )"/> that uses  <img class="math" src="../_images/math/7305e33d42085692e876f68a09bef056b3abc2f4.png" alt="\lfloor P_v \rfloor"/> and the offset to
 locate the next repeat of the route.</p>
 <div class="math">
-<p><img src="../_images/math/0e6a8f3b668afd64e92de9ca18eb74d039210ea9.png" alt="\rho( PT_v, \delta r ) = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land t^{\prime}_n = {\lfloor P_v \rfloor}_n \land t_n \approx t^{\prime}_n + \delta r \rangle" /></p>
+<p><img src="../_images/math/0e6a8f3b668afd64e92de9ca18eb74d039210ea9.png" alt="\rho( PT_v, \delta r ) = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land t^{\prime}_n = {\lfloor P_v \rfloor}_n \land t_n \approx t^{\prime}_n + \delta r \rangle"/></p>
 </div><p>This generalizes nicely for any integer number of repeats of the route.</p>
 <div class="math">
-<p><img src="../_images/math/c86c46f1c5bf4b69d90393d29a48ddce083d6de6.png" alt="\rho( PT_v, k \delta r ) = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land t^{\prime}_n = {\lfloor P_v \rfloor}_n \land t_n \approx t^{\prime}_n + k \delta r \rangle" /></p>
+<p><img src="../_images/math/c86c46f1c5bf4b69d90393d29a48ddce083d6de6.png" alt="\rho( PT_v, k \delta r ) = \langle p_n \vert \langle v_n, p_n, t_n \rangle \in PT_v \land t^{\prime}_n = {\lfloor P_v \rfloor}_n \land t_n \approx t^{\prime}_n + k \delta r \rangle"/></p>
 </div><p>Finding repeats of a route, however, isn&#8217;t very valuable.</p>
 <p>Some routes have times that vary throughout the day to reflect the
 morning and evening rush.  It&#8217;s easier (and more accurate) to ignore
@@ -364,7 +367,7 @@ repeats.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">iterator over Report instances.</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">iterator over Report instances.</td>
 </tr>
 </tbody>
 </table>
@@ -372,7 +375,7 @@ repeats.</p>
 
 <dl class="function">
 <dt id="test.spike_stats.group_by_rte_dir_stop">
-<tt class="descclassname">test.spike_stats.</tt><tt class="descname">group_by_rte_dir_stop</tt><big>(</big><em>data</em><big>)</big><a class="headerlink" href="#test.spike_stats.group_by_rte_dir_stop" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">test.spike_stats.</tt><tt class="descname">group_by_rte_dir_stop</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="../_modules/test/spike_stats.html#group_by_rte_dir_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_stats.group_by_rte_dir_stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Since the GPS reports are in time order, we need to parition them
 by route/direction/stop and date.</p>
 <p>This creates a RDS (Route/Direction/Stop) dictionay that
@@ -385,9 +388,9 @@ contains each day&#8217;s times.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> &#8211; An iterable of <tt class="xref py py-class docutils literal"><span class="pre">Report</span></tt> instances.  Usually <tt class="xref py py-func docutils literal"><span class="pre">synth_data_iter()</span></tt>.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>data</strong> &#8211; An iterable of <tt class="xref py py-class docutils literal"><span class="pre">Report</span></tt> instances.  Usually <tt class="xref py py-func docutils literal"><span class="pre">synth_data_iter()</span></tt>.</td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">Dictionary keyed by Route/Direction/Stop.  Each value in that
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Dictionary keyed by Route/Direction/Stop.  Each value in that
 is a dictionary keyed by day.  Each value is a time.</td>
 </tr>
 </tbody>
@@ -396,7 +399,7 @@ is a dictionary keyed by day.  Each value is a time.</td>
 
 <dl class="function">
 <dt id="test.spike_stats.cluster_times">
-<tt class="descclassname">test.spike_stats.</tt><tt class="descname">cluster_times</tt><big>(</big><em>reports</em>, <em>epsilon=480</em><big>)</big><a class="headerlink" href="#test.spike_stats.cluster_times" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">test.spike_stats.</tt><tt class="descname">cluster_times</tt><big>(</big><em>reports</em>, <em>epsilon=480</em><big>)</big><a class="reference internal" href="../_modules/test/spike_stats.html#cluster_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_stats.cluster_times" title="Permalink to this definition">¶</a></dt>
 <dd><p>Correlate arrival times across the various days in the data set to
 create a cluster of times for each R/D/S with a minimal deviation.</p>
 <p>For a given route/direction/stop, step through each day&#8217;s arrival
@@ -434,11 +437,11 @@ a given Route/Direction/Stop during the day.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>reports</strong> &#8211; A dictionary of dictionaries.  The top key is R/D/S.  Each
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>reports</strong> &#8211; A dictionary of dictionaries.  The top key is R/D/S.  Each
 inner dictionary is keyed by date and has a list of times.
 See <tt class="xref py py-func docutils literal"><span class="pre">group_by_rte_dir_stop()</span></tt>.</td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">A sequence of ((R/D/S), Time Sequence) tuples.  The Time Sequence
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A sequence of ((R/D/S), Time Sequence) tuples.  The Time Sequence
 contains an ordered list of (mean, standard deviation) 2-tuples for each
 arrival time at the route/direction/stop.</td>
 </tr>
@@ -448,7 +451,7 @@ arrival time at the route/direction/stop.</td>
 
 <dl class="function">
 <dt id="test.spike_stats.build_route">
-<tt class="descclassname">test.spike_stats.</tt><tt class="descname">build_route</tt><big>(</big><em>schedule</em><big>)</big><a class="headerlink" href="#test.spike_stats.build_route" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">test.spike_stats.</tt><tt class="descname">build_route</tt><big>(</big><em>schedule</em><big>)</big><a class="reference internal" href="../_modules/test/spike_stats.html#build_route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_stats.build_route" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build the route/direction summary as a sequence of stops throughout
 the day.  This is a small reorganization of the R/D/S schedule
 information to be a dictionary, keyed by R/D with a sequence of time-ordered stops.</p>
@@ -456,9 +459,9 @@ information to be a dictionary, keyed by R/D with a sequence of time-ordered sto
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field"><th class="field-name">Parameters:</th><td class="field-body"><strong>schedule</strong> &#8211; An iterator over 2-tuples of (R,D,S) and ( (time,std), (time,std), ... )</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>schedule</strong> &#8211; An iterator over 2-tuples of (R,D,S) and ( (time,std), (time,std), ... )</td>
 </tr>
-<tr class="field"><th class="field-name">Returns:</th><td class="field-body">A dictionary with keys of (R,D) and values of ( (S,Time,Std), ... )</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A dictionary with keys of (R,D) and values of ( (S,Time,Std), ... )</td>
 </tr>
 </tbody>
 </table>
@@ -466,7 +469,7 @@ information to be a dictionary, keyed by R/D with a sequence of time-ordered sto
 
 <dl class="function">
 <dt id="test.spike_stats.main">
-<tt class="descclassname">test.spike_stats.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="headerlink" href="#test.spike_stats.main" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">test.spike_stats.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/test/spike_stats.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_stats.main" title="Permalink to this definition">¶</a></dt>
 <dd><p>Demonstrate the essential three-step route discovery algorithm.</p>
 <ol class="arabic simple">
 <li>Organize raw data by route/direction/stop.  <tt class="xref py py-func docutils literal"><span class="pre">group_by_rte_dir_stop()</span></tt>.</li>
@@ -527,7 +530,7 @@ dictionary construction.</p>
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -556,13 +559,13 @@ dictionary construction.</p>
         <li class="right" >
           <a href="location_finding.html" title="Location Finding"
              >previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Design Notes</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, S.Lott.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

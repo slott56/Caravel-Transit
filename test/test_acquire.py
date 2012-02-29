@@ -137,7 +137,7 @@ class Test_Get_Route( unittest.TestCase ):
         except OSError as e:
             self.assertEqual( 2, e.errno )
     def runTest( self ):
-        self.name= caravel.acquire.get_route( self.http_class, target_dir='test' )
+        self.name= caravel.acquire.get_route( self.http_class(), target_dir='test' )
         self.assertTrue( os.path.exists( 'test/google_transit.zip' ) )
         with open('test/google_transit.zip','rb') as new_file:
             new_data= new_file.read()

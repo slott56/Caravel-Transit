@@ -3,13 +3,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.report &mdash; Caravel-Transit v1.1 documentation</title>
+    <title>caravel.report &mdash; Caravel-Transit 1.1 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -35,7 +38,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -74,6 +77,8 @@
 <span class="sd">================</span>
 
 <span class="sd">..  autoclass:: ReportFactory</span>
+<span class="sd">    :members:</span>
+
 <span class="sd">..  autofunction:: report_iter</span>
 
 <span class="sd">JSON Codec</span>
@@ -169,7 +174,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">svc</span> <span class="o">=</span> <span class="n">svc</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">blk</span> <span class="o">=</span> <span class="n">blk</span>
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;{0.__class__.__name__}( &#39;{0.timestamp!s}&#39;, {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, time=&#39;{0.time!s}&#39;, rte={0.rte!r}, dir={0.dir!r}, tp={0.tp!r}, stop={0.stop!r}, svc={0.svc!r}, blk={0.blk!r}, dwell={0.dwell!r} )&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="s">&quot;{0.__class__.__name__}( &#39;{0.timestamp!s}&#39;, {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid={0.ll_valid}, time=&#39;{0.time!s}&#39;, rte={0.rte!r}, dir={0.dir!r}, tp={0.tp!r}, stop={0.stop!r}, svc={0.svc!r}, blk={0.blk!r}, dwell={0.dwell!r} )&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Dwell"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.Dwell">[docs]</a><span class="k">class</span> <span class="nc">Dwell</span><span class="p">(</span> <span class="n">Arrival</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Paused in traffic?&quot;&quot;&quot;</span>
@@ -186,8 +191,15 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">blk</span> <span class="o">=</span> <span class="n">blk</span>
 </div>
 <div class="viewcode-block" id="ReportFactory"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory">[docs]</a><span class="k">class</span> <span class="nc">ReportFactory</span><span class="p">(</span> <span class="n">Callable</span> <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Emit Report items (Location, Arrival, Dwell).</span>
+    <span class="sd">&quot;&quot;&quot;Emit Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).</span>
 <span class="sd">    A subclass can implement different parsing rules.</span>
+
+<span class="sd">    This is a callable objects, generally something like the following is done::</span>
+
+<span class="sd">        factory= ReportFactory()</span>
+<span class="sd">        for line in some_file:</span>
+<span class="sd">            fields = line.strip().split()</span>
+<span class="sd">            obj= factory( fields )</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">vehicle_pat</span><span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span> <span class="s">r&quot;V\.\d+\.(\d+)&quot;</span> <span class="p">)</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
@@ -205,17 +217,38 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">year</span><span class="o">=</span> <span class="n">today</span><span class="o">.</span><span class="n">year</span>
 
 <div class="viewcode-block" id="ReportFactory.label_str"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.label_str">[docs]</a>    <span class="k">def</span> <span class="nf">label_str</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Split a &quot;label:value&quot; field, doing no further conversion.</span>
+<span class="sd">        If the label is not as expected, raise an exception.</span>
+
+<span class="sd">        :param field: a &quot;label:value field</span>
+<span class="sd">        :param expected: the expected label.</span>
+<span class="sd">        :returns: the string value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">label</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span>
         <span class="k">assert</span> <span class="n">expected</span> <span class="o">==</span> <span class="n">label</span><span class="p">,</span> <span class="s">&quot;expected {0!r} not actual {1!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">expected</span><span class="p">,</span> <span class="n">label</span> <span class="p">)</span>
         <span class="k">return</span> <span class="n">value</span>
 </div>
 <div class="viewcode-block" id="ReportFactory.label_int"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.label_int">[docs]</a>    <span class="k">def</span> <span class="nf">label_int</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Split a &quot;label:value&quot; field, attempting an integer conversion.</span>
+<span class="sd">        If the label is not as expected, raise an exception.</span>
+
+<span class="sd">        :param field: a &quot;label:value field</span>
+<span class="sd">        :param expected: the expected label.</span>
+<span class="sd">        :returns: the integer value</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">value</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">)</span>
         <span class="k">if</span> <span class="n">value</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">None</span>
 </div>
 <div class="viewcode-block" id="ReportFactory.label_lat_lon"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.label_lat_lon">[docs]</a>    <span class="k">def</span> <span class="nf">label_lat_lon</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span><span class="o">=</span><span class="s">&quot;Lat/Lon&quot;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Split a &quot;label:lat/lon&quot; field, attempting an fairly complex conversion.</span>
+<span class="sd">        If the label is not as expected, raise an exception.</span>
+
+<span class="sd">        :param field: a &quot;label:lat/lon field</span>
+<span class="sd">        :param expected: the expected label.</span>
+<span class="sd">        :returns: (lat, lon) 2-tuple</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">latlon</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">)</span>
         <span class="n">lat_st</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">lon_st</span> <span class="o">=</span> <span class="n">latlon</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
         <span class="n">lat</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lat_st</span><span class="p">)</span><span class="o">/</span><span class="mi">10000000</span>
@@ -223,24 +256,40 @@
         <span class="k">return</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span>
 </div>
 <div class="viewcode-block" id="ReportFactory.label_time"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.label_time">[docs]</a>    <span class="k">def</span> <span class="nf">label_time</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Split a &quot;label:time&quot; field, to create a seconds-after-midnight value.</span>
+<span class="sd">        If the label is not as expected, raise an exception.</span>
+
+<span class="sd">        :param field: a &quot;label:time field</span>
+<span class="sd">        :param expected: the expected label.</span>
+<span class="sd">        :returns: datetime.time() object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">value</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">)</span>
-        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">value</span><span class="p">,</span> <span class="s">&quot;%H:%M:%S&quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">hh</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">ss</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span> <span class="nb">int</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">hh</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">mm</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">ss</span>
 </div>
 <div class="viewcode-block" id="ReportFactory.common_fields"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.common_fields">[docs]</a>    <span class="k">def</span> <span class="nf">common_fields</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">fields</span> <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Fields 13-20 of MT_TIMEPOINTCROSSING</span>
-<span class="sd">        Fields 5-12 of MT_LOCATION</span>
+        <span class="sd">&quot;&quot;&quot;Parse the common set of fields.</span>
+<span class="sd">        These are Fields 13-20 of MT_TIMEPOINTCROSSING.</span>
+<span class="sd">        They are also Fields 5-12 of MT_LOCATION.</span>
+
+<span class="sd">        These fields are</span>
+
+<span class="sd">        -   &quot;Lat/Lon&quot; and the following &quot;[Valid]&quot;/&quot;[Invalid]&quot; flag.</span>
+<span class="sd">        -   &quot;Adher&quot; and the following &quot;[Valid]&quot;/&quot;[Invalid]&quot; flag.</span>
+<span class="sd">        -   &quot;Odom&quot; and the following &quot;[Valid]&quot;/&quot;[Invalid]&quot; flag.</span>
+<span class="sd">        -   &quot;DGPS&quot;</span>
+<span class="sd">        -   &quot;FOM&quot;</span>
 
 <span class="sd">        :returns: tuple of (lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_lat_lon</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_lat_lon</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&quot;Lat/Lon&quot;</span> <span class="p">)</span>
             <span class="n">ll_valid</span><span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;[Valid]&quot;</span>
             <span class="n">adher</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;Adher&#39;</span> <span class="p">)</span>
             <span class="n">adher_valid</span><span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;[Valid]&quot;</span>
             <span class="n">odom</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="s">&#39;Odom&#39;</span> <span class="p">)</span>
             <span class="n">odom_valid</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;[Valid]&quot;</span>
-            <span class="n">label</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">dgps</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span>
-            <span class="k">assert</span> <span class="n">label</span> <span class="o">==</span> <span class="s">&quot;DGPS&quot;</span>
+            <span class="n">dgps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="s">&quot;DGPS&quot;</span> <span class="p">)</span>
             <span class="n">fom</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="s">&#39;FOM&#39;</span> <span class="p">)</span>
             <span class="k">return</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span>
         <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
@@ -269,10 +318,10 @@
             <span class="c"># Fields 13-20 repeat fields 5-12 of MT_LOCATION</span>
             <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">common_fields</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">13</span><span class="p">:]</span> <span class="p">)</span>
             <span class="n">time</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_time</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="s">&quot;Time&quot;</span> <span class="p">)</span>
-            <span class="n">rte</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="s">&quot;Rte&quot;</span> <span class="p">)</span>
+            <span class="n">rte</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="s">&quot;Rte&quot;</span> <span class="p">)</span>
             <span class="nb">dir</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span> <span class="s">&quot;Dir&quot;</span> <span class="p">)</span>
             <span class="n">tp</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">9</span><span class="p">],</span> <span class="s">&quot;TP&quot;</span> <span class="p">)</span>
-            <span class="n">stop</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span> <span class="s">&quot;Stop&quot;</span> <span class="p">)</span>
+            <span class="n">stop</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span> <span class="s">&quot;Stop&quot;</span> <span class="p">)</span>
             <span class="n">svc</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">11</span><span class="p">],</span> <span class="s">&quot;Svc&quot;</span> <span class="p">)</span>
             <span class="n">blk</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">12</span><span class="p">],</span> <span class="s">&quot;Blk&quot;</span> <span class="p">)</span>
             <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;Arrival&quot;</span><span class="p">:</span>
@@ -310,21 +359,26 @@
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">report_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">source</span><span class="p">:</span>
                 <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span> <span class="k">continue</span>
-                <span class="n">fields</span><span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span> <span class="n">f</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="p">)</span>
+                <span class="n">fields</span><span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
                 <span class="n">report</span><span class="o">=</span> <span class="n">report_factory</span><span class="p">(</span> <span class="n">fields</span> <span class="p">)</span>
                 <span class="k">yield</span> <span class="n">report</span>
 </div>
 <div class="viewcode-block" id="JSONEncoder"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.JSONEncoder">[docs]</a><span class="k">class</span> <span class="nc">JSONEncoder</span><span class="p">(</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Encode any of the Report subclasses into JSON.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">default</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">obj</span> <span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Report</span><span class="p">):</span>
             <span class="n">as_dict</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
             <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%x</span><span class="s"> </span><span class="si">%X</span><span class="s">&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">):</span>
-                <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%X</span><span class="s">&quot;</span><span class="p">)</span>
+                <span class="n">hh</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">time</span><span class="o">//</span><span class="mi">3600</span>
+                <span class="n">mm</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">time</span><span class="o">-</span><span class="p">(</span><span class="n">hh</span><span class="o">*</span><span class="mi">3600</span><span class="p">)</span><span class="o">//</span><span class="mi">60</span>
+                <span class="n">ss</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">time</span><span class="o">-</span><span class="n">hh</span><span class="o">*</span><span class="mi">3600</span><span class="o">-</span><span class="n">mm</span><span class="o">*</span><span class="mi">60</span>
+                <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">=</span> <span class="s">&quot;{0:2d}:{1:2d}:{2:2d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">hh</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">ss</span> <span class="p">)</span>
             <span class="k">return</span> <span class="n">as_dict</span>
         <span class="nb">super</span><span class="p">(</span> <span class="n">JSONEncoder</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">default</span><span class="p">(</span> <span class="n">obj</span> <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="JSONDecoder"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.JSONDecoder">[docs]</a><span class="k">class</span> <span class="nc">JSONDecoder</span><span class="p">(</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Decode any of the Report subclasses from JSON.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span> <span class="n">JSONDecoder</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">object_hook</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">make_report</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">)</span>
     <span class="k">def</span> <span class="nf">make_report</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">as_dict</span> <span class="p">):</span>
@@ -334,8 +388,8 @@
                 <span class="n">timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">],</span><span class="s">&quot;</span><span class="si">%x</span><span class="s"> </span><span class="si">%X</span><span class="s">&quot;</span><span class="p">)</span>
                 <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">timestamp</span>
                 <span class="k">if</span> <span class="n">as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">):</span>
-                    <span class="n">timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">),</span><span class="s">&quot;</span><span class="si">%X</span><span class="s">&quot;</span><span class="p">)</span>
-                    <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">timestamp</span>
+                    <span class="n">hh</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">ss</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span> <span class="nb">int</span><span class="p">,</span> <span class="n">as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span> <span class="p">)</span>
+                    <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">=</span> <span class="p">(</span><span class="n">hh</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">mm</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">ss</span>
                 <span class="k">return</span> <span class="n">cn</span><span class="p">(</span><span class="o">**</span><span class="n">as_dict</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
                 <span class="k">print</span><span class="p">(</span> <span class="n">cn</span><span class="p">,</span> <span class="n">as_dict</span><span class="p">,</span> <span class="n">cn</span><span class="o">.</span><span class="n">__init__</span><span class="o">.</span><span class="n">__code__</span><span class="o">.</span><span class="n">co_varnames</span> <span class="p">)</span>
@@ -357,7 +411,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -380,13 +434,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, S.Lott.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

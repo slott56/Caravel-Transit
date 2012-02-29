@@ -17,7 +17,7 @@ import caravel.report
 import glob
 import pprint
 
-def arrival_stats( conn, base='.' ):
+def arrival_stats( reader, conn, base='.' ):
     """Use the :meth:`transit_system.connection.get_candidate_stops` to locate
     stops.  Compare the shortest distance stop with stops farther away to see
     if the time match of a later stop is better than the time match of the
@@ -25,8 +25,7 @@ def arrival_stats( conn, base='.' ):
     """
     count= 0
     matches= defaultdict(list)
-    factory= caravel.report.ReportFactory()
-    for report in caravel.report.report_iter( factory, glob.glob( os.path.join(base,'*.rpt') ) ):
+    for report in caravel.report.report_iter( reader, glob.glob( os.path.join(base,'*.rpt') ) ):
         if report and report.rte: # Arrival or Dwell
             count += 1
             services= tuple( transit_system.get_services_today(conn, report.timestamp.date() ) )
@@ -59,8 +58,11 @@ def arrival_stats( conn, base='.' ):
         print()
         print( s )
         pprint.pprint( dict(fq) )
-        print( "{0:d}, {1:5.0f}, {2:5.0f}, {3:3d}".format( s, fq.mean(), fq.sd(), fq.count ) )
-
+        mean, std = fq.mean(), fq.sd()
+        if std:
+            print( "{0:d}, {1:5.0f}, {2:5.0f}, {3:3d}".format( s, fq.mean(), fq.sd(), fq.count ) )
+        else:
+            print( "{0:d}, {1:5.0f}, {2:>5s}, {3:3d}".format( s, fq.mean(), "None", fq.count ) )
 
 if __name__ == "__main__":
     data = os.path.join('hampton-roads-transit-hrt_20120218_0425' )
@@ -72,4 +74,6 @@ if __name__ == "__main__":
     print( 'stops', len(conn.stops) )
     print( 'trips', len(conn.trips) )
     print( 'stop_times', len(conn.stop_times) )
-    arrival_stats( conn )
+    reader= caravel.report.ReportReader_v2()
+
+    arrival_stats( reader, conn )

@@ -18,7 +18,7 @@ Vehicle Id information in :file:`vid.csv` has the following format::
 
 RID is the route ID.  VehID is the Vehicle ID.
 
-Real-Time Location
+Vehicle Report V1
 -----------------------
 
 There are three types of records::
@@ -66,3 +66,16 @@ For MT_TIMEPOINTCROSSING some additional fields are present.
 18. '[Valid]': 27
 19. 'DGPS:Off': 1, 'DGPS:On': 26
 20. ``"FOM:%d"``.  Optional.
+
+Vehicle Report V2
+------------------------
+
+There are two types of records::
+
+    Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
+
+    07:00:38,02/28,3247,368147270/-762487811,V,-1,V
+
+    07:00:41,02/28,2109,368099480/-763510804,V,-1,V,28,1,30
+
+The header, however, is unusable in the given form.

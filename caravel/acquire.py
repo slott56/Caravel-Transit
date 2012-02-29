@@ -18,6 +18,7 @@ Also.  Gets route information from http://googletf.gohrt.com/google_transit.zip
 """
 from __future__ import print_function, division
 import ftplib
+import urllib2
 from contextlib import closing
 import datetime
 from collections import namedtuple
@@ -88,12 +89,12 @@ def get_route( connection=None, target_dir='.', url="http://googletf.gohrt.com/g
     :param url: URL for the file (http://googletf.gohrt.com/google_transit.zip)
     """
     if not connection:
-        connection= urllib2.OpenerDirector
+        connection= urllib2.build_opener()
 
     download=  urlparse.urlparse(url)
     dir, name = os.path.split( download.path )
 
-    with closing( connection().open( url ) ) as source:
+    with closing( connection.open( url ) ) as source:
         with open(os.path.join(target_dir,name),'wb') as target:
             target.write( source.read() )
     return name

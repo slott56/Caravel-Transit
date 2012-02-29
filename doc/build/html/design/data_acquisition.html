@@ -3,13 +3,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Data Acquisition &mdash; Caravel-Transit v1.1 documentation</title>
+    <title>Data Acquisition &mdash; Caravel-Transit 1.1 documentation</title>
+    
     <link rel="stylesheet" href="../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../index.html" />
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
     <link rel="up" title="Design Notes" href="index.html" />
     <link rel="next" title="General Transit Feed Data" href="additional_data.html" />
     <link rel="prev" title="RESTful API" href="RESTapi.html" /> 
@@ -43,7 +46,7 @@
         <li class="right" >
           <a href="RESTapi.html" title="RESTful API"
              accesskey="P">previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
       </ul>
     </div>  
@@ -67,8 +70,8 @@
 </div>
 <p>RID is the route ID.  VehID is the Vehicle ID.</p>
 </div>
-<div class="section" id="real-time-location">
-<h2>Real-Time Location<a class="headerlink" href="#real-time-location" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="vehicle-report-v1">
+<h2>Vehicle Report V1<a class="headerlink" href="#vehicle-report-v1" title="Permalink to this headline">¶</a></h2>
 <p>There are three types of records:</p>
 <div class="highlight-python"><pre>07:04:42 02/15  V.1.2233  H.0.0  MT_LOCATION    Lat/Lon:370620935/-763413842 [Valid]  Adher:-1 [Valid]  Odom:2668 [Valid]  DGPS:On  FOM:2
 
@@ -115,6 +118,17 @@
 <li><tt class="docutils literal"><span class="pre">&quot;FOM:%d&quot;</span></tt>.  Optional.</li>
 </ol>
 </div>
+<div class="section" id="vehicle-report-v2">
+<h2>Vehicle Report V2<a class="headerlink" href="#vehicle-report-v2" title="Permalink to this headline">¶</a></h2>
+<p>There are two types of records:</p>
+<div class="highlight-python"><pre>Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
+
+07:00:38,02/28,3247,368147270/-762487811,V,-1,V
+
+07:00:41,02/28,2109,368099480/-763510804,V,-1,V,28,1,30</pre>
+</div>
+<p>The header, however, is unusable in the given form.</p>
+</div>
 </div>
 
 
@@ -130,7 +144,8 @@
   <ul>
 <li><a class="reference internal" href="#">Data Acquisition</a><ul>
 <li><a class="reference internal" href="#vehicle-information">Vehicle Information</a></li>
-<li><a class="reference internal" href="#real-time-location">Real-Time Location</a></li>
+<li><a class="reference internal" href="#vehicle-report-v1">Vehicle Report V1</a></li>
+<li><a class="reference internal" href="#vehicle-report-v2">Vehicle Report V2</a></li>
 </ul>
 </li>
 </ul>
@@ -149,7 +164,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -178,13 +193,13 @@
         <li class="right" >
           <a href="RESTapi.html" title="RESTful API"
              >previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Design Notes</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, S.Lott.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

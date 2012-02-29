@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-"""Caravel raw file filter and split.
+"""Filter and split raw input to separate Location reports from Arrival reports.
 
 Synopsis
 
@@ -9,32 +9,38 @@ Synopsis
 
 Description
 
-For each source file, filter the invalid Reports.  Split into two CSV files.
-One file gets Arrival and Dwell reports.  The other file gets Location reports.
+    For each source file, filter the invalid Reports.  Split into two CSV files.
+    One file gets Arrival and Dwell reports.  The other file gets Location reports.
 
 Options
 
-..  program:: split
+    ..  program:: split
 
-..  option:: --new, -n
+    ..  option:: --format number
 
-    Get a new, live report file.
+        Format number.  Generally maps to a subclass of :class:`caravel.report.ReportReader`.
 
-.. option:: --location <file>, -l <file>
+    ..  option:: --new, -n
 
-    The name of the Location reports ('location.csv' is the default)
+        Get a new, live report file.
 
-.. option:: --arrival <file>, -a <file>
+    .. option:: --location <file>, -l <file>
 
-    The name of the Arrival/Dwell reports ('arrival.csv' is the default)
+        The name of the Location reports ('location.csv' is the default)
 
-.. option:: source...
+    .. option:: --arrival <file>, -a <file>
 
-    List of source files to process.
+        The name of the Arrival/Dwell reports ('arrival.csv' is the default)
 
-..  autofunction:: split
+    .. option:: source...
 
-..  autofunction:: get_args
+        List of source files to process.
+
+Components
+
+    ..  autofunction:: split
+
+    ..  autofunction:: get_args
 """
 from __future__ import print_function, division
 import csv
@@ -54,8 +60,8 @@ def split( report_iter, location_csv, arrival_csv ):
 
     It's usually built like this::
 
-        factory= caravel.report.ReportFactory()
-        rpt_iter= caravel.report.report_iter( factory, [list,of,files] )
+        reader= caravel.report.ReportReader_v1()
+        rpt_iter= caravel.report.report_iter( reader, [list,of,files] )
 
     This iterator will examine all the files in the list, extracting
     all Report objects.
@@ -77,7 +83,7 @@ def split( report_iter, location_csv, arrival_csv ):
                 if not item:
                     counts['invalid'] += 1
                     continue
-                if not (item.ll_valid and item.odom_valid):
+                if not item.ll_valid:
                     logger.debug( 'Excluded {0!r}'.format(item) )
                     counts['excluded'] += 1
                     continue
@@ -98,6 +104,7 @@ def get_args():
     """
     parser= argparse.ArgumentParser( )
     parser.add_argument( 'files', action='store', nargs='*' )
+    parser.add_argument( '--format', '-f', action='store', default='2' )
     parser.add_argument( '--new', '-n', action='store_true', default=False, dest='acquire' )
     parser.add_argument( '--location', '-l', action='store', default='location.csv' )
     parser.add_argument( '--arrival', '-a', action='store', default='arrival.csv' )
@@ -114,9 +121,13 @@ if __name__ == "__main__":
         files= [caravel.acquire.get_reports()] + args.files
     else:
         files= args.files
-    factory= caravel.report.ReportFactory()
+    rdr_class = {
+        '1': caravel.report.ReportReader_v1,
+        '2': caravel.report.ReportReader_v2,
+        }
+    reader= rdr_class[args.format]()
     counts= split(
-        caravel.report.report_iter( factory, files ),
+        caravel.report.report_iter( reader, files ),
         args.location,
         args.arrival )
     logger.info( "Counts {0}".format( pprint.pformat( counts ) ) )

@@ -56,15 +56,16 @@ Applications
 
 These are top-level applications to produce useful results.
 
+Split
+----------------
+
+..  automodule:: caravel.split
+
 Arrival At Stop
 ----------------
 
 ..  automodule:: caravel.arrival_at_stop
 
-Split
-----------------
-
-..  automodule:: caravel.split
 
 Stop Discovery
 ----------------

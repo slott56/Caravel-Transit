@@ -55,6 +55,7 @@ Query Functions
 ..  autofunction:: get_candidate_stops
 ..  autofunction:: get_route_from_stop_time
 ..  autofunction:: get_trip_from_stop_time
+..  autofunction:: get_next_stop_time
 ..  autofunction:: get_route
 ..  autofunction:: get_stop
 ..  autofunction:: get_route_stops
@@ -371,6 +372,23 @@ def get_trip_from_stop_time( conn, stop_time ):
     """
     return conn.trips[stop_time.trip_id]
 
+def get_next_stop_time( conn, stop_time, services ):
+    """Given a :class:`Stop_Time` object, locate the remaining
+    sequence of stops.
+
+    :param conn: An open :class:`Connection`.
+    :param stop_time: A :class:`Stop_Time` object
+    :param services: The iterable sequence of services applicable
+    :returns: iterator over (time,stop_time) pairs ordered from closest in time
+        to the max_time value.  The absolute magnitude is used for sorting
+        so early and late times will be intermixed.
+    """
+    next_iter = ( st for st in conn.trip_times[stop_time.trip_id]
+                 if st.stop_id != stop_time.stop_id
+                 and st.arrival_time >= stop_time.departure_time
+                 and conn.trips[st.trip_id].service_id in services
+                 )
+    return next_iter
 
 def get_route( conn, id=None ):
     """Returns route or list of routes.

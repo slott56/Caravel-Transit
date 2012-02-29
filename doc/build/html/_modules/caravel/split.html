@@ -3,13 +3,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
+
 <html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.split &mdash; Caravel-Transit v1.1 documentation</title>
+    <title>caravel.split &mdash; Caravel-Transit 1.1 documentation</title>
+    
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
@@ -22,7 +25,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit v1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -35,7 +38,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -49,21 +52,40 @@
 <span class="c">#!/usr/bin/env python2.7</span>
 <span class="sd">&quot;&quot;&quot;Caravel raw file filter and split.</span>
 
-<span class="sd">Synopsis:</span>
+<span class="sd">Synopsis</span>
 
-<span class="sd">    python2.7 -m caravel.split [-l location] [-a arrival] source...</span>
+<span class="sd">::</span>
 
-<span class="sd">Description:</span>
+<span class="sd">    python2.7 -m caravel.split [--new] [-l location] [-a arrival] source...</span>
+
+<span class="sd">Description</span>
 
 <span class="sd">For each source file, filter the invalid Reports.  Split into two CSV files.</span>
 <span class="sd">One file gets Arrival and Dwell reports.  The other file gets Location reports.</span>
 
-<span class="sd">Implementation</span>
-<span class="sd">================</span>
+<span class="sd">Options</span>
+
+<span class="sd">..  program:: split</span>
+
+<span class="sd">..  option:: --new, -n</span>
+
+<span class="sd">    Get a new, live report file.</span>
+
+<span class="sd">.. option:: --location &lt;file&gt;, -l &lt;file&gt;</span>
+
+<span class="sd">    The name of the Location reports (&#39;location.csv&#39; is the default)</span>
+
+<span class="sd">.. option:: --arrival &lt;file&gt;, -a &lt;file&gt;</span>
+
+<span class="sd">    The name of the Arrival/Dwell reports (&#39;arrival.csv&#39; is the default)</span>
+
+<span class="sd">.. option:: source...</span>
+
+<span class="sd">    List of source files to process.</span>
 
 <span class="sd">..  autofunction:: split</span>
 
-<span class="sd">..  autfunction:: get_args</span>
+<span class="sd">..  autofunction:: get_args</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">csv</span>
@@ -72,6 +94,7 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">caravel.report</span>
+<span class="kn">import</span> <span class="nn">caravel.acquire</span>
 
 <span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="n">__name__</span> <span class="p">)</span>
 
@@ -121,8 +144,12 @@
     <span class="k">return</span> <span class="n">counts</span>
 </div>
 <div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../implementation/index.html#caravel.split.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Parse command-line arguments.</span>
+<span class="sd">    :returns: Arguments object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">parser</span><span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span> <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;files&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&#39;*&#39;</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--new&#39;</span><span class="p">,</span> <span class="s">&#39;-n&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&#39;acquire&#39;</span> <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--location&#39;</span><span class="p">,</span> <span class="s">&#39;-l&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&#39;location.csv&#39;</span> <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--arrival&#39;</span><span class="p">,</span> <span class="s">&#39;-a&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&#39;arrival.csv&#39;</span> <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--debug&#39;</span><span class="p">,</span> <span class="s">&#39;-d&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span> <span class="p">)</span>
@@ -134,9 +161,13 @@
     <span class="n">args</span><span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">acquire</span><span class="p">:</span>
+        <span class="n">files</span><span class="o">=</span> <span class="p">[</span><span class="n">caravel</span><span class="o">.</span><span class="n">acquire</span><span class="o">.</span><span class="n">get_reports</span><span class="p">()]</span> <span class="o">+</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">files</span><span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span>
     <span class="n">factory</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportFactory</span><span class="p">()</span>
     <span class="n">counts</span><span class="o">=</span> <span class="n">split</span><span class="p">(</span>
-        <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_iter</span><span class="p">(</span> <span class="n">factory</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span> <span class="p">),</span>
+        <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_iter</span><span class="p">(</span> <span class="n">factory</span><span class="p">,</span> <span class="n">files</span> <span class="p">),</span>
         <span class="n">args</span><span class="o">.</span><span class="n">location</span><span class="p">,</span>
         <span class="n">args</span><span class="o">.</span><span class="n">arrival</span> <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Counts {0}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span> <span class="n">counts</span> <span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
@@ -154,7 +185,7 @@
 <div id="searchbox" style="display: none">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
-      <input type="text" name="q" size="18" />
+      <input type="text" name="q" />
       <input type="submit" value="Go" />
       <input type="hidden" name="check_keywords" value="yes" />
       <input type="hidden" name="area" value="default" />
@@ -177,13 +208,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit v1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2012, S.Lott.
-      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.0.7.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
 </html>

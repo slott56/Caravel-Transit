@@ -1,31 +1,40 @@
 #!/usr/bin/env python2.7
-"""Caravel route and stop analysis.
+"""Simple route and stop analysis to cluster location reports by
+reported route and direction.
 
-Synopsis:
+Synopsis
 
     python2.7 -m caravel.stops source...
 
-Description:
+Description
 
-For each source file, filter the invalid Reports.  Summarize the
-Arrival and Dwell reports.
+    For each source file, filter the invalid Reports.  Summarize the
+    Arrival and Dwell reports.
 
 
-Options:
+Options
 
-.. option:: --debug, -d
+    ..  program:: stops
 
-    Set logging level.
+    .. option:: --debug, -d
 
-.. option:: source...
+        Set logging level.
 
-    List of source files to process.
+    ..  option:: --format number
 
-..  autofunction:: group_by_rte_dir_stop
+        Format number.  Generally maps to a subclass of :class:`caravel.report.ReportReader`.
 
-..  autofunction:: display
+    .. option:: source...
 
-..  autofunction:: get_args
+        List of source files to process.
+
+Components
+
+    ..  autofunction:: group_by_rte_dir_stop
+
+    ..  autofunction:: display
+
+    ..  autofunction:: get_args
 """
 from __future__ import print_function, division
 from collections import defaultdict, namedtuple, OrderedDict
@@ -47,8 +56,8 @@ def group_by_rte_dir_stop( report_iter ):
 
     It's usually built like this::
 
-        factory= caravel.report.ReportFactory()
-        rpt_iter= caravel.report.report_iter( factory, [list,of,files] )
+        reader= caravel.report.ReportReader_v1()
+        rpt_iter= caravel.report.report_iter( reader, [list,of,files] )
 
     This iterator will examine all the files in the list, extracting
     all Report objects.
@@ -104,6 +113,7 @@ def get_args():
     """
     parser= argparse.ArgumentParser( )
     parser.add_argument( 'files', action='store', nargs='*' )
+    parser.add_argument( '--format', '-f', action='store', default='2' )
     parser.add_argument( '--debug', '-d', action='store_true', default=False )
     args= parser.parse_args()
     return args
@@ -113,10 +123,14 @@ if __name__ == "__main__":
     args= get_args()
     if args.debug:
         logging.getLogger().setLevel( logging.DEBUG )
+    rdr_class = {
+        '1': caravel.report.ReportReader_v1,
+        '2': caravel.report.ReportReader_v2,
+        }
+    reader= rdr_class[args.format]()
     started= datetime.datetime.now()
-    factory= caravel.report.ReportFactory()
     counts, route = group_by_rte_dir_stop(
-        caravel.report.report_iter( factory, args.files ) )
+        caravel.report.report_iter( reader, args.files ) )
     display( route )
     finished= datetime.datetime.now()
     logger.info( "Time {0}; Counts {1}".format( finished-started, pprint.pformat( counts ) ) )
