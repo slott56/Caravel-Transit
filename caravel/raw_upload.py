@@ -145,8 +145,9 @@ def upload_rtf( db, filename ):
         status = "new",
     )
     feed.save()
-    feed.put_attachment( filename, name="feed", content_type="text/csv" )
-    print( feed )
+    with open(filename,'r') as source:
+        feed.put_attachment( source, name="feed", content_type="text/csv" )
+    print( feed, feed._id )
 
 def all_rtf( db ):
     """Query all real-time Feed uploads."""
@@ -193,10 +194,16 @@ def get_and_upload(db):
         target.write( data )
     upload_rtf( db, name )
 
-if __name__ == "__main__":
+def polling_loop(db, duration=12):
+    """Poll for files on a one-minute cycle.
 
-    define_views( db )
-    for i in range(10):
+    :param duration: number of hours to run."""
+    for i in range(duration*60):
         time.sleep(60)
         get_and_upload(db)
 
+if __name__ == "__main__":
+
+    define_views( db )
+    get_and_upload( db )
+    all_rtf( db )

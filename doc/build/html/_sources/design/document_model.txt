@@ -99,7 +99,6 @@ See :ref:`design.transit_resource` for additional transit system queries.
 
 See http://guide.couchdb.org/draft/why.html
 
-
 Candidate Document Structures
 -------------------------------
 

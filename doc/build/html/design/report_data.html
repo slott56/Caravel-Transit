@@ -57,12 +57,265 @@
             
   <div class="section" id="position-data-acquisition">
 <span id="design-position"></span><h1>Position Data Acquisition<a class="headerlink" href="#position-data-acquisition" title="Permalink to this headline">¶</a></h1>
-<p>See <a class="reference external" href="http://www.transitchicago.com/developers/bustracker.aspx">http://www.transitchicago.com/developers/bustracker.aspx</a></p>
-<p>Source information: <a class="reference external" href="ftp://216.54.15.3/Anrd/">ftp://216.54.15.3/Anrd/</a></p>
-<p>Two Files: <tt class="file docutils literal"><span class="pre">hrtrtf.txt</span></tt> is the data. <tt class="file docutils literal"><span class="pre">vid.csv</span></tt> is a map of route ids to vehicle ids</p>
-<p>Need Routes and Segments to see where bus is.</p>
+<p>See <a class="reference external" href="http://www.transitchicago.com/developers/bustracker.aspx">http://www.transitchicago.com/developers/bustracker.aspx</a>
+for other implementations.</p>
+<div class="section" id="background">
+<h2>Background<a class="headerlink" href="#background" title="Permalink to this headline">¶</a></h2>
+<p>The underlying software is the Trapeze ITS integated vehicle fleet management
+and communication systems for advanced public transit operations.</p>
+<p>From Trapeze application, we need to do a tail of the GPS log.  This is
+a very clever way to extract nearly real-time
+location data without disrupting any aspect of Trapeze operations.</p>
+<p>This tail can then be loaded into a Caravel database.</p>
+</div>
+<div class="section" id="legacy-implementations">
+<h2>Legacy Implementations<a class="headerlink" href="#legacy-implementations" title="Permalink to this headline">¶</a></h2>
+<p>The first implementation did a file copy from the tail to an FTP server.
+This provided a great deal of useful information.</p>
+<div class="highlight-python"><pre>ftp://216.54.15.3/Anrd/</pre>
+</div>
+<ul class="simple">
+<li><tt class="file docutils literal"><span class="pre">hrtrtf.txt</span></tt> is the data.  There are at least three different
+formats for this file.</li>
+<li><tt class="file docutils literal"><span class="pre">vid.csv</span></tt> is a map of route ids to vehicle ids</li>
+</ul>
+<p>The next two releases reformatted this extract into CSV and attempted to resolve
+some of the foreign keys.</p>
+<p>This suffers from three race conditions.  One of them cannot be fixed.</p>
+<ul class="simple">
+<li>Tailing the log file will often create a partial last record
+as the tail is not synchronized with Trapeze.  Currently,
+this is 300 records, but the rate of growth of the log file
+(in records per minute) has not been measurted, so it&#8217;s difficult
+to know if this is the roght size or not.</li>
+<li>Polling means that the consumer can easily miss an entire upload
+simply by having the producer run a little more quickly than
+the consumer.</li>
+<li>Copying the transformed log file to the FTP server means that
+FTP clients can see partial files.  While unlikely, it can&#8217;t be
+prevented.</li>
+</ul>
+</div>
+<div class="section" id="preferred-implementation">
+<h2>Preferred Implementation<a class="headerlink" href="#preferred-implementation" title="Permalink to this headline">¶</a></h2>
+<p>There are three separate issues in capturing the Trapeze data.</p>
+<ol class="arabic simple">
+<li>Proper interval for tailing the log.</li>
+<li>Providing mappings from Trapeze vehicle, route, stop and direction
+to GTFS route, stop and direction.</li>
+<li>Pushing the position report tail to a couchdb server as soon as it&#8217;s available
+to avoid polling and synchronization issues.</li>
+</ol>
+<p><strong>Tail Size</strong>.
+The proper tail size is estimated by computing the size of the
+log hourly during several days.  From this, the average size per minute
+can be computed along with a standard deviation that allows judging
+how much data must be sampled to have reasonable confidence that all
+data is available.</p>
+<p><strong>Mappings</strong>.
+The mappings must be extracted from Trapeze and pushed to the Caravel couchdb.
+The Trapeze data reflects actual operating conditions of the system and
+are essential for matching the position reports against GTFS information.</p>
+<p>The mappings are created and pushed as follows.</p>
+<ol class="arabic simple">
+<li>Manually query the relevant Trapeze tables.</li>
+<li>Remove unneeded extra columns.</li>
+<li>Format as CSV.</li>
+<li>Package and push.</li>
+</ol>
+<p>The &#8220;package and push&#8221; will supplement the mapping with an &#8220;Effective Date&#8221; &#8211; the
+date at which these mappings should be used.  Ideally, this date is in the future.</p>
+<p>Each mapping file is pushed to the Caravel couchdb using two HTTP requests.</p>
+<ol class="arabic simple">
+<li>An HTTP POST is used to create the mapping document.</li>
+<li>An HTTP PUT is used to upload the actual CSV file as an attachment to the
+mapping document.</li>
+</ol>
+<p>The mapping document is encoded in <a class="reference external" href="http://www.json.org/">JSON</a> notation:</p>
+<div class="highlight-python"><pre>{
+    "timestamp": "yyyy-mm-ddThh:mm:ssZ",
+    "effective_date": "yyyy-mm-dd",
+    "mapping_type": "vehicle"
+    "doc_type": "Mapping"
+}</pre>
+</div>
+<p>In JSON, the <tt class="docutils literal"><span class="pre">{}</span></tt>, <tt class="docutils literal"><span class="pre">:</span></tt>, <tt class="docutils literal"><span class="pre">,</span></tt> and <tt class="docutils literal"><span class="pre">&quot;</span></tt> punctuation is mandatory; whitespace
+is optional.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">timestamp:</th><td class="field-body"><p class="first">The current date and time.
+The format is <tt class="samp docutils literal"><em><span class="pre">date</span></em><span class="pre">T</span><em><span class="pre">time</span></em><span class="pre">Z</span></tt> and should be in GMT, not local time.
+The <tt class="docutils literal"><span class="pre">T</span></tt> is required.  The <tt class="docutils literal"><span class="pre">Z</span></tt> indicates GMT.
+Date is <tt class="samp docutils literal"><em><span class="pre">yyyy</span></em><span class="pre">-</span><em><span class="pre">mm</span></em><span class="pre">-</span><em><span class="pre">dd</span></em></tt>.
+Time is <tt class="samp docutils literal"><span class="pre">hh:mm:ss</span></tt>.</p>
+<p>See ISO 8601 and <a class="reference external" href="http://www.ietf.org/rfc/rfc3339.txt">http://www.ietf.org/rfc/rfc3339.txt</a>.</p>
+<p>This should simply be the operating system file timestamp.  If the file
+is updated and pushed a second time, then the timetamp will positively
+identify which is the latest and greatest.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">effective_date:</th><td class="field-body"><p class="first">The date on which this becomes effective.
+Date is <tt class="samp docutils literal"><em><span class="pre">yyyy</span></em><span class="pre">-</span><em><span class="pre">mm</span></em><span class="pre">-</span><em><span class="pre">dd</span></em></tt>.</p>
+<p>Once a mapping reaches the effective date, there&#8217;s no point in changing
+the file, since it&#8217;s being used elsewhere in the system.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">mapping_type:</th><td class="field-body"><p class="first">The type of mapping file being provided.
+This must be one of the following strings.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">&quot;vehicle&quot;</span></tt> to provide vehicle ID mappings from Trapeze codes to proper numbers.</li>
+<li><tt class="docutils literal"><span class="pre">&quot;route&quot;</span></tt> to provide route ID mappings from Trapeze to GTFS.</li>
+<li><tt class="docutils literal"><span class="pre">&quot;stop&quot;</span></tt> to provide stop ID mappings from Trapeze to GTFS.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">doc_type:</th><td class="field-body"><p class="first last">Must be <tt class="docutils literal"><span class="pre">&quot;Mapping&quot;</span></tt> or the document cannot be found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Using a program like <a class="reference external" href="http://curl.haxx.se/">curl</a>, the mapping document
+can be created using the following HTTP POST request.</p>
+<div class="highlight-python"><pre>curl -X POST http://hrt.iriscouch.com:5984/mappings/
+-H "Content-Type: application/json"
+-d '{"timestamp":"2012-03-02T21:16:00Z", "effective_date":"2012-03-05",
+"mapping_type":"vehicle", "doc_type":"Mapping"}'</pre>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p>Long Lines</p>
+<p class="last">curl commands are one long (!) line, shown on multiple lines
+for readability in this document.</p>
+</div>
+<p>This can also done using any HTTP library in any programming language.</p>
+<p>The response to document creation looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;1-7750ef2dbce77303f957de17c754852a&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This provides the status, the assigned document ID and a revision.  The <tt class="docutils literal"><span class="pre">id</span></tt> and <tt class="docutils literal"><span class="pre">rev</span></tt> are used
+to attach the CSV document</p>
+<p>The actual mapping file content is attached to the document using the following
+HTTP PUT request.</p>
+<p>The <tt class="docutils literal"><span class="pre">id</span></tt> and <tt class="docutils literal"><span class="pre">rev</span></tt> from the initial response becomes part of the URL.
+The <tt class="docutils literal"><span class="pre">/content/</span></tt> in the URL is required; it&#8217;s the name of the attachment.</p>
+<div class="highlight-python"><pre>curl -X PUT http://hrt.iriscouch.com:5984/mappings/09833a88a1cbb06f64c555d0245f1af3/content/?rev=1-7750ef2dbce77303f957de17c754852a
+-H "Content-Type: text/csv"
+--data-ascii @the_mapping_file.csv</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;2-748151ff136b0001671fb0fa14eb886d&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This provides the status, the assigned document ID and the new revision of the document.</p>
+<p><strong>Position Report Feed</strong>.
+The real-time feed must be extracted from Trapeze and pushed to the Caravel couchdb.</p>
+<p>The feed is created and pushed as follows.</p>
+<ol class="arabic simple">
+<li>Tail the Trapeze log.  The tail size is currently 300 lines, but
+may need to be changed.</li>
+<li>Format into CSV.</li>
+<li>Package and push.</li>
+</ol>
+<p>The &#8220;package and push&#8221; will include a status, document type and a timestamp.</p>
+<p>Each feed extract is pushed to the Caravel couchdb using two HTTP requests.</p>
+<ol class="arabic simple">
+<li>An HTTP POST is used to create the position report document.</li>
+<li>An HTTP PUT is used to upload the actual CSV file as an attachment to the
+position report document.</li>
+</ol>
+<p>The position report feed document is encoded in <a class="reference external" href="http://www.json.org/">JSON</a> notation:</p>
+<div class="highlight-python"><pre>{
+    "timestamp": "yyyy-mm-ddThh:mm:ssZ",
+    "status": "new"
+    "doc_type": "Feed"
+}</pre>
+</div>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">timestamp:</th><td class="field-body"><p class="first">The current date and time.
+The format is <tt class="samp docutils literal"><em><span class="pre">date</span></em><span class="pre">T</span><em><span class="pre">time</span></em><span class="pre">Z</span></tt> and should be in GMT, not local time.
+Date is <tt class="samp docutils literal"><em><span class="pre">yyyy</span></em><span class="pre">-</span><em><span class="pre">mm</span></em><span class="pre">-</span><em><span class="pre">dd</span></em></tt>.
+Time is <tt class="samp docutils literal"><span class="pre">hh:mm:ss</span></tt>.</p>
+<p>See ISO 8601 and <a class="reference external" href="http://www.ietf.org/rfc/rfc3339.txt">http://www.ietf.org/rfc/rfc3339.txt</a>.</p>
+<p>This should simply be the operating system file timestamp.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">status:</th><td class="field-body"><p class="first">The status of the feed file being provided.  Must be <tt class="docutils literal"><span class="pre">&quot;new&quot;</span></tt> or
+the document will not be used.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">doc_type:</th><td class="field-body"><p class="first last">Must be <tt class="docutils literal"><span class="pre">&quot;Feed&quot;</span></tt> or the document cannot be found.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Using a program like <cite>curl &lt;http://curl.haxx.se/&gt;</cite>, the feed document
+can be created using the following HTTP POST request.</p>
+<div class="highlight-python"><pre>curl -X POST http://hrt.iriscouch.com:5984/feed/
+-H "Content-Type: application/json"
+-d '{"timestamp":"2012-03-02T21:16:00Z", "status":"new", "doc_type":"Feed"}'</pre>
+</div>
+<p>This can also done using any HTTP library in any programming language.</p>
+<p>The response to document creation looks like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;1-7750ef2dbce77303f957de17c754852a&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This provides the status, the assigned document ID and a revision.  The <tt class="docutils literal"><span class="pre">id</span></tt> and <tt class="docutils literal"><span class="pre">rev</span></tt> are used
+to attach the CSV feed document</p>
+<p>The actual feed file content is attached to the document using the following
+HTTP PUT request.</p>
+<p>The <tt class="docutils literal"><span class="pre">id</span></tt> and <tt class="docutils literal"><span class="pre">rev</span></tt> from the initial response becomes part of the URL.
+The <tt class="docutils literal"><span class="pre">/feed/</span></tt> in the URL is required; it&#8217;s the name of the attachment.</p>
+<div class="highlight-python"><pre>curl -X PUT http://hrt.iriscouch.com:5984/feed/09833a88a1cbb06f64c555d0245f1af3/feed/?rev=1-7750ef2dbce77303f957de17c754852a
+-H "Content-Type: text/csv"
+--data-ascii @the_loca_feed_extract.csv</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;2-748151ff136b0001671fb0fa14eb886d&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>This provides the status, the assigned document ID and the new revision of the document.</p>
+<p><strong>Audit</strong>.
+The ID&#8217;s can be used to get the documents to confirm proper upload.</p>
+<p>For example:</p>
+<div class="highlight-python"><pre>curl http://hrt.iriscouch.com:5984/feed/09833a88a1cbb06f64c555d0245f1af3/</pre>
+</div>
+<p>This will respond with the specific document.</p>
+<div class="highlight-python"><pre>{
+"_id":"09833a88a1cbb06f64c555d024be284c",
+"_rev":"2-450cfb068dfedf21046d11b5bed1d84f",
+"status":"new",
+"doc_type":"Feed",
+"timestamp":"2012-03-03T19:46:02Z",
+"_attachments":{
+    "feed":{
+        "content_type":"text/csv",
+        "revpos":2,
+        "digest":"md5-amWYNwFqSf4ICT04fsWeNw==","
+        length":14758,
+        "stub":true
+        }
+    }
+}</pre>
+</div>
+<p>To see the attachment, use this:</p>
+<div class="highlight-python"><pre>curl http://hrt.iriscouch.com:5984/feed/09833a88a1cbb06f64c555d0245f1af3/feed/</pre>
+</div>
+<p>That will confirm the feed file which was pushed.</p>
+<p>Similar queries can be used for the mappings:</p>
+<div class="highlight-python"><pre>curl http://hrt.iriscouch.com:5984/mapping/09833a88a1cbb06f64c555d0245f1af3/
+curl http://hrt.iriscouch.com:5984/mapping/09833a88a1cbb06f64c555d0245f1af3/content/</pre>
+</div>
+</div>
+<div class="section" id="data-model">
+<h2>Data Model<a class="headerlink" href="#data-model" title="Permalink to this headline">¶</a></h2>
+<p>There have been three legacy data models.</p>
 <div class="section" id="vehicle-information">
-<h2>Vehicle Information<a class="headerlink" href="#vehicle-information" title="Permalink to this headline">¶</a></h2>
+<h3>Vehicle Information<a class="headerlink" href="#vehicle-information" title="Permalink to this headline">¶</a></h3>
 <p>Vehicle Id information in <tt class="file docutils literal"><span class="pre">vid.csv</span></tt> has the following format:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&#39;RID&#39;</span><span class="p">:</span> <span class="s">&#39;2218&#39;</span><span class="p">,</span> <span class="s">&#39;VehID&#39;</span><span class="p">:</span> <span class="s">&#39;2018&#39;</span><span class="p">}</span>
 </pre></div>
@@ -70,7 +323,7 @@
 <p>RID is the route ID.  VehID is the Vehicle ID.</p>
 </div>
 <div class="section" id="vehicle-report-v1">
-<h2>Vehicle Report V1<a class="headerlink" href="#vehicle-report-v1" title="Permalink to this headline">¶</a></h2>
+<h3>Vehicle Report V1<a class="headerlink" href="#vehicle-report-v1" title="Permalink to this headline">¶</a></h3>
 <p>There are three types of records:</p>
 <div class="highlight-python"><pre>07:04:42 02/15  V.1.2233  H.0.0  MT_LOCATION    Lat/Lon:370620935/-763413842 [Valid]  Adher:-1 [Valid]  Odom:2668 [Valid]  DGPS:On  FOM:2
 
@@ -118,7 +371,7 @@
 </ol>
 </div>
 <div class="section" id="vehicle-report-v2">
-<h2>Vehicle Report V2<a class="headerlink" href="#vehicle-report-v2" title="Permalink to this headline">¶</a></h2>
+<h3>Vehicle Report V2<a class="headerlink" href="#vehicle-report-v2" title="Permalink to this headline">¶</a></h3>
 <p>There are two types of records:</p>
 <div class="highlight-python"><pre>Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
 
@@ -128,6 +381,16 @@
 <p>The header, however, is unusual.</p>
 <p>The RID value appears to be an internal route id.  It does not
 match the route ID in the <a class="reference internal" href="transit_data.html#design-transit"><em>General Transit Feed Data</em></a> data.</p>
+</div>
+<div class="section" id="vehicle-report-v3">
+<h3>Vehicle Report V3<a class="headerlink" href="#vehicle-report-v3" title="Permalink to this headline">¶</a></h3>
+<p>There are two types of records:</p>
+<div class="highlight-python"><pre>Time,Date,Vehicle,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
+
+07:00:38,02/28,3247,368147270/-762487811,V,-1,V
+07:00:41,02/28,2109,368099480/-763510804,V,-1,V,28,1,30</pre>
+</div>
+</div>
 </div>
 </div>
 
@@ -143,9 +406,16 @@ match the route ID in the <a class="reference internal" href="transit_data.html#
   <h3><a href="../caravel.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Position Data Acquisition</a><ul>
+<li><a class="reference internal" href="#background">Background</a></li>
+<li><a class="reference internal" href="#legacy-implementations">Legacy Implementations</a></li>
+<li><a class="reference internal" href="#preferred-implementation">Preferred Implementation</a></li>
+<li><a class="reference internal" href="#data-model">Data Model</a><ul>
 <li><a class="reference internal" href="#vehicle-information">Vehicle Information</a></li>
 <li><a class="reference internal" href="#vehicle-report-v1">Vehicle Report V1</a></li>
 <li><a class="reference internal" href="#vehicle-report-v2">Vehicle Report V2</a></li>
+<li><a class="reference internal" href="#vehicle-report-v3">Vehicle Report V3</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
