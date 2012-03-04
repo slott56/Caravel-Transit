@@ -1,0 +1,1 @@
+function(doc){ if(doc.doc_type=='Feed' && doc.status=="new") { emit(null, doc)} }

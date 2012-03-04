@@ -1,0 +1,1 @@
+function(doc){ if(doc.doc_type=='Mapping') { emit(doc._id, null )} }
