@@ -54,47 +54,23 @@ import sys
 import os.path
 import json
 from abc import abstractmethod
+from couchdbkit import Document
+from couchdbkit import schema
 
 logger= logging.getLogger( __name__ )
 
-class Report( object ):
-    """Abstract superclass of the various kinds of reports."""
-    headings = [
-        '__class__', 'adher', 'adher_valid', 'blk', 'dgps', 'dir', 'dwell',
-        'fom', 'id', 'lat', 'll_valid', 'lon', 'odom', 'odom_valid', 'rte',
-        'stop', 'svc', 'time', 'timestamp', 'tp'
-    ]
-    def __init__( self, timestamp, id ):
-        self.timestamp= timestamp
-        self.id= id
+headings = ['timestamp', 'id',
+    'lat', 'lon', 'll_valid',
+    'adher', 'adher_valid',
+    'odom', 'odom_valid', 'dgps', 'fom',
+    'time', 'dwell', 'rte',  'dir',  'stop',
+     'tp', 'svc', 'blk',
+]
 
-class Location( Report ):
-    """A Location report for a Vehicle in motion.
-    """
-    def __init__( self, timestamp, id, lat, lon, ll_valid, adher, adher_valid,
-                 odom=None, odom_valid=None, dgps=None, fom=None, **kwargs ):
-        super( Location, self ).__init__( timestamp, id )
-        self.lat= lat
-        self.lon= lon
-        self.ll_valid= ll_valid
-        self.adher= adher
-        self.adher_valid= adher_valid
-        self.odom= odom
-        self.odom_valid= odom_valid
-        self.dgps= dgps
-        self.fom= fom
-        self.time= None
-        self.dwell= None
-        self.rte= None
-        self.dir= None
-        self.stop= None
-        self.tp= None
-        self.svc= None
-        self.blk= None
-        if kwargs:
-            assert all( kwargs[k] is None for k in kwargs ), "Extra {0!r}".format(kwargs)
-    def __repr__( self ):
-        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat!r}, {0.lon!r}, ll_valid={0.ll_valid!r}, odom_valid={0.odom_valid!r} )".format( self )
+class Report( Document ):
+    """Abstract superclass of the various kinds of reports."""
+    timestamp= schema.DateTimeProperty()
+    id= schema.StringProperty()
     def as_dict( self ):
         return dict(
             timestamp= self.timestamp,
@@ -104,57 +80,68 @@ class Location( Report ):
             ll_valid= self.ll_valid,
             adher= self.adher,
             adher_valid= self.adher_valid,
-            odom= self.odom,
-            odom_valid= self.odom_valid,
-            dgps= self.dgps,
-            fom= self.fom,
+            #odom= self.odom,
+            #odom_valid= self.odom_valid,
+            #dgps= self.dgps,
+            #fom= self.fom,
             time= self.time,
-            dwell= self.dwell,
+            #dwell= self.dwell,
             rte= self.rte,
             dir= self.dir,
             stop= self.stop,
-            tp= self.tp,
-            svc= self.svc,
-            blk= self.blk,
-            __class__= self.__class__.__name__
+            #tp= self.tp,
+            #svc= self.svc,
+            #blk= self.blk,
+        )
+
+class Location( Report ):
+    """A Location report for a Vehicle in motion.
+    """
+    lat= schema.FloatProperty()
+    lon= schema.FloatProperty()
+    ll_valid= schema.StringProperty()
+    adher= schema.IntegerProperty()
+    adher_valid= schema.StringProperty()
+    #odom= schema.IntegerProperty()
+    #odom_valid= schema.StringProperty()
+    #dgps= schema.StringProperty()
+    #fom= schema.IntegerProperty()
+    time= schema.IntegerProperty()
+    rte= schema.StringProperty()
+    dir= schema.StringProperty()
+    stop= schema.StringProperty()
+    #tp= schema.StringProperty()
+    #svc= schema.StringProperty()
+    #blk= schema.StringProperty()
+    def __repr__( self ):
+        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat!r}, {0.lon!r}, ll_valid={0.ll_valid!r} )".format( self )
+    def __eq__( self, other ):
+        return all(
+            self.timestamp== other.timestamp,
+            self.lat== other.lat,
+            self.lon== other.lon,
+            self.ll_valid == other.ll_valid,
+            self.adher == other.adher,
+            self.ader_valid == other.aher_valid,
+            self.time== other.time,
+            self.rte == other.rte,
+            self.dir == other.dir,
+            self.stop == other.stop,
         )
 
 class Arrival( Location ):
     """A Location report for a Vehicle arriving at a stop.
     """
-    def __init__( self, timestamp, id, lat, lon, ll_valid, adher, adher_valid,
-            odom=None, odom_valid=None, dgps=None, fom=None,
-            time=None, rte=None, dir=None, tp=None, stop=None, svc=None, blk=None, **kwargs):
-        super( Arrival, self ).__init__( timestamp, id, lat, lon, ll_valid, adher, adher_valid,
-                                        odom, odom_valid, dgps, fom )
-        self.time = time
-        self.dwell= None
-        self.rte = rte
-        self.dir = dir # 1 == out? 2 == in?
-        self.tp = tp
-        self.stop = stop
-        self.svc = svc
-        self.blk = blk
     def __repr__( self ):
-        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid={0.ll_valid}, time='{0.time!s}', rte={0.rte!r}, dir={0.dir!r}, tp={0.tp!r}, stop={0.stop!r}, svc={0.svc!r}, blk={0.blk!r}, dwell={0.dwell!r} )".format( self )
+        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid={0.ll_valid}, time='{0.time!s}', rte={0.rte!r}, dir={0.dir!r}, stop={0.stop!r} )".format( self )
 
 class Dwell( Arrival ):
     """A Location report for a Vehicle paused at a stop.
     This is less helpful and may get filtered out.
     """
-    def __init__( self, timestamp, id, lat, lon, ll_valid, adher, adher_valid,
-            odom=None, odom_valid=None, dgps=None, fom=None,
-            time=None, dwell=None, rte=None, dir=None, tp=None, stop=None, svc=None, blk=None, **kwargs):
-        super( Arrival, self ).__init__( timestamp, id, lat, lon, ll_valid, adher, adher_valid,
-                                        odom, odom_valid, dgps, fom )
-        self.time = time
-        self.dwell = dwell
-        self.rte = rte
-        self.dir = dir # 1 == out? 2 == in?
-        self.tp = tp
-        self.stop = stop
-        self.svc = svc
-        self.blk = blk
+    dwell= schema.IntegerProperty()
+    def __repr__( self ):
+        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid={0.ll_valid}, time='{0.time!s}', rte={0.rte!r}, dir={0.dir!r}, stop={0.stop!r}, dwell={0.dwell!r} )".format( self )
 
 class ReportReader( Iterable ):
     """An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).
@@ -288,11 +275,11 @@ class ReportReader_v1( ReportReader ):
         """
         try:
             lat, lon = self.label_lat_lon( fields[0], "Lat/Lon" )
-            ll_valid= fields[1] == "[Valid]"
+            ll_valid= 'V' if fields[1] == "[Valid]" else "I"
             adher= self.label_int( fields[2], 'Adher' )
-            adher_valid= fields[3] == "[Valid]"
+            adher_valid=  'V' if fields[3] == "[Valid]" else "I"
             odom= self.label_int( fields[4], 'Odom' )
-            odom_valid = fields[5] == "[Valid]"
+            odom_valid = 'V' if fields[5] == "[Valid]" else "I"
             dgps = self.label_str( fields[6], "DGPS" )
             fom= self.label_int( fields[7], 'FOM' )
             return lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom
@@ -334,28 +321,43 @@ class ReportReader_v1( ReportReader ):
             lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom = self.common_fields( fields[13:] )
             time= self.label_time( fields[5], "Time" )
             rte= self.label_str( fields[7], "Rte" )
-            dir= self.label_int( fields[8], "Dir" )
+            dir= self.label_str( fields[8], "Dir" )
             tp= self.label_str( fields[9], "TP" )
             stop= self.label_str( fields[10], "Stop" )
             svc= self.label_str( fields[11], "Svc" )
             blk= self.label_str( fields[12], "Blk" )
             if fields[6] == "Arrival":
-                return Arrival(timestamp, vehicle,
-                    lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom,
-                    time, rte, dir, tp, stop, svc, blk,
+                return Arrival(
+                    timestamp=timestamp,
+                    id=vehicle,
+                    lat=lat, lon=lon, ll_valid=ll_valid,
+                    adher=adher, adher_valid=adher_valid,
+                    odom=odom, odom_valid=odom_valid, dgps=dgps, fom=fom,
+                    time=time, rte=rte, dir=dir, tp=tp, stop=stop, svc=svc,
+                    blk=blk,
                     )
             else:
                 dwell= self.label_int( fields[6], "Dwell")
-                return Dwell(timestamp, vehicle,
-                    lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom,
-                    time, dwell, rte, dir, tp, stop, svc, blk,
+                return Dwell(
+                    timestamp=timestamp,
+                    id=vehicle,
+                    lat=lat, lon=lon, ll_valid=ll_valid,
+                    adher=adher, adher_valid=adher_valid,
+                    odom=odom, odom_valid=odom_valid, dgps=dgps, fom=fom,
+                    time=time, rte=rte, dir=dir, tp=tp, stop=stop, svc=svc,
+                    blk=blk, dwell=dwell,
                     )
         elif fields[4] == 'MT_LOCATION':
             # Fields 5, 7, 9, 11 and 12 are label:value
             # Fields 6, 8, 10 are [valid]/[invalid]
             lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom = self.common_fields( fields[5:] )
-            return Location(timestamp, vehicle,
-                lat, lon, ll_valid, adher, adher_valid, odom, odom_valid, dgps, fom )
+            return Location(
+                    timestamp=timestamp,
+                    id=vehicle,
+                    lat=lat, lon=lon, ll_valid=ll_valid,
+                    adher=adher, adher_valid=adher_valid,
+                    odom=odom, odom_valid=odom_valid, dgps=dgps, fom=fom,
+                    )
         else:
             self.log.error( "Unrecognized {0!r}".format(fields) )
 
@@ -401,7 +403,7 @@ class ReportReader_v2( ReportReader ):
         if year:
             self.year= year
         self.source= csv.DictReader( source )
-        assert ReportReader_v2.columns==self.source.fieldnames, "Unrecognized Heading {0!r}".format( heading )
+        assert self.columns==self.source.fieldnames, "Unrecognized Heading {0!r}".format( self.source.fieldnames )
 
     def factory( self, line ):
         """Parse the fields, returning Arrival, Dwell or Location.
@@ -416,12 +418,81 @@ class ReportReader_v2( ReportReader ):
         lat= int(lat_st)/10000000
         lon= int(lon_st)/10000000
         time= (tm.hour*60+tm.minute)*60+tm.second
+        adher= int(line['Adherence'])
         if all( (line['Route'], line['Direction'], line['StopID]']) ):
-            return Arrival( timestamp, line['RID'], lat, lon, line['Location Valid/Invalid'],
-                line['Adherence'], line['Adherence Valid/Invalid['],
-                time=time, rte=line['Route'], dir=line['Direction'], stop=line['StopID]'] )
-        return Location( timestamp, line['RID'], lat, lon, line['Location Valid/Invalid'],
-            line['Adherence'], line['Adherence Valid/Invalid['], )
+            return Arrival(
+                timestamp=timestamp,
+                id=line['RID'],
+                lat=lat, lon=lon, ll_valid=line['Location Valid/Invalid'],
+                adher= adher, adher_valid= line['Adherence Valid/Invalid['],
+                time=time,
+                rte=line['Route'], dir=line['Direction'], stop=line['StopID]'] )
+        return Location(
+                id=line['RID'],
+                lat=lat, lon=lon, ll_valid=line['Location Valid/Invalid'],
+                adher= adher, adher_valid= line['Adherence Valid/Invalid['],
+                )
+
+class ReportReader_v3( ReportReader_v2 ):
+    """An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).
+
+    This handles V3 format, which is CSV.
+
+    First Line::
+
+        Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
+
+    Column Titles:
+
+        -   'Time'
+        -   'Date'
+        -   'Vehicle'
+        -   'Lat/Lon'
+        -   'Location Valid/Invalid'
+        -   'Adherence'
+        -   'Adherence Valid/Invalid[' # Really.
+        -   'Route'
+        -   'Direction'
+        -   'Stop]' # Also peculiar.
+
+    This is an iterable object, generally something like the following is done::
+
+        reader= ReportReader_v3()
+        with open(some_file) as source:
+            reader.open(some_file)
+            for report in reader:
+                # process report
+    """
+    columns=  [
+        'Time', 'Date', 'Vehicle', 'Lat/Lon', 'Location Valid/Invalid',
+        'Adherence', 'Adherence Valid/Invalid[', 'Route', 'Direction', 'Stop]']
+    def factory( self, line ):
+        """Parse the fields, returning Arrival, Dwell or Location.
+
+        :param line: CSV line of raw input.
+        :returns: Report instance, if possible.  ``None`` if the fields can't be parsed.
+        """
+        dt = datetime.datetime.strptime( line['Date'], "%m/%d" ).date().replace( year=self.year )
+        tm= datetime.datetime.strptime( line['Time'], "%H:%M:%S" ).time()
+        timestamp= datetime.datetime.combine( dt, tm )
+        lat_st, _, lon_st = line['Lat/Lon'].partition('/')
+        lat= int(lat_st)/10000000
+        lon= int(lon_st)/10000000
+        time= (tm.hour*60+tm.minute)*60+tm.second
+        adher= int(line['Adherence'])
+        if all( (line['Route'], line['Direction'], line['Stop]']) ):
+            return Arrival(
+                timestamp=timestamp,
+                id=line['Vehicle'],
+                lat=lat, lon=lon, ll_valid=line['Location Valid/Invalid'],
+                adher= adher, adher_valid= line['Adherence Valid/Invalid['],
+                time=time,
+                rte=line['Route'], dir=line['Direction'], stop=line['Stop]'] )
+        return Location(
+                id=line['Vehicle'],
+                lat=lat, lon=lon, ll_valid=line['Location Valid/Invalid'],
+                adher= adher, adher_valid= line['Adherence Valid/Invalid['],
+                )
 
 def report_iter( report_reader, files ):
     """An iterator which applies the ``report_reader`` instance to all
@@ -440,16 +511,23 @@ def report_iter( report_reader, files ):
                 yield report
 
 class JSONEncoder( json.JSONEncoder ):
-    """Encode any of the Report subclasses into JSON."""
+    """Encode any of the Report subclasses into JSON.
+
+    Not needed, since couchdbkit.schema.Document objects
+    have a :meth:`couchdbkit.schema.Document.to_json` method that
+    handles some of the conversion.
+
+    ::
+
+        json.dumps( rpt.to_json() )
+
+    Far better than this.
+    """
     def default( self, obj ):
         if isinstance(obj, Report):
             as_dict= obj.as_dict()
-            as_dict['timestamp']= obj.timestamp.strftime("%x %X")
-            if as_dict.get('time'):
-                hh= obj.time//3600
-                mm= obj.time-(hh*3600)//60
-                ss= obj.time-hh*3600-mm*60
-                as_dict['time']= "{0:2d}:{1:2d}:{2:2d}".format( hh, mm, ss )
+            as_dict['doc_type']= obj.__class__.__name__
+            as_dict['timestamp']= obj.timestamp.strftime("%Y-%m-%dT%XZ")
             return as_dict
         super( JSONEncoder, self ).default( obj )
 
@@ -458,14 +536,11 @@ class JSONDecoder( json.JSONDecoder ):
     def __init__( self, *args, **kwargs ):
         super( JSONDecoder, self ).__init__( *args, object_hook=self.make_report, **kwargs )
     def make_report( self, as_dict ):
-        if "__class__" in as_dict:
+        if "doc_type" in as_dict:
             try:
-                cn= eval(as_dict.pop('__class__'))
-                timestamp= datetime.datetime.strptime(as_dict['timestamp'],"%x %X")
+                cn= eval(as_dict.pop('doc_type'))
+                timestamp= datetime.datetime.strptime(as_dict['timestamp'],"%Y-%m-%dT%XZ")
                 as_dict['timestamp']= timestamp
-                if as_dict.get('time'):
-                    hh, mm, ss = map( int, as_dict.get('time').split(":") )
-                    as_dict['time']= (hh*60+mm)*60+ss
                 return cn(**as_dict)
             except TypeError:
                 print( cn, as_dict, cn.__init__.__code__.co_varnames )

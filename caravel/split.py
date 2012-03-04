@@ -1,5 +1,6 @@
 #!/usr/bin/env python2.7
-"""Filter and split raw input to separate Location reports from Arrival reports.
+"""Filter and split raw input files to create CSV files
+with Location reports separated from Arrival reports.
 
 Synopsis
 
@@ -73,10 +74,10 @@ def split( report_iter, location_csv, arrival_csv ):
     """
     counts= {'source':0, 'excluded': 0, 'invalid':0, 'location':0, 'arrival':0}
     with open(location_csv,'wb') as loc_file:
-        loc_wtr= csv.DictWriter( loc_file, caravel.report.Report.headings )
+        loc_wtr= csv.DictWriter( loc_file, caravel.report.headings )
         loc_wtr.writeheader()
         with open(arrival_csv,'wb') as arr_file:
-            arr_wtr= csv.DictWriter( arr_file, caravel.report.Report.headings )
+            arr_wtr= csv.DictWriter( arr_file, caravel.report.headings )
             arr_wtr.writeheader()
             for item in report_iter:
                 counts['source'] += 1
@@ -118,12 +119,13 @@ if __name__ == "__main__":
     if args.debug:
         logging.getLogger().setLevel( logging.DEBUG )
     if args.acquire:
-        files= [caravel.acquire.get_reports()] + args.files
+        files= [caravel.acquire.get_report_files()] + args.files
     else:
         files= args.files
     rdr_class = {
         '1': caravel.report.ReportReader_v1,
         '2': caravel.report.ReportReader_v2,
+        '3': caravel.report.ReportReader_v3,
         }
     reader= rdr_class[args.format]()
     counts= split(

@@ -1,7 +1,18 @@
 #!/usr/bin/env python2.7
-"""Caravel raw file acquire.
+"""Caravel Data Acquisition.
 
-Checks FTP status and downloads latest versions of locations.
+Gather raw FTP position reports as well as transit system
+metadata.
+
+The transit system data be fetched to a file for unzipping and loading
+into a local database.
+
+The position reports, however, should not actually be written to a
+persistent file.  Instead, they should be pushed into a queue for processing.
+This can be a conceptual queue in a single-threaded applicaiton, or an
+actual multi-processing queue to improve performance.
+
+Real-Tiem Position Report Source
 
 ::
 
@@ -9,11 +20,15 @@ Checks FTP status and downloads latest versions of locations.
     user='anonymous'
     passwd='slott56@gmail.com'
 
-Also.  Gets route information from http://googletf.gohrt.com/google_transit.zip
+Transit System Source
 
-..  autofunction:: get_reports
+::
 
+    http://googletf.gohrt.com/google_transit.zip
+
+..  autofunction:: report_reader
 ..  autofunction:: get_route
+..  autofunction:: get_report_files
 
 """
 from __future__ import print_function, division
@@ -26,16 +41,39 @@ import urlparse
 import os.path
 import logging
 
+URL_Positions = "ftp://216.54.15.3/Anrd/hrtrtf.txt"
+URL_Vehicle_ID = "ftp://216.54.15.3/Anrd/vid.csv"
+URL_Google_Transit = "http://googletf.gohrt.com/google_transit.zip"
+
 logger= logging.getLogger( __name__ )
 
-Directory = namedtuple( "Directory", ['name', 'timestamp', 'size'] )
+def report_reader( connection=None, url=None ):
+    """Open the position report file for reading.
+    This is a file-like object which must be closed properly.
 
-def get_reports( connection=None, target_dir='.', **access ):
-    """Get the lastest position report "file".
+    ::
 
-    Check for latest versions of "vid.csv" and download it only if it changed.
+        with closing( report_reader() ):
+            for line in data:
+                process line
 
-    Download the current version of  ``hrtrtf.txt`` file;
+    :param connection: Override to the default of urllib2
+    :param host: URL for the real-time data.
+    """
+    if not connection:
+        connection= urllib2.build_opener()
+    if not url:
+        url= URL_Positions
+
+    return connection.open( url )
+
+def get_report_files( connection=None, target_dir='.', **access ):
+    """Get the lastest position report "file" and save it to the
+    target directory.
+
+    Check for latest versions of "Anrd/vid.csv" and download it only if it changed.
+
+    Download the current version of  ``Anrd/hrtrtf.txt`` file;
     naming it with a ``YYYYMMDDHHMM.rpt`` name.
 
     :param connection: Override to the default of ftplib.FTP
@@ -47,9 +85,16 @@ def get_reports( connection=None, target_dir='.', **access ):
     if not connection:
         connection= ftplib.FTP
     if not access:
-        access = dict(host='216.54.15.3', user='anonymous', passwd='slott56@gmail.com')
+        access= dict(
+            host= "216.54.15.3",
+            user="anonymous",
+            passwd="s_lott@yahoo.com",
+        )
+
+    Directory = namedtuple( "Directory", ['name', 'timestamp', 'size'] )
 
     file_status = {}
+
     def get_directory( line ):
         if not line: return
         date, time, size_str, name = line.strip().split()
@@ -68,20 +113,28 @@ def get_reports( connection=None, target_dir='.', **access ):
             with open( name, 'wb') as target:
                 server.retrbinary("RETR {0}".format(source), target.write)
 
+    def get_current( server, source, destination ):
+        with open(destination, 'w' ) as target:
+            logger.info( "Getting {0}".format(name) )
+            server.retrlines("RETR {0}".format(source),
+                lambda line: print( line, file=target ) )
+
     with closing(connection(**access)) as server:
         server.dir("Anrd", get_directory)
-
-        get_newest( server, "Anrd/vid.csv", 'vid.csv' )
+        try:
+            get_newest( server, "Anrd/vid.csv", 'vid.csv' )
+        except ftplib.error_perm:
+            pass
+        except KeyError:
+            pass
 
         name= os.path.join(target_dir,
             file_status['hrtrtf.txt'].timestamp.strftime( "%Y%m%d%H%M.rpt") )
-        with open(name, 'w' ) as target:
-            logger.info( "Getting {0}".format(name) )
-            server.retrlines("RETR Anrd/hrtrtf.txt", lambda line: print( line, file=target ) )
+        get_current( server, "Anrd/hrtrtf.txt", name )
+
     return name
 
-
-def get_route( connection=None, target_dir='.', url="http://googletf.gohrt.com/google_transit.zip" ):
+def get_route( connection=None, target_dir='.', url=None ):
     """Get the lastest Route Definition ZIP Archive.
 
     :param connection: Override to the default of urllib2.OpenerDirector.
@@ -90,6 +143,8 @@ def get_route( connection=None, target_dir='.', url="http://googletf.gohrt.com/g
     """
     if not connection:
         connection= urllib2.build_opener()
+    if not url:
+        url= URL_Google_Transit
 
     download=  urlparse.urlparse(url)
     dir, name = os.path.split( download.path )

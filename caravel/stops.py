@@ -75,7 +75,7 @@ def group_by_rte_dir_stop( report_iter ):
         if not item:
             counts['invalid'] += 1
             continue
-        if not (item.ll_valid and item.odom_valid):
+        if not item.ll_valid:
             logger.debug( 'Excluded {0!r}'.format(item) )
             counts['excluded'] += 1
             continue
@@ -85,7 +85,11 @@ def group_by_rte_dir_stop( report_iter ):
             continue
         counts['arrival'] += 1
 
-        dtl= Details( item.rte, item.dir, item.stop, item.id, item.dwell, item.time )
+        try:
+            dwell= item.dwell
+        except AttributeError:
+            dwell= None
+        dtl= Details( item.rte, item.dir, item.stop, item.id, dwell, item.time )
         route_dir[dtl.rte,dtl.dir,dtl.stop].append( dtl )
 
     for rds in route_dir:
@@ -103,7 +107,7 @@ def display( route_dir ):
     print( "=== = ==== ==============")
     for r,d,s in route_dir:
         times= tuple( "{0.time} {0.dwell!r}".format(rpt) for rpt in route_dir[r,d,s] )
-        print( "{0:3d} {1:1d} {2:4d} {3:s}".format(r,d,s, times) )
+        print( "{0:3s} {1:1s} {2:4s} {3:s}".format(r,d,s, times) )
 
     return counts
 
@@ -126,6 +130,7 @@ if __name__ == "__main__":
     rdr_class = {
         '1': caravel.report.ReportReader_v1,
         '2': caravel.report.ReportReader_v2,
+        '3': caravel.report.ReportReader_v3,
         }
     reader= rdr_class[args.format]()
     started= datetime.datetime.now()

@@ -309,7 +309,7 @@ class WriteNoStop( Callable ):
     This creates a callable ``no_stop`` function.
     """
     heading= ( ['status']
-        + caravel.report.Report.headings
+        + caravel.report.headings
         + prefix_fields('candidate_1', caravel.transit_system.Candidate)
         + prefix_fields('candidate_2', caravel.transit_system.Candidate)
         )
@@ -422,7 +422,7 @@ if __name__ == "__main__":
         logging.getLogger().setLevel( logging.DEBUG )
     if args.acquire:
         caravel.acquire.get_route()
-        latest= caravel.acquire.get_reports()
+        latest= caravel.acquire.get_report_files()
         files= [latest] + args.files
     else:
         files= args.files
