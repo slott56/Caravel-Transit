@@ -1,5 +1,7 @@
-Data Acquisition
-====================
+..  _design.position:
+
+Position Data Acquisition
+===========================
 
 See http://www.transitchicago.com/developers/bustracker.aspx
 

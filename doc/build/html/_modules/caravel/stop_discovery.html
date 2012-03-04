@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -10,7 +9,7 @@
     
     <title>caravel.stop_discovery &mdash; Caravel-Transit 1.1 documentation</title>
     
-    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -97,7 +96,7 @@
 
 <span class="n">Details</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span> <span class="s">&#39;Details&#39;</span><span class="p">,</span> <span class="p">[</span> <span class="s">&#39;rte&#39;</span><span class="p">,</span> <span class="s">&#39;dir&#39;</span><span class="p">,</span> <span class="s">&#39;stop&#39;</span><span class="p">,</span> <span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;dwell&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span> <span class="p">])</span>
 
-<div class="viewcode-block" id="group_by_rte_dir_stop"><a class="viewcode-back" href="../../implementation/index.html#caravel.stop_discovery.group_by_rte_dir_stop">[docs]</a><span class="k">def</span> <span class="nf">group_by_rte_dir_stop</span><span class="p">(</span> <span class="n">report_iter</span> <span class="p">):</span>
+<div class="viewcode-block" id="group_by_rte_dir_stop"><a class="viewcode-back" href="../../implementation/domain.html#caravel.stop_discovery.group_by_rte_dir_stop">[docs]</a><span class="k">def</span> <span class="nf">group_by_rte_dir_stop</span><span class="p">(</span> <span class="n">report_iter</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Accumulate stops from a sequence of Arrivals.</span>
 
 <span class="sd">    Generally, the report_iter is an instance of :func:`caravel.report.report_iter`.</span>
@@ -141,7 +140,7 @@
 
     <span class="k">return</span> <span class="n">counts</span><span class="p">,</span> <span class="n">OrderedDict</span><span class="p">(</span> <span class="nb">sorted</span><span class="p">(</span> <span class="n">route_dir</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="p">)</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="display"><a class="viewcode-back" href="../../implementation/index.html#caravel.stop_discovery.display">[docs]</a><span class="k">def</span> <span class="nf">display</span><span class="p">(</span> <span class="n">route_dir</span> <span class="p">):</span>
+<div class="viewcode-block" id="display"><a class="viewcode-back" href="../../implementation/domain.html#caravel.stop_discovery.display">[docs]</a><span class="k">def</span> <span class="nf">display</span><span class="p">(</span> <span class="n">route_dir</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Display the accumulated raw data.</span>
 
 <span class="sd">    :param route_dir: OrderedDict, keyed by Route/Dir/Stop with sequence of arrival times.</span>
@@ -155,7 +154,7 @@
 
     <span class="k">return</span> <span class="n">counts</span>
 </div>
-<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../implementation/index.html#caravel.stop_discovery.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
+<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../implementation/domain.html#caravel.stop_discovery.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Parse command-line arguments.</span>
 <span class="sd">    :returns: Arguments object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>

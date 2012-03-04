@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -10,7 +9,7 @@
     
     <title>caravel.transit_system &mdash; Caravel-Transit 1.1 documentation</title>
     
-    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -136,13 +135,13 @@
 
 <span class="n">Candidate</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;Candidate&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;distance&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="s">&#39;stop&#39;</span><span class="p">,</span> <span class="s">&#39;stop_time&#39;</span><span class="p">]</span> <span class="p">)</span>
 
-<div class="viewcode-block" id="Accessor"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.Accessor">[docs]</a><span class="k">class</span> <span class="nc">Accessor</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+<div class="viewcode-block" id="Accessor"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.Accessor">[docs]</a><span class="k">class</span> <span class="nc">Accessor</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Abstract superclass to unify access to a directory and access to</span>
 <span class="sd">    a ZIP archive.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">pass</span>
 </div>
-<div class="viewcode-block" id="AccessZip"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.AccessZip">[docs]</a><span class="k">class</span> <span class="nc">AccessZip</span><span class="p">(</span> <span class="n">Accessor</span> <span class="p">):</span>
+<div class="viewcode-block" id="AccessZip"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.AccessZip">[docs]</a><span class="k">class</span> <span class="nc">AccessZip</span><span class="p">(</span> <span class="n">Accessor</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Access a ZIP archive.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">archive</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Prepare the archive for access.</span>
@@ -151,11 +150,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">archive</span><span class="o">=</span> <span class="n">archive</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">zip</span><span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">archive</span><span class="p">,</span> <span class="s">&#39;r&#39;</span> <span class="p">)</span>
-<div class="viewcode-block" id="AccessZip.open"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.AccessZip.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span> <span class="p">):</span>
+<div class="viewcode-block" id="AccessZip.open"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.AccessZip.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns an open file object for the named member.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span> <span class="p">)</span>
 </div></div>
-<div class="viewcode-block" id="AccessDir"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.AccessDir">[docs]</a><span class="k">class</span> <span class="nc">AccessDir</span><span class="p">(</span> <span class="n">Accessor</span> <span class="p">):</span>
+<div class="viewcode-block" id="AccessDir"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.AccessDir">[docs]</a><span class="k">class</span> <span class="nc">AccessDir</span><span class="p">(</span> <span class="n">Accessor</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Access a Directory (an archive that&#39;s been expanded.)&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">base</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Prepare the directory for access.</span>
@@ -163,15 +162,15 @@
 <span class="sd">        :param base: the directory name.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">=</span> <span class="n">base</span>
-<div class="viewcode-block" id="AccessDir.open"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.AccessDir.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rb&#39;</span> <span class="p">):</span>
+<div class="viewcode-block" id="AccessDir.open"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.AccessDir.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rb&#39;</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns an open file object for the named member.&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">open</span><span class="p">(</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="p">,</span><span class="n">name</span><span class="p">),</span> <span class="n">mode</span> <span class="p">)</span>
 </div></div>
-<div class="viewcode-block" id="Connection"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.Connection">[docs]</a><span class="k">class</span> <span class="nc">Connection</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+<div class="viewcode-block" id="Connection"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.Connection">[docs]</a><span class="k">class</span> <span class="nc">Connection</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Open a database-like connection to the transit data.</span>
 <span class="sd">    This will eagerly load all the files, creating a large (but fast) in-memory database.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="Connection.open"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.Connection.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">base</span> <span class="p">):</span>
+<div class="viewcode-block" id="Connection.open"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.Connection.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">base</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Open the given .ZIP file or directory.  This will eagerly load</span>
 <span class="sd">        the files.  It takes a second or two.</span>
 
@@ -250,7 +249,7 @@
         <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rdr</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">Trip</span><span class="p">(</span><span class="o">**</span><span class="n">row</span><span class="p">)</span>
     <span class="nd">@staticmethod</span>
-<div class="viewcode-block" id="Connection.time_parse"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.Connection.time_parse">[docs]</a>    <span class="k">def</span> <span class="nf">time_parse</span><span class="p">(</span> <span class="n">string</span> <span class="p">):</span>
+<div class="viewcode-block" id="Connection.time_parse"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.Connection.time_parse">[docs]</a>    <span class="k">def</span> <span class="nf">time_parse</span><span class="p">(</span> <span class="n">string</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Transform HH:MM:SS string into seconds past midnight.</span>
 <span class="sd">        Unlike :mod:`datetime`, this does not mind times &gt;= 24:00:00.</span>
 
@@ -273,7 +272,7 @@
                 <span class="k">print</span><span class="p">(</span> <span class="n">row</span><span class="p">,</span> <span class="s">&quot;has no stop&quot;</span> <span class="p">)</span>
 
 </div>
-<div class="viewcode-block" id="radians"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.radians">[docs]</a><span class="k">def</span> <span class="nf">radians</span><span class="p">(</span> <span class="n">degrees</span> <span class="p">):</span>
+<div class="viewcode-block" id="radians"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.radians">[docs]</a><span class="k">def</span> <span class="nf">radians</span><span class="p">(</span> <span class="n">degrees</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convert Lat/Lon degrees to radians.</span>
 
 <span class="sd">    :param degrees: Latitude or Longitude</span>
@@ -281,7 +280,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">degrees</span><span class="o">/</span><span class="mi">180</span>
 </div>
-<div class="viewcode-block" id="degrees"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.degrees">[docs]</a><span class="k">def</span> <span class="nf">degrees</span><span class="p">(</span> <span class="n">radians</span> <span class="p">):</span>
+<div class="viewcode-block" id="degrees"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.degrees">[docs]</a><span class="k">def</span> <span class="nf">degrees</span><span class="p">(</span> <span class="n">radians</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convert radians to Lat/Lon degrees.</span>
 
 <span class="sd">    :param radians: angle in radians, usually from a distance calculation</span>
@@ -289,7 +288,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="mi">180</span><span class="o">*</span><span class="n">radians</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span>
 </div>
-<div class="viewcode-block" id="dist_approx"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.dist_approx">[docs]</a><span class="k">def</span> <span class="nf">dist_approx</span><span class="p">(</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="p">):</span>
+<div class="viewcode-block" id="dist_approx"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.dist_approx">[docs]</a><span class="k">def</span> <span class="nf">dist_approx</span><span class="p">(</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;The Equirectangular Approximation for distance between two coordinates.</span>
 <span class="sd">    Fast and reasonably accurate.</span>
 
@@ -306,7 +305,7 @@
     <span class="n">c</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
     <span class="k">return</span> <span class="mf">3961.3</span><span class="o">*</span><span class="n">c</span> <span class="c"># 3440.07 for nm, 3961.3 for statute miles, 6378.1 for km, 20915664.0 for feet</span>
 </div>
-<div class="viewcode-block" id="get_services_today"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_services_today">[docs]</a><span class="k">def</span> <span class="nf">get_services_today</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">today</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_services_today"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_services_today">[docs]</a><span class="k">def</span> <span class="nf">get_services_today</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">today</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns the Service ID applicable today.</span>
 <span class="sd">    Examines calendar and calendar dates.</span>
 
@@ -326,7 +325,7 @@
             <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">cal</span><span class="p">,</span> <span class="n">column</span><span class="p">)):</span>
                 <span class="k">yield</span> <span class="n">cal</span><span class="o">.</span><span class="n">service_id</span>
 </div>
-<div class="viewcode-block" id="get_closest_stops"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_closest_stops">[docs]</a><span class="k">def</span> <span class="nf">get_closest_stops</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_closest_stops"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_closest_stops">[docs]</a><span class="k">def</span> <span class="nf">get_closest_stops</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Given a lat/lon pair, locate nearby stops.</span>
 
 <span class="sd">    Handles the following REST requests.</span>
@@ -347,7 +346,7 @@
         <span class="n">distances</span> <span class="o">=</span> <span class="p">(</span> <span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">stop</span><span class="p">)</span> <span class="k">for</span> <span class="n">dist</span><span class="p">,</span><span class="n">stop</span> <span class="ow">in</span> <span class="n">distances</span> <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="n">max_dist</span> <span class="p">)</span>
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="get_closest_times_in_service"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_closest_times_in_service">[docs]</a><span class="k">def</span> <span class="nf">get_closest_times_in_service</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">stop_id</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">min_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_closest_times_in_service"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_closest_times_in_service">[docs]</a><span class="k">def</span> <span class="nf">get_closest_times_in_service</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">stop_id</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">min_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Given a stop and a time, locate the scheduled stop_time closest to this.</span>
 
 <span class="sd">    :param conn: An open :class:`Connection`.</span>
@@ -372,7 +371,7 @@
         <span class="n">times</span> <span class="o">=</span> <span class="p">(</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span><span class="n">stop</span><span class="p">)</span> <span class="k">for</span> <span class="n">time</span><span class="p">,</span><span class="n">stop</span> <span class="ow">in</span> <span class="n">times</span> <span class="k">if</span> <span class="n">time</span> <span class="o">&lt;</span> <span class="n">max_time</span> <span class="p">)</span>
     <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="get_candidate_stops"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_candidate_stops">[docs]</a><span class="k">def</span> <span class="nf">get_candidate_stops</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">min_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">6</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_candidate_stops"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_candidate_stops">[docs]</a><span class="k">def</span> <span class="nf">get_candidate_stops</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">min_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">6</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Compute the most likely stops to match a report&#39;s lat/lon and time.</span>
 <span class="sd">    This will use :meth:`get_closest_stops` to locate a collection of likely stops.</span>
 <span class="sd">    For each stop, :meth:`get_closest_times_in_service` is used to locate the</span>
@@ -403,7 +402,7 @@
         <span class="n">count</span> <span class="o">-=</span> <span class="n">h</span>
         <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">break</span>
 </div>
-<div class="viewcode-block" id="get_route_from_stop_time"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_route_from_stop_time">[docs]</a><span class="k">def</span> <span class="nf">get_route_from_stop_time</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">stop_time</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_route_from_stop_time"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_route_from_stop_time">[docs]</a><span class="k">def</span> <span class="nf">get_route_from_stop_time</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">stop_time</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Query the route that contains a given stop_time value.</span>
 <span class="sd">    This does a stop_times JOIN trips JOIN routes query.</span>
 
@@ -413,7 +412,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">conn</span><span class="o">.</span><span class="n">routes</span><span class="p">[</span><span class="n">conn</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">stop_time</span><span class="o">.</span><span class="n">trip_id</span><span class="p">]</span><span class="o">.</span><span class="n">route_id</span><span class="p">]</span>
 </div>
-<div class="viewcode-block" id="get_trip_from_stop_time"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_trip_from_stop_time">[docs]</a><span class="k">def</span> <span class="nf">get_trip_from_stop_time</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">stop_time</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_trip_from_stop_time"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_trip_from_stop_time">[docs]</a><span class="k">def</span> <span class="nf">get_trip_from_stop_time</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">stop_time</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Query the trip that contains a given stop_time value.</span>
 <span class="sd">    This does a stop_times JOIN trips JOIN routes query.</span>
 
@@ -423,7 +422,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">conn</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">stop_time</span><span class="o">.</span><span class="n">trip_id</span><span class="p">]</span>
 </div>
-<div class="viewcode-block" id="get_next_stop_time"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_next_stop_time">[docs]</a><span class="k">def</span> <span class="nf">get_next_stop_time</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">,</span> <span class="n">services</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_next_stop_time"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_next_stop_time">[docs]</a><span class="k">def</span> <span class="nf">get_next_stop_time</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">,</span> <span class="n">services</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Given a :class:`Stop_Time` object, locate the remaining</span>
 <span class="sd">    sequence of stops.</span>
 
@@ -441,7 +440,7 @@
                  <span class="p">)</span>
     <span class="k">return</span> <span class="n">next_iter</span>
 </div>
-<div class="viewcode-block" id="get_route"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_route">[docs]</a><span class="k">def</span> <span class="nf">get_route</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_route"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_route">[docs]</a><span class="k">def</span> <span class="nf">get_route</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns route or list of routes.</span>
 <span class="sd">    Handles the following REST requests.</span>
 
@@ -467,7 +466,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span> <span class="n">elaborate</span><span class="p">(</span><span class="n">r</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">routes</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="get_stop"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_stop">[docs]</a><span class="k">def</span> <span class="nf">get_stop</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_stop"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_stop">[docs]</a><span class="k">def</span> <span class="nf">get_stop</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns stop or list of stops.</span>
 <span class="sd">    Handles the following REST requests.</span>
 
@@ -486,7 +485,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">(</span> <span class="n">elaborate</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">stops</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="get_route_stops"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_route_stops">[docs]</a><span class="k">def</span> <span class="nf">get_route_stops</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_route_stops"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_route_stops">[docs]</a><span class="k">def</span> <span class="nf">get_route_stops</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns a route with a list of stops on that route.</span>
 <span class="sd">    Handles the following REST requests.</span>
 
@@ -528,7 +527,7 @@
         <span class="n">stop_ids</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span> <span class="n">st</span><span class="o">.</span><span class="n">stop_id</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trips</span> <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">trip_times</span><span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">trip_id</span><span class="p">]</span>  <span class="p">)</span>
     <span class="k">return</span> <span class="n">conn</span><span class="o">.</span><span class="n">routes</span><span class="p">[</span><span class="nb">id</span><span class="p">],</span> <span class="p">(</span><span class="n">conn</span><span class="o">.</span><span class="n">stops</span><span class="p">[</span><span class="n">stop_id</span><span class="p">]</span> <span class="k">for</span> <span class="n">stop_id</span> <span class="ow">in</span> <span class="n">stop_ids</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="get_stop_times"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_stop_times">[docs]</a><span class="k">def</span> <span class="nf">get_stop_times</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_stop_times"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_stop_times">[docs]</a><span class="k">def</span> <span class="nf">get_stop_times</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns a stop with a list of stop times.</span>
 <span class="sd">    Handles the following REST requests.</span>
 
@@ -571,7 +570,7 @@
 <span class="k">def</span> <span class="nf">filter_stops_by_time</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">stops</span><span class="p">,</span> <span class="n">time</span> <span class="p">):</span>
     <span class="k">return</span> <span class="p">(</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stops</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">stop_id</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span> <span class="n">st</span><span class="o">.</span><span class="n">stop_id</span> <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">stop_times</span><span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">stop_id</span><span class="p">]</span> <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">arrival_time</span> <span class="o">&gt;=</span> <span class="n">time</span> <span class="p">)</span> <span class="p">)</span>
 
-<div class="viewcode-block" id="get_closest_stops_filtered"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_closest_stops_filtered">[docs]</a><span class="k">def</span> <span class="nf">get_closest_stops_filtered</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_closest_stops_filtered"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_closest_stops_filtered">[docs]</a><span class="k">def</span> <span class="nf">get_closest_stops_filtered</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Given a lat/lon pair, locate nearby stops.</span>
 
 <span class="sd">    Handles the following REST requests.</span>
@@ -607,7 +606,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">stops</span>
 </div>
-<div class="viewcode-block" id="get_closest_routes_filtered"><a class="viewcode-back" href="../../implementation/index.html#caravel.transit_system.get_closest_routes_filtered">[docs]</a><span class="k">def</span> <span class="nf">get_closest_routes_filtered</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="get_closest_routes_filtered"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_system.get_closest_routes_filtered">[docs]</a><span class="k">def</span> <span class="nf">get_closest_routes_filtered</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Given a lat/lon pair, locate nearby stops on a given route.</span>
 
 <span class="sd">    Handles the following REST requests.</span>

@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -10,7 +9,7 @@
     
     <title>Data Acquisition &mdash; Caravel-Transit 1.1 documentation</title>
     
-    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -28,7 +27,7 @@
     <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
     <link rel="up" title="Design Notes" href="index.html" />
     <link rel="next" title="General Transit Feed Data" href="additional_data.html" />
-    <link rel="prev" title="RESTful API" href="RESTapi.html" /> 
+    <link rel="prev" title="RESTful API for Transit Data" href="RESTapi2.html" /> 
   </head>
   <body>
     <div class="related">
@@ -44,7 +43,7 @@
           <a href="additional_data.html" title="General Transit Feed Data"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="RESTapi.html" title="RESTful API"
+          <a href="RESTapi2.html" title="RESTful API for Transit Data"
              accesskey="P">previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
@@ -124,10 +123,11 @@
 <div class="highlight-python"><pre>Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
 
 07:00:38,02/28,3247,368147270/-762487811,V,-1,V
-
 07:00:41,02/28,2109,368099480/-763510804,V,-1,V,28,1,30</pre>
 </div>
-<p>The header, however, is unusable in the given form.</p>
+<p>The header, however, is unusual.</p>
+<p>The RID value appears to be an internal route id.  It does not
+match the route ID in the <a class="reference internal" href="additional_data.html#design-transit"><em>General Transit Feed Data</em></a> data.</p>
 </div>
 </div>
 
@@ -151,8 +151,8 @@
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="RESTapi.html"
-                        title="previous chapter">RESTful API</a></p>
+  <p class="topless"><a href="RESTapi2.html"
+                        title="previous chapter">RESTful API for Transit Data</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="additional_data.html"
                         title="next chapter">General Transit Feed Data</a></p>
@@ -191,7 +191,7 @@
           <a href="additional_data.html" title="General Transit Feed Data"
              >next</a> |</li>
         <li class="right" >
-          <a href="RESTapi.html" title="RESTful API"
+          <a href="RESTapi2.html" title="RESTful API for Transit Data"
              >previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Design Notes</a> &raquo;</li> 

@@ -2,72 +2,27 @@
 Implementation
 ================
 
-This section contains Sphinx "automodule" documentation from the various
-components.
+The essential features of the implementation include the following:
 
-There are two tiers: `Low-Level Structures`_ which support both
-`Analysis and Profiling`_ and `Applications`_.
+-   Python 2.7.  http://www.python.org
 
-Low-Level Structures
-=====================
+-   CouchDB.  http://couchdb.apache.org.
 
-These are supporting structures which define the essential classes.
+    For hosting, see http://www.iriscouch.com/ and https://cloudant.com/
 
-This includes reports, the transit system and the raw data server
-from which reports are acquired.
+-   See http://wiki.apache.org/couchdb/Getting_started_with_Python
 
-Acquire
------------------
+    -   couchdbkit.  http://couchdbkit.org/.  This has Django compatibility.
+        Large and sophisticated.
 
-..  automodule:: caravel.acquire
-
-Report
------------------
-
-..  automodule:: caravel.report
-
-Transit System
------------------
-
-..  automodule:: caravel.transit_system
-
-Analysis and Profiling
-=========================
-
-These are analysis and profiling modules and applications.
-
-Statistics
-------------
-
-..  automodule:: caravel.statistics
-
-Arrival Statistics
---------------------
-
-..  automodule:: caravel.arrival_stats
-
-Transit System Statistics
----------------------------
-
-..  automodule:: caravel.transit_stats
-
-Applications
-=====================
-
-These are top-level applications to produce useful results.
-
-Split
-----------------
-
-..  automodule:: caravel.split
-
-Arrival At Stop
-----------------
-
-..  automodule:: caravel.arrival_at_stop
+    -   couchdb-Python 0.8.  http://packages.python.org/CouchDB/index.html
+        Small and simple.
 
 
-Stop Discovery
-----------------
 
-..  automodule:: caravel.stop_discovery
+..  toctree::
+    :maxdepth: 2
+
+    database
+    domain
+    web

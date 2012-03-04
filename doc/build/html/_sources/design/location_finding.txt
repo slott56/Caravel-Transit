@@ -1,7 +1,9 @@
-Location Finding
+..  _design.stopfinder:
+
+Stop Finding
 ===================
 
-Given a Report (generally, an Arrival or Dwell), what stop does this
+Given a position Report (generally, an Arrival or Dwell), what stop does this
 report reflect?
 
 The :ref:`design.transit`  has stops with GPS coordinates.

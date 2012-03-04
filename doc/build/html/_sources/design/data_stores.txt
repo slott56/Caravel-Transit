@@ -1,83 +1,111 @@
-Data Store Hierarchy
-=======================
+..  include:: <isoamsa.txt>
 
-There are three tiers of storage.
+..  _design.flow:
 
-1.  Since Last Stop on this route.  These are location reports
-    that reflect a vehicle's progress since the last stop.
-    With some care, this can be extrapolated to an arrival time
-    at all subsequent stops on the route.
+Data Flow and Processing
+=========================
 
-2.  Today's History.  These are arrival and dwell reports for
-    today. These create a localized trend that conforms to or deviates from the
-    historical average arrival times for a given route/direction/stop.
+There are several processing steps.  This leads to a number of data stores
+reflecting the persistent results of the various processing steps.
 
-3.  Long-Term History.  The overall history of route/direction/stop arrival
+Also, see :ref:`design.document` for database design considerations based
+simply on the structure of the data, independent of the processing.
+
+1.  Acquire Position Information.  See :ref:`design.position`.
+    This is parsed and (in effect) put into a processing queue.
+
+2.  Find Stop.  Position information is used to find a stop location and
+    stop time.  See :ref:`design.stopfinder`.  There are two results possible.
+
+    -   No good correlation with a stop or stop time.  These are "reject"
+        locations that can be logged for further analysis and research on
+        GPS errors or vehicle deviations from routes and schedules.
+
+    -   A good correlation with a stop and time.
+        This use useful data that is persisted for publication.
+
+3.  Time to Next Stop Calculation.  The time and stop information from a good location
+    provides an estimate of the time to next stop.  The time since the report,
+    and the time of the request all figure into this calculation.  Seconds
+    count.  This is the **Since Last Stop** type and is most recent information
+    only.
+
+4.  Time On This Trip Calculation.  This is the sequence of stops on this
+    particular trip on this route on this day.  For short routes, it's only
+    a few locations.  For longer routes, it may be more locations.  This can
+    provide additional detail for time to next stop.
+
+5.  Day Statistics.  This is the sequence of stops on this day.  For a given
+    route and direction, this may indicate persistent delays.  It provides an
+    overall "health of the system" value that (probably) can't be used
+    to predict arrival times.
+
+6.  Longer-Term Statistics.
+
+This leads to several tiers of storage.
+
+1.  Raw Position Queue.  The Location, Dwell and Arrival reports, queued
+    up for location correlation via a geospatial query.
+
+2.  Stop Status FIFO.  These are Good Arrival reports; i.e., those that have a
+    close Stop and Stop Time.  These are stored in a simple FIFO that
+    show's a vehicle's last reported status.
+
+3.  Route Status.  These are Good Arrival reports.
+    These are placed in a structure that tracks the vehicle's progress
+    along a route.
+
+#.  Day Status.  These are a collection of trip status for a given day.
+
+    Day |map| [ Trip, ... ]
+
+#.  Long-Term History.  The overall history of route/direction/stop arrival
     times effectively describes the actual routes and schedules.
+    This is simply a collection of days.
 
-Note that the standard relational model isn't an ideal fit for this
-data.  There are several issues.
-
--   The route is a graph with nodes and edges corresponding to stops
-    and driving segments.  Because nodes and edges are duals, only one is
-    sufficient for a relational model.  Stops, for example, are easy
-    to discern from the data.  Segments, however, are where slowdowns
-    occur and where vehicle location reports are found.  It's difficult
-    to choose one representation for the relational model.  It's also
-    difficult to attempt to use both and keep them synchronized.
-
--   The historical data can be normalized, but it's of little value
-    to do this.  A hierarchical collection might be considerably
-    more efficient than normalizing the route/direction/stop hierarchy
-
--   The bulk of the access is
-    to gather the short-term historical records associated with a
-    a given route/direction/stop; this forms a short vector of times.
-    This is transient data that forms a kind of FIFO.
-    Fairly complex database queries are required to insert, delete and
-    query a FIFO structure.
-    A simple web service which avoids database overheads makes more sense.
-
--   Geospatial queries.  Locating stops and vehicles based on Lat/Lon
-    is irksome because there's no simple database indexing scheme
-    that permits rapid distance calculations.
-
-    However.  See :ref:`design.distance` for more information on
-    rapid distance approximations using an Equirectangular Approximation.
-
-Last-Stop FIFO
+Stop Status FIFO
 ------------------
 
 Each Route/Direction FIFO contains the last stop's Dwell or Arrival report followed by
-any Location reports for the same vehicle.
+any Location class position reports for the same vehicle.
 
-The CRUD transactions work like this.
+These are placed into a structure like this.
 
-**Create**.
+    (Route, Direction) |map| (Report, Last Stop, Last Stop Time)
 
--   Location reports are appended to a FIFO.
+The stops along the route are part of the transit system information.
+This is required to predict all future stops in this route/direction.
 
--   Arrival and Dwell reports clear the FIFO prior to insert.
+    (Route, Direction) |map| [ Stop Time, ... ]
 
-**Update**.  Does not happen.
+Route Status
+--------------
 
-**Retrieve**.  Given a request for a route/direction, the short term
-data is available to discover immediate location.  Daily data and Historical
-data is required to compute an expected arrival time.
+Good Arrival reports are placed in a structure that tracks the vehicle's progress
+along a trip (and the associated route).
 
-**Delete**.  Happens when an Arrival or Dwell report is inserted.
+    Trip |map| [ (Report, Stop, Stop Time), ... ]
 
-Today
--------
+Good Arrival reports (and their stop and stop time) are appended to
+the trip's stop sequence.
+
+
+The sequence of stops along the trip provide a slightly longer-term view of
+delays for the vehicle that will likely arrive at the stop.
+
+This is supplemented with the transit map information.
+
+    Trip |map| Route
+
+Today's Status
+----------------
 
 Each Route/Direction/Stop contains the Dwell and Arrival data accumulated today.
 
-This has two parts.
+    (Route, Direction, Stop) |map| [ (Report, Stop Time), ... ]
 
--   A status with simple variance and confidence factor.
-
--   A sequence of reports.  Each Insert
-    updates the status with a time variance and a confidence window.
+This allows calculation of a simple variance and confidence factor between
+scheduled and actual stop times.
 
 The arrival times throughout the day will fit into one of two patterns.
 
@@ -93,6 +121,8 @@ History
 ---------
 
 Each Route/Direction/Stop contains all Dwell and Arrival data.
+
+    (Route, Direction, Stop) |map| [ (Report, Stop Time), ... ]
 
 This is simply accumulated to discover any long-term trends.
 

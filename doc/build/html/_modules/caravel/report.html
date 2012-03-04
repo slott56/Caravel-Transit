@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -10,7 +9,7 @@
     
     <title>caravel.report &mdash; Caravel-Transit 1.1 documentation</title>
     
-    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -100,7 +99,7 @@
 
 <span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="n">__name__</span> <span class="p">)</span>
 
-<div class="viewcode-block" id="Report"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.Report">[docs]</a><span class="k">class</span> <span class="nc">Report</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+<div class="viewcode-block" id="Report"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Report">[docs]</a><span class="k">class</span> <span class="nc">Report</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Abstract superclass of the various kinds of reports.&quot;&quot;&quot;</span>
     <span class="n">headings</span> <span class="o">=</span> <span class="p">[</span>
         <span class="s">&#39;__class__&#39;</span><span class="p">,</span> <span class="s">&#39;adher&#39;</span><span class="p">,</span> <span class="s">&#39;adher_valid&#39;</span><span class="p">,</span> <span class="s">&#39;blk&#39;</span><span class="p">,</span> <span class="s">&#39;dgps&#39;</span><span class="p">,</span> <span class="s">&#39;dir&#39;</span><span class="p">,</span> <span class="s">&#39;dwell&#39;</span><span class="p">,</span>
@@ -111,7 +110,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="o">=</span> <span class="n">timestamp</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="o">=</span> <span class="nb">id</span>
 </div>
-<div class="viewcode-block" id="Location"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.Location">[docs]</a><span class="k">class</span> <span class="nc">Location</span><span class="p">(</span> <span class="n">Report</span> <span class="p">):</span>
+<div class="viewcode-block" id="Location"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Location">[docs]</a><span class="k">class</span> <span class="nc">Location</span><span class="p">(</span> <span class="n">Report</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A Location report for a given vehicle.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span> <span class="n">Location</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span> <span class="p">)</span>
@@ -160,7 +159,7 @@
             <span class="n">__class__</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
         <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Arrival"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.Arrival">[docs]</a><span class="k">class</span> <span class="nc">Arrival</span><span class="p">(</span> <span class="n">Location</span> <span class="p">):</span>
+<div class="viewcode-block" id="Arrival"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Arrival">[docs]</a><span class="k">class</span> <span class="nc">Arrival</span><span class="p">(</span> <span class="n">Location</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;At a given stop on a route?&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="p">,</span>
             <span class="n">time</span><span class="p">,</span> <span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">svc</span><span class="p">,</span> <span class="n">blk</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -176,7 +175,7 @@
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
         <span class="k">return</span> <span class="s">&quot;{0.__class__.__name__}( &#39;{0.timestamp!s}&#39;, {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid={0.ll_valid}, time=&#39;{0.time!s}&#39;, rte={0.rte!r}, dir={0.dir!r}, tp={0.tp!r}, stop={0.stop!r}, svc={0.svc!r}, blk={0.blk!r}, dwell={0.dwell!r} )&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Dwell"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.Dwell">[docs]</a><span class="k">class</span> <span class="nc">Dwell</span><span class="p">(</span> <span class="n">Arrival</span> <span class="p">):</span>
+<div class="viewcode-block" id="Dwell"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Dwell">[docs]</a><span class="k">class</span> <span class="nc">Dwell</span><span class="p">(</span> <span class="n">Arrival</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Paused in traffic?&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="p">,</span>
             <span class="n">time</span><span class="p">,</span> <span class="n">dwell</span><span class="p">,</span> <span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">svc</span><span class="p">,</span> <span class="n">blk</span> <span class="p">):</span>
@@ -344,7 +343,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span> <span class="s">&quot;Unrecognized {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="report_iter"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.report_iter">[docs]</a><span class="k">def</span> <span class="nf">report_iter</span><span class="p">(</span> <span class="n">report_factory</span><span class="p">,</span> <span class="n">files</span> <span class="p">):</span>
+<div class="viewcode-block" id="report_iter"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.report_iter">[docs]</a><span class="k">def</span> <span class="nf">report_iter</span><span class="p">(</span> <span class="n">report_factory</span><span class="p">,</span> <span class="n">files</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;An iterator which applies the report_factory to all lines</span>
 <span class="sd">    in all of the named files.</span>
 
@@ -363,7 +362,7 @@
                 <span class="n">report</span><span class="o">=</span> <span class="n">report_factory</span><span class="p">(</span> <span class="n">fields</span> <span class="p">)</span>
                 <span class="k">yield</span> <span class="n">report</span>
 </div>
-<div class="viewcode-block" id="JSONEncoder"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.JSONEncoder">[docs]</a><span class="k">class</span> <span class="nc">JSONEncoder</span><span class="p">(</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span> <span class="p">):</span>
+<div class="viewcode-block" id="JSONEncoder"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.JSONEncoder">[docs]</a><span class="k">class</span> <span class="nc">JSONEncoder</span><span class="p">(</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Encode any of the Report subclasses into JSON.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">default</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">obj</span> <span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Report</span><span class="p">):</span>
@@ -377,7 +376,7 @@
             <span class="k">return</span> <span class="n">as_dict</span>
         <span class="nb">super</span><span class="p">(</span> <span class="n">JSONEncoder</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">default</span><span class="p">(</span> <span class="n">obj</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="JSONDecoder"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.JSONDecoder">[docs]</a><span class="k">class</span> <span class="nc">JSONDecoder</span><span class="p">(</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span> <span class="p">):</span>
+<div class="viewcode-block" id="JSONDecoder"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.JSONDecoder">[docs]</a><span class="k">class</span> <span class="nc">JSONDecoder</span><span class="p">(</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecoder</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Decode any of the Report subclasses from JSON.&quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span> <span class="n">JSONDecoder</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">object_hook</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">make_report</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">)</span>

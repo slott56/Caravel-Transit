@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -10,7 +9,7 @@
     
     <title>Design Notes &mdash; Caravel-Transit 1.1 documentation</title>
     
-    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -26,7 +25,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
-    <link rel="next" title="RESTful API" href="RESTapi.html" />
+    <link rel="next" title="Data Flow and Processing" href="data_stores.html" />
     <link rel="prev" title="Use Cases" href="../usecase/index.html" /> 
   </head>
   <body>
@@ -40,7 +39,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="RESTapi.html" title="RESTful API"
+          <a href="data_stores.html" title="Data Flow and Processing"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../usecase/index.html" title="Use Cases"
@@ -57,43 +56,53 @@
   <div class="section" id="design-notes">
 <h1>Design Notes<a class="headerlink" href="#design-notes" title="Permalink to this headline">¶</a></h1>
 <p>This section contains design notes and explanations.</p>
+<p>Also, see <a class="reference external" href="https://gist.github.com/fef4deb655bbabfacaab">https://gist.github.com/fef4deb655bbabfacaab</a></p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="RESTapi.html">RESTful API</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="RESTapi.html#data-model">Data Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="RESTapi.html#route-access">Route Access</a></li>
-<li class="toctree-l2"><a class="reference internal" href="RESTapi.html#stop-access">Stop Access</a></li>
-<li class="toctree-l2"><a class="reference internal" href="RESTapi.html#location-search">Location Search</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="data_acquisition.html">Data Acquisition</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="data_acquisition.html#vehicle-information">Vehicle Information</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_acquisition.html#vehicle-report-v1">Vehicle Report V1</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_acquisition.html#vehicle-report-v2">Vehicle Report V2</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="additional_data.html">General Transit Feed Data</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#agency">Agency</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#calendar">Calendar</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#calendar-dates">Calendar Dates</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#fare-attributes">Fare Attributes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#fare-rules">Fare Rules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#trips">Trips</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#routes">Routes</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#stops">Stops</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#stop-times">Stop Times</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#gtfs-data-model">GTFS Data Model</a></li>
-<li class="toctree-l2"><a class="reference internal" href="additional_data.html#hierarchical-document-model">Hierarchical Document Model</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="data_stores.html">Data Store Hierarchy</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="data_stores.html#last-stop-fifo">Last-Stop FIFO</a></li>
-<li class="toctree-l2"><a class="reference internal" href="data_stores.html#today">Today</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_stores.html">Data Flow and Processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#stop-status-fifo">Stop Status FIFO</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#route-status">Route Status</a></li>
+<li class="toctree-l2"><a class="reference internal" href="data_stores.html#today-s-status">Today&#8217;s Status</a></li>
 <li class="toctree-l2"><a class="reference internal" href="data_stores.html#history">History</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="report_data.html">Position Data Acquisition</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="report_data.html#vehicle-information">Vehicle Information</a></li>
+<li class="toctree-l2"><a class="reference internal" href="report_data.html#vehicle-report-v1">Vehicle Report V1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="report_data.html#vehicle-report-v2">Vehicle Report V2</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="transit_data.html">General Transit Feed Data</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#agency">Agency</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#calendar">Calendar</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#calendar-dates">Calendar Dates</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#fare-attributes">Fare Attributes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#fare-rules">Fare Rules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#trips">Trips</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#routes">Routes</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#stops">Stops</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#stop-times">Stop Times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="transit_data.html#gtfs-data-model">GTFS Data Model</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="document_model.html">CouchDB Document Model</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="document_model.html#concerns">Concerns</a></li>
+<li class="toctree-l2"><a class="reference internal" href="document_model.html#relations">Relations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="document_model.html#design-considerations">Design Considerations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="document_model.html#candidate-document-structures">Candidate Document Structures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="document_model.html#multi-tree-structure">Multi-Tree Structure</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="RESTapi1.html">RESTful API for Reports</a></li>
+<li class="toctree-l1"><a class="reference internal" href="RESTapi2.html">RESTful API for Transit Resources</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="RESTapi2.html#data-model">Data Model</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RESTapi2.html#route-access">Route Access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RESTapi2.html#stop-access">Stop Access</a></li>
+<li class="toctree-l2"><a class="reference internal" href="RESTapi2.html#position-search">Position Search</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="distance.html">Distance Calculations</a></li>
-<li class="toctree-l1"><a class="reference internal" href="location_finding.html">Location Finding</a><ul>
+<li class="toctree-l1"><a class="reference internal" href="location_finding.html">Stop Finding</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="location_finding.html#route-statistics">Route Statistics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="location_finding.html#lookup-statistics">Lookup Statistics</a></li>
 </ul>
@@ -125,8 +134,8 @@
   <p class="topless"><a href="../usecase/index.html"
                         title="previous chapter">Use Cases</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="RESTapi.html"
-                        title="next chapter">RESTful API</a></p>
+  <p class="topless"><a href="data_stores.html"
+                        title="next chapter">Data Flow and Processing</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/design/index.txt"
@@ -159,7 +168,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="RESTapi.html" title="RESTful API"
+          <a href="data_stores.html" title="Data Flow and Processing"
              >next</a> |</li>
         <li class="right" >
           <a href="../usecase/index.html" title="Use Cases"

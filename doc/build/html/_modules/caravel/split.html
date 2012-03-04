@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -10,7 +9,7 @@
     
     <title>caravel.split &mdash; Caravel-Transit 1.1 documentation</title>
     
-    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -98,7 +97,7 @@
 
 <span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="n">__name__</span> <span class="p">)</span>
 
-<div class="viewcode-block" id="split"><a class="viewcode-back" href="../../implementation/index.html#caravel.split.split">[docs]</a><span class="k">def</span> <span class="nf">split</span><span class="p">(</span> <span class="n">report_iter</span><span class="p">,</span> <span class="n">location_csv</span><span class="p">,</span> <span class="n">arrival_csv</span> <span class="p">):</span>
+<div class="viewcode-block" id="split"><a class="viewcode-back" href="../../implementation/domain.html#caravel.split.split">[docs]</a><span class="k">def</span> <span class="nf">split</span><span class="p">(</span> <span class="n">report_iter</span><span class="p">,</span> <span class="n">location_csv</span><span class="p">,</span> <span class="n">arrival_csv</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Split a collection of reports into two subclass: Locations and Arrivals.</span>
 
 <span class="sd">    Generally, the report_iter is an instance of :func:`caravel.report.report_iter`.</span>
@@ -143,7 +142,7 @@
                     <span class="n">counts</span><span class="p">[</span><span class="s">&#39;location&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="n">counts</span>
 </div>
-<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../implementation/index.html#caravel.split.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
+<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../implementation/domain.html#caravel.split.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Parse command-line arguments.</span>
 <span class="sd">    :returns: Arguments object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>

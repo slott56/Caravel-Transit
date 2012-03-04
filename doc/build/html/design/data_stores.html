@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
@@ -8,9 +7,9 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Data Store Hierarchy &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>Data Flow and Processing &mdash; Caravel-Transit 1.1 documentation</title>
     
-    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -27,8 +26,8 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
     <link rel="up" title="Design Notes" href="index.html" />
-    <link rel="next" title="Distance Calculations" href="distance.html" />
-    <link rel="prev" title="General Transit Feed Data" href="additional_data.html" /> 
+    <link rel="next" title="Position Data Acquisition" href="report_data.html" />
+    <link rel="prev" title="Design Notes" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -41,10 +40,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="distance.html" title="Distance Calculations"
+          <a href="report_data.html" title="Position Data Acquisition"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="additional_data.html" title="General Transit Feed Data"
+          <a href="index.html" title="Design Notes"
              accesskey="P">previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
@@ -56,75 +55,93 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="data-store-hierarchy">
-<h1>Data Store Hierarchy<a class="headerlink" href="#data-store-hierarchy" title="Permalink to this headline">¶</a></h1>
-<p>There are three tiers of storage.</p>
+  <div class="section" id="data-flow-and-processing">
+<span id="design-flow"></span><h1>Data Flow and Processing<a class="headerlink" href="#data-flow-and-processing" title="Permalink to this headline">¶</a></h1>
+<p>There are several processing steps.  This leads to a number of data stores
+reflecting the persistent results of the various processing steps.</p>
+<p>Also, see <a class="reference internal" href="document_model.html#design-document"><em>CouchDB Document Model</em></a> for database design considerations based
+simply on the structure of the data, independent of the processing.</p>
 <ol class="arabic simple">
-<li>Since Last Stop on this route.  These are location reports
-that reflect a vehicle&#8217;s progress since the last stop.
-With some care, this can be extrapolated to an arrival time
-at all subsequent stops on the route.</li>
-<li>Today&#8217;s History.  These are arrival and dwell reports for
-today. These create a localized trend that conforms to or deviates from the
-historical average arrival times for a given route/direction/stop.</li>
-<li>Long-Term History.  The overall history of route/direction/stop arrival
-times effectively describes the actual routes and schedules.</li>
+<li>Acquire Position Information.  See <a class="reference internal" href="report_data.html#design-position"><em>Position Data Acquisition</em></a>.
+This is parsed and (in effect) put into a processing queue.</li>
+<li>Find Stop.  Position information is used to find a stop location and
+stop time.  See <a class="reference internal" href="location_finding.html#design-stopfinder"><em>Stop Finding</em></a>.  There are two results possible.<ul>
+<li>No good correlation with a stop or stop time.  These are &#8220;reject&#8221;
+locations that can be logged for further analysis and research on
+GPS errors or vehicle deviations from routes and schedules.</li>
+<li>A good correlation with a stop and time.
+This use useful data that is persisted for publication.</li>
+</ul>
+</li>
+<li>Time to Next Stop Calculation.  The time and stop information from a good location
+provides an estimate of the time to next stop.  The time since the report,
+and the time of the request all figure into this calculation.  Seconds
+count.  This is the <strong>Since Last Stop</strong> type and is most recent information
+only.</li>
+<li>Time On This Trip Calculation.  This is the sequence of stops on this
+particular trip on this route on this day.  For short routes, it&#8217;s only
+a few locations.  For longer routes, it may be more locations.  This can
+provide additional detail for time to next stop.</li>
+<li>Day Statistics.  This is the sequence of stops on this day.  For a given
+route and direction, this may indicate persistent delays.  It provides an
+overall &#8220;health of the system&#8221; value that (probably) can&#8217;t be used
+to predict arrival times.</li>
+<li>Longer-Term Statistics.</li>
 </ol>
-<p>Note that the standard relational model isn&#8217;t an ideal fit for this
-data.  There are several issues.</p>
-<ul>
-<li><p class="first">The route is a graph with nodes and edges corresponding to stops
-and driving segments.  Because nodes and edges are duals, only one is
-sufficient for a relational model.  Stops, for example, are easy
-to discern from the data.  Segments, however, are where slowdowns
-occur and where vehicle location reports are found.  It&#8217;s difficult
-to choose one representation for the relational model.  It&#8217;s also
-difficult to attempt to use both and keep them synchronized.</p>
+<p>This leads to several tiers of storage.</p>
+<ol class="arabic">
+<li><p class="first">Raw Position Queue.  The Location, Dwell and Arrival reports, queued
+up for location correlation via a geospatial query.</p>
 </li>
-<li><p class="first">The historical data can be normalized, but it&#8217;s of little value
-to do this.  A hierarchical collection might be considerably
-more efficient than normalizing the route/direction/stop hierarchy</p>
+<li><p class="first">Stop Status FIFO.  These are Good Arrival reports; i.e., those that have a
+close Stop and Stop Time.  These are stored in a simple FIFO that
+show&#8217;s a vehicle&#8217;s last reported status.</p>
 </li>
-<li><p class="first">The bulk of the access is
-to gather the short-term historical records associated with a
-a given route/direction/stop; this forms a short vector of times.
-This is transient data that forms a kind of FIFO.
-Fairly complex database queries are required to insert, delete and
-query a FIFO structure.
-A simple web service which avoids database overheads makes more sense.</p>
+<li><p class="first">Route Status.  These are Good Arrival reports.
+These are placed in a structure that tracks the vehicle&#8217;s progress
+along a route.</p>
 </li>
-<li><p class="first">Geospatial queries.  Locating stops and vehicles based on Lat/Lon
-is irksome because there&#8217;s no simple database indexing scheme
-that permits rapid distance calculations.</p>
-<p>However.  See <a class="reference internal" href="distance.html#design-distance"><em>Distance Calculations</em></a> for more information on
-rapid distance approximations using an Equirectangular Approximation.</p>
+<li><p class="first">Day Status.  These are a collection of trip status for a given day.</p>
+<p>Day ↦ [ Trip, ... ]</p>
 </li>
-</ul>
-<div class="section" id="last-stop-fifo">
-<h2>Last-Stop FIFO<a class="headerlink" href="#last-stop-fifo" title="Permalink to this headline">¶</a></h2>
+<li><p class="first">Long-Term History.  The overall history of route/direction/stop arrival
+times effectively describes the actual routes and schedules.
+This is simply a collection of days.</p>
+</li>
+</ol>
+<div class="section" id="stop-status-fifo">
+<h2>Stop Status FIFO<a class="headerlink" href="#stop-status-fifo" title="Permalink to this headline">¶</a></h2>
 <p>Each Route/Direction FIFO contains the last stop&#8217;s Dwell or Arrival report followed by
-any Location reports for the same vehicle.</p>
-<p>The CRUD transactions work like this.</p>
-<p><strong>Create</strong>.</p>
-<ul class="simple">
-<li>Location reports are appended to a FIFO.</li>
-<li>Arrival and Dwell reports clear the FIFO prior to insert.</li>
-</ul>
-<p><strong>Update</strong>.  Does not happen.</p>
-<p><strong>Retrieve</strong>.  Given a request for a route/direction, the short term
-data is available to discover immediate location.  Daily data and Historical
-data is required to compute an expected arrival time.</p>
-<p><strong>Delete</strong>.  Happens when an Arrival or Dwell report is inserted.</p>
+any Location class position reports for the same vehicle.</p>
+<p>These are placed into a structure like this.</p>
+<blockquote>
+<div>(Route, Direction) ↦ (Report, Last Stop, Last Stop Time)</div></blockquote>
+<p>The stops along the route are part of the transit system information.
+This is required to predict all future stops in this route/direction.</p>
+<blockquote>
+<div>(Route, Direction) ↦ [ Stop Time, ... ]</div></blockquote>
 </div>
-<div class="section" id="today">
-<h2>Today<a class="headerlink" href="#today" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="route-status">
+<h2>Route Status<a class="headerlink" href="#route-status" title="Permalink to this headline">¶</a></h2>
+<p>Good Arrival reports are placed in a structure that tracks the vehicle&#8217;s progress
+along a trip (and the associated route).</p>
+<blockquote>
+<div>Trip ↦ [ (Report, Stop, Stop Time), ... ]</div></blockquote>
+<p>Good Arrival reports (and their stop and stop time) are appended to
+the trip&#8217;s stop sequence.</p>
+<p>The sequence of stops along the trip provide a slightly longer-term view of
+delays for the vehicle that will likely arrive at the stop.</p>
+<p>This is supplemented with the transit map information.</p>
+<blockquote>
+<div>Trip ↦ Route</div></blockquote>
+</div>
+<div class="section" id="today-s-status">
+<h2>Today&#8217;s Status<a class="headerlink" href="#today-s-status" title="Permalink to this headline">¶</a></h2>
 <p>Each Route/Direction/Stop contains the Dwell and Arrival data accumulated today.</p>
-<p>This has two parts.</p>
-<ul class="simple">
-<li>A status with simple variance and confidence factor.</li>
-<li>A sequence of reports.  Each Insert
-updates the status with a time variance and a confidence window.</li>
-</ul>
+<blockquote>
+<div>(Route, Direction, Stop) ↦ [ (Report, Stop Time), ... ]</div></blockquote>
+<p>This allows calculation of a simple variance and confidence factor between
+scheduled and actual stop times.</p>
 <p>The arrival times throughout the day will fit into one of two patterns.</p>
 <ul class="simple">
 <li>Statistically significant departure from historical averages.
@@ -138,6 +155,8 @@ in any variance.</li>
 <div class="section" id="history">
 <h2>History<a class="headerlink" href="#history" title="Permalink to this headline">¶</a></h2>
 <p>Each Route/Direction/Stop contains all Dwell and Arrival data.</p>
+<blockquote>
+<div>(Route, Direction, Stop) ↦ [ (Report, Stop Time), ... ]</div></blockquote>
 <p>This is simply accumulated to discover any long-term trends.</p>
 <p>Also, the historical data can be used to discover routes.
 See <a class="reference internal" href="route_details.html#design-routes"><em>Route Discovery</em></a>.</p>
@@ -155,20 +174,21 @@ See <a class="reference internal" href="route_details.html#design-routes"><em>Ro
             </a></p>
   <h3><a href="../caravel.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Data Store Hierarchy</a><ul>
-<li><a class="reference internal" href="#last-stop-fifo">Last-Stop FIFO</a></li>
-<li><a class="reference internal" href="#today">Today</a></li>
+<li><a class="reference internal" href="#">Data Flow and Processing</a><ul>
+<li><a class="reference internal" href="#stop-status-fifo">Stop Status FIFO</a></li>
+<li><a class="reference internal" href="#route-status">Route Status</a></li>
+<li><a class="reference internal" href="#today-s-status">Today&#8217;s Status</a></li>
 <li><a class="reference internal" href="#history">History</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="additional_data.html"
-                        title="previous chapter">General Transit Feed Data</a></p>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Design Notes</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="distance.html"
-                        title="next chapter">Distance Calculations</a></p>
+  <p class="topless"><a href="report_data.html"
+                        title="next chapter">Position Data Acquisition</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/design/data_stores.txt"
@@ -201,10 +221,10 @@ See <a class="reference internal" href="route_details.html#design-routes"><em>Ro
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="distance.html" title="Distance Calculations"
+          <a href="report_data.html" title="Position Data Acquisition"
              >next</a> |</li>
         <li class="right" >
-          <a href="additional_data.html" title="General Transit Feed Data"
+          <a href="index.html" title="Design Notes"
              >previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
           <li><a href="index.html" >Design Notes</a> &raquo;</li> 
