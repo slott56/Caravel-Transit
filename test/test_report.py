@@ -25,7 +25,11 @@ class Test_Parse_Good_Location( unittest.TestCase ):
         self.assertAlmostEqual( 37.0620935, rpt.lat )
         self.assertAlmostEqual( -76.3413842, rpt.lon )
         self.assertIsNone( rpt.rte )
-        self.assertIsNone( rpt.dwell )
+        try:
+            self.assertIsNone( rpt.dwell )
+            self.fail( "Shouldn't work" )
+        except AttributeError:
+            pass
         txt= self.json_enc.encode(rpt)
         ##print( txt )
         obj= self.json_dec.decode( txt )
@@ -57,8 +61,12 @@ class Test_Parse_Arrive( unittest.TestCase ):
         self.assertAlmostEqual( 37.0315618, rpt.lat )
         self.assertAlmostEqual( -76.3461352, rpt.lon )
         self.assertEqual( '4', rpt.rte )
-        self.assertIsNone( rpt.dwell )
-        self.assertEqual( 2, rpt.dir )
+        try:
+            rpt.dwell
+            self.fail( "Should not have attribute dwell")
+        except AttributeError:
+            pass
+        self.assertEqual( '2', rpt.dir )
         self.assertEqual( '45', rpt.stop )
         txt= self.json_enc.encode(rpt)
         ##print( txt )
@@ -69,7 +77,11 @@ class Test_Parse_Arrive( unittest.TestCase ):
         self.assertEqual( rpt.rte, obj.rte )
         self.assertEqual( rpt.dir, obj.dir)
         self.assertEqual( rpt.stop, obj.stop )
-        self.assertIsNone( obj.dwell )
+        try:
+            self.assertIsNone( obj.dwell )
+            self.fail( "Shouldn't work" )
+        except AttributeError:
+            pass
 
 dwell="07:04:42 02/15  V.1.3515  H.0.0  MT_TIMEPOINTCROSSING   Time:07:04:37  Dwell:22  Rte:65  Dir:2  TP:352  Stop:69  Svc:1  Blk:203  Lat/Lon:370425333/-764286136 [Valid]  Adher:-1 [Valid]  Odom:1712 [Valid]  DGPS:On  FOM:2"
 
@@ -86,9 +98,9 @@ class Test_Parse_Dwell( unittest.TestCase ):
         self.assertAlmostEqual( -76.4286136, rpt.lon )
         self.assertEqual( '65', rpt.rte )
         self.assertEqual( 22, rpt.dwell )
-        self.assertEqual( 2, rpt.dir )
+        self.assertEqual( '2', rpt.dir )
         self.assertEqual( '69', rpt.stop )
-        txt= self.json_enc.encode(rpt)
+        txt= json.dumps( rpt.to_json() ) # self.json_enc.encode(rpt)
         ##print(rpt.as_dict())
         ##print( txt )
         obj= self.json_dec.decode( txt )

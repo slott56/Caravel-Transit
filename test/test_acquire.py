@@ -8,6 +8,7 @@ import sys
 import datetime
 import os
 import time
+from contextlib import closing
 import caravel.acquire
 
 class MockFTP( object ):
@@ -31,7 +32,7 @@ class MockFTP( object ):
         writer( "Of Data" )
 
 class MockHTTP( object ):
-    dirlist= ""
+    data= "New Lines Of Data"
     history= []
     def __init__( self ):
         self.closed= False
@@ -41,15 +42,29 @@ class MockHTTP( object ):
     def close( self ):
         self.closed= True
     def read( self ):
-        return "New Lines Of Data"
+        return self.data
+    def __iter__( self ):
+        return iter( self.data.splitlines() )
 
-class Test_No_VID( unittest.TestCase ):
+class Temp_File_Cleanup( unittest.TestCase ):
     today= datetime.datetime.now()
     yesterday= today-datetime.timedelta( days=1 )
     template_directory= """\
 {0}                 3975 vid.csv
 {0}                43107 hrtrtf.txt
 """
+    def tearDown( self ):
+        try:
+            os.remove( 'test/vid.csv' )
+        except OSError as e:
+            self.assertEqual( 2, e.errno )
+        if self.name:
+            try:
+                os.remove( self.name )
+            except OSError as e:
+                self.assertEqual( 2, e.errno )
+
+class Test_No_VID( Temp_File_Cleanup ):
     def setUp( self ):
         class NewVIDFTP( MockFTP ):
             dirlist= self.template_directory.format( self.today.strftime( "%m-%d-%y %I:%M%p") )
@@ -59,8 +74,9 @@ class Test_No_VID( unittest.TestCase ):
             os.remove( 'test/vid.csv' )
         except OSError as e:
             self.assertEqual( 2, e.errno )
+        self.name= None
     def runTest( self ):
-        self.name= caravel.acquire.get_reports( self.ftp_class, target_dir='test' )
+        self.name= caravel.acquire.get_report_files( self.ftp_class, target_dir='test' )
         self.assertTrue( os.path.exists( 'test/vid.csv' ) )
         self.assertEqual( ['Anrd', 'RETR Anrd/vid.csv', 'RETR Anrd/hrtrtf.txt'], self.ftp_class.history )
         with open('test/vid.csv','rb') as new_file:
@@ -69,17 +85,8 @@ class Test_No_VID( unittest.TestCase ):
         with open(self.name,'rb') as new_file:
             new_data= new_file.read()
         self.assertEqual( "New Lines\nOf Data\n", new_data )
-    def tearDown( self ):
-        try:
-            os.remove( 'test/vid.csv' )
-        except OSError as e:
-            self.assertEqual( 2, e.errno )
-        try:
-            os.remove( self.name )
-        except OSError as e:
-            self.assertEqual( 2, e.errno )
 
-class Test_New_VID( Test_No_VID ):
+class Test_New_VID( Temp_File_Cleanup ):
     def setUp( self ):
         class NewVIDFTP( MockFTP ):
             dirlist= self.template_directory.format( self.today.strftime( "%m-%d-%y %I:%M%p") )
@@ -93,8 +100,9 @@ class Test_New_VID( Test_No_VID ):
             vid.write( "original\n" )
         old = time.mktime( self.yesterday.utctimetuple() )
         os.utime( 'test/vid.csv', (old, old) )
+        self.name= None
     def runTest( self ):
-        self.name= caravel.acquire.get_reports( self.ftp_class, target_dir='test' )
+        self.name= caravel.acquire.get_report_files( self.ftp_class, target_dir='test' )
         self.assertTrue( os.path.exists( 'test/vid.csv' ) )
         with open('test/vid.csv','rb') as new_file:
             new_data= new_file.read()
@@ -104,7 +112,7 @@ class Test_New_VID( Test_No_VID ):
         self.assertEqual( "New Lines\nOf Data\n", new_data )
         self.assertEqual( ['Anrd', 'RETR Anrd/vid.csv', 'RETR Anrd/hrtrtf.txt'], self.ftp_class.history )
 
-class Test_Old_VID( Test_No_VID ):
+class Test_Old_VID( Temp_File_Cleanup ):
     def setUp( self ):
         class OldVIDFTP( MockFTP ):
             dirlist= self.template_directory.format( self.yesterday.strftime( "%m-%d-%y %I:%M%p") )
@@ -118,8 +126,9 @@ class Test_Old_VID( Test_No_VID ):
             vid.write( "original\n" )
         new = time.mktime( self.today.timetuple() )
         os.utime( 'test/vid.csv', (new, new) )
+        self.name= None
     def runTest( self ):
-        self.name= caravel.acquire.get_reports( self.ftp_class, target_dir='test' )
+        self.name= caravel.acquire.get_report_files( self.ftp_class, target_dir='test' )
         self.assertTrue( os.path.exists( 'test/vid.csv' ) )
         with open('test/vid.csv','rb') as new_file:
             new_data= new_file.read()
@@ -148,6 +157,18 @@ class Test_Get_Route( unittest.TestCase ):
             os.remove( 'test/google_transit.zip' )
         except OSError as e:
             self.assertEqual( 2, e.errno )
+
+class Test_Reader( unittest.TestCase ):
+    def setUp( self ):
+        self.http_class= MockHTTP
+        self.http_class.data= "Several\nLines\nOf\nData\n"
+    def runTest( self ):
+        with closing( caravel.acquire.report_reader( self.http_class() ) ) as source:
+            src_iter= iter( source )
+            self.assertEqual( "Several", next(src_iter) )
+            self.assertEqual( "Lines", next(src_iter) )
+            self.assertEqual( "Of", next(src_iter) )
+            self.assertEqual( "Data", next(src_iter) )
 
 if __name__ == "__main__":
     logging.basicConfig( stream=sys.stderr, level=logging.WARN )
