@@ -1,0 +1,205 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Position Data Acquisition &mdash; Caravel-Transit 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
+    <link rel="up" title="Design Notes" href="index.html" />
+    <link rel="next" title="General Transit Feed Data" href="transit_data.html" />
+    <link rel="prev" title="Data Flow and Processing" href="data_stores.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="transit_data.html" title="General Transit Feed Data"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="data_stores.html" title="Data Flow and Processing"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="position-data-acquisition">
+<span id="design-position"></span><h1>Position Data Acquisition<a class="headerlink" href="#position-data-acquisition" title="Permalink to this headline">¶</a></h1>
+<p>See <a class="reference external" href="http://www.transitchicago.com/developers/bustracker.aspx">http://www.transitchicago.com/developers/bustracker.aspx</a></p>
+<p>Source information: <a class="reference external" href="ftp://216.54.15.3/Anrd/">ftp://216.54.15.3/Anrd/</a></p>
+<p>Two Files: <tt class="file docutils literal"><span class="pre">hrtrtf.txt</span></tt> is the data. <tt class="file docutils literal"><span class="pre">vid.csv</span></tt> is a map of route ids to vehicle ids</p>
+<p>Need Routes and Segments to see where bus is.</p>
+<div class="section" id="vehicle-information">
+<h2>Vehicle Information<a class="headerlink" href="#vehicle-information" title="Permalink to this headline">¶</a></h2>
+<p>Vehicle Id information in <tt class="file docutils literal"><span class="pre">vid.csv</span></tt> has the following format:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&#39;RID&#39;</span><span class="p">:</span> <span class="s">&#39;2218&#39;</span><span class="p">,</span> <span class="s">&#39;VehID&#39;</span><span class="p">:</span> <span class="s">&#39;2018&#39;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>RID is the route ID.  VehID is the Vehicle ID.</p>
+</div>
+<div class="section" id="vehicle-report-v1">
+<h2>Vehicle Report V1<a class="headerlink" href="#vehicle-report-v1" title="Permalink to this headline">¶</a></h2>
+<p>There are three types of records:</p>
+<div class="highlight-python"><pre>07:04:42 02/15  V.1.2233  H.0.0  MT_LOCATION    Lat/Lon:370620935/-763413842 [Valid]  Adher:-1 [Valid]  Odom:2668 [Valid]  DGPS:On  FOM:2
+
+07:04:42 02/15  V.1.3515  H.0.0  MT_TIMEPOINTCROSSING   Time:07:04:37  Dwell:22  Rte:65  Dir:2  TP:352  Stop:69  Svc:1  Blk:203  Lat/Lon:370425333/-764286136 [Valid]  Adher:-1 [Valid]  Odom:1712 [Valid]  DGPS:On  FOM:2
+
+07:04:42 02/15  V.1.2236  H.0.0  MT_TIMEPOINTCROSSING   Time:07:04:36  Arrival  Rte:4  Dir:2  TP:329  Stop:45  Svc:1  Blk:221  Lat/Lon:370315618/-763461352 [Valid]  Adher:2 [Valid]  Odom:1924 [Valid]  DGPS:On  FOM:2</pre>
+</div>
+<p>Field by Field</p>
+<ol class="arabic simple" start="0">
+<li>Time in <tt class="docutils literal"><span class="pre">&quot;%H:%M:%S&quot;</span></tt> format</li>
+<li>Date in <tt class="docutils literal"><span class="pre">&quot;%m/%d&quot;</span></tt> format</li>
+<li>Vehicle ID in <tt class="docutils literal"><span class="pre">&quot;V\.1\.(\d+)&quot;</span></tt> format</li>
+<li><tt class="docutils literal"><span class="pre">H.0.0</span></tt></li>
+<li>Either <tt class="docutils literal"><span class="pre">&quot;MT_LOCATION&quot;</span></tt> or <tt class="docutils literal"><span class="pre">&quot;MT_TIMEPOINTCROSSING&quot;</span></tt></li>
+</ol>
+<p>For MT_LOCATION</p>
+<ol class="arabic simple" start="5">
+<li>Location in <tt class="docutils literal"><span class="pre">&quot;Lat/Lon:%d/%d&quot;</span></tt> format.</li>
+<li>&#8216;[Invalid]&#8217;: 4, &#8216;[Valid]&#8217;: 269</li>
+<li><tt class="docutils literal"><span class="pre">&quot;Adher:%d&quot;</span></tt></li>
+<li>&#8216;[Invalid]&#8217;: 64, &#8216;[Valid]&#8217;: 209</li>
+<li><tt class="docutils literal"><span class="pre">&quot;Odom:%d&quot;</span></tt></li>
+<li>&#8216;[Invalid]&#8217;: 6, &#8216;[Valid]&#8217;: 267</li>
+<li>&#8216;DGPS:Off&#8217;: 8, &#8216;DGPS:On&#8217;: 265</li>
+<li><tt class="docutils literal"><span class="pre">&quot;FOM:%d&quot;</span></tt>.  Optional.</li>
+</ol>
+<p>For MT_TIMEPOINTCROSSING some additional fields are present.</p>
+<ol class="arabic simple" start="5">
+<li>Actual Time in <tt class="docutils literal"><span class="pre">&quot;&quot;Time:%H:%M:%S&quot;</span></tt> format</li>
+<li>&#8220;Dwell:%d&#8221; or &#8220;Arrival&#8221;</li>
+<li><tt class="docutils literal"><span class="pre">Rte:65</span></tt> - Does not match routes.txt</li>
+<li><tt class="docutils literal"><span class="pre">Dir:2</span></tt> - Direction 1 or 2; trips.txt uses 0 or 1</li>
+<li><tt class="docutils literal"><span class="pre">TP:352</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">Stop:69</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">Svc:1</span></tt> or <tt class="docutils literal"><span class="pre">Svc:4</span></tt></li>
+<li><tt class="docutils literal"><span class="pre">Blk:203</span></tt></li>
+<li>Location in <tt class="docutils literal"><span class="pre">&quot;Lat/Lon:%d/%d&quot;</span></tt> format.</li>
+<li>&#8216;[Valid]&#8217;: 27</li>
+<li><tt class="docutils literal"><span class="pre">&quot;Adher:%d&quot;</span></tt></li>
+<li>&#8216;[Valid]&#8217;: 27</li>
+<li><tt class="docutils literal"><span class="pre">&quot;Odom:%d&quot;</span></tt></li>
+<li>&#8216;[Valid]&#8217;: 27</li>
+<li>&#8216;DGPS:Off&#8217;: 1, &#8216;DGPS:On&#8217;: 26</li>
+<li><tt class="docutils literal"><span class="pre">&quot;FOM:%d&quot;</span></tt>.  Optional.</li>
+</ol>
+</div>
+<div class="section" id="vehicle-report-v2">
+<h2>Vehicle Report V2<a class="headerlink" href="#vehicle-report-v2" title="Permalink to this headline">¶</a></h2>
+<p>There are two types of records:</p>
+<div class="highlight-python"><pre>Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
+
+07:00:38,02/28,3247,368147270/-762487811,V,-1,V
+07:00:41,02/28,2109,368099480/-763510804,V,-1,V,28,1,30</pre>
+</div>
+<p>The header, however, is unusual.</p>
+<p>The RID value appears to be an internal route id.  It does not
+match the route ID in the <a class="reference internal" href="transit_data.html#design-transit"><em>General Transit Feed Data</em></a> data.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Position Data Acquisition</a><ul>
+<li><a class="reference internal" href="#vehicle-information">Vehicle Information</a></li>
+<li><a class="reference internal" href="#vehicle-report-v1">Vehicle Report V1</a></li>
+<li><a class="reference internal" href="#vehicle-report-v2">Vehicle Report V2</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="data_stores.html"
+                        title="previous chapter">Data Flow and Processing</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="transit_data.html"
+                        title="next chapter">General Transit Feed Data</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/design/report_data.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="transit_data.html" title="General Transit Feed Data"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="data_stores.html" title="Data Flow and Processing"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

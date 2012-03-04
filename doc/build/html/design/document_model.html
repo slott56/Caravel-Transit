@@ -1,0 +1,247 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>CouchDB Document Model &mdash; Caravel-Transit 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
+    <link rel="up" title="Design Notes" href="index.html" />
+    <link rel="next" title="RESTful API for Reports" href="RESTapi1.html" />
+    <link rel="prev" title="General Transit Feed Data" href="transit_data.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="RESTapi1.html" title="RESTful API for Reports"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="transit_data.html" title="General Transit Feed Data"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="couchdb-document-model">
+<span id="design-document"></span><h1>CouchDB Document Model<a class="headerlink" href="#couchdb-document-model" title="Permalink to this headline">¶</a></h1>
+<p>See <a class="reference internal" href="transit_data.html#design-transit"><em>General Transit Feed Data</em></a> for the relational model.</p>
+<p>We have a collection of hierarchical documents that are closely intertwined.
+All of these are needed for different kinds of requests and processing.
+Unlike a normalized relational models, there is no single <em>canonical</em> document structure.</p>
+<p>We have at least two different document taxonomies for transit data.</p>
+<ul class="simple">
+<li>By Geography &#8211; route, direction and stop.</li>
+<li>By Time &#8211; weekday service class and time of day.</li>
+</ul>
+<p>Additionally, we have position report documents, which can be
+grouped around a vehicle id to track progress down a specific route.</p>
+<div class="section" id="concerns">
+<h2>Concerns<a class="headerlink" href="#concerns" title="Permalink to this headline">¶</a></h2>
+<p>Note that the standard relational model isn&#8217;t an ideal fit for this
+data.  There are several issues.</p>
+<ul class="simple">
+<li>The route is a graph with nodes and edges corresponding to stops
+and driving segments.  Because nodes and edges are duals, only one is
+sufficient for a relational model.  Stops, for example, are easy
+to discern from the data.  Segments, however, are where slowdowns
+occur and where vehicle position reports are found.  It&#8217;s difficult
+to choose one representation for a relational model.  It&#8217;s also
+difficult to attempt to use both and keep them synchronized.</li>
+<li>The historical data can be normalized, but it&#8217;s of little value
+to do this.  A hierarchical collection of data by time period and
+trip might be
+more efficient than normalizing the route/direction/stop hierarchy</li>
+<li>The bulk of the access is
+to gather the short-term historical records associated with a
+a given route/direction/stop; this forms a short vector of times.
+This is transient data that forms a kind of FIFO.
+Fairly complex database queries are required to insert, delete and
+query a FIFO structure.
+A simple web service which avoids database overheads makes more sense.</li>
+<li>Geospatial queries.  Locating stops and vehicles based on Lat/Lon
+is irksome because there&#8217;s no simple database indexing scheme
+that permits rapid distance calculations.
+See <a class="reference internal" href="distance.html#design-distance"><em>Distance Calculations</em></a> for more information on
+rapid distance approximations using an Equirectangular Approximation.</li>
+</ul>
+</div>
+<div class="section" id="relations">
+<h2>Relations<a class="headerlink" href="#relations" title="Permalink to this headline">¶</a></h2>
+<p>The relational model contains four essential relationships.</p>
+<ul class="simple">
+<li><tt class="docutils literal"><span class="pre">[Class]&lt;1-1..m&gt;[Trip]</span></tt>.  A Class of Service qualifies a number of Trips.</li>
+<li><tt class="docutils literal"><span class="pre">[Route]&lt;1-1..m&gt;[Trip]</span></tt>.  A Route has  a number of Trips.</li>
+<li><tt class="docutils literal"><span class="pre">[Trip]&lt;1-1..m&gt;[Stop</span> <span class="pre">Time]</span></tt>.  A single Trip contains a number of scheduled Stop Times.</li>
+<li><tt class="docutils literal"><span class="pre">[Stop]&lt;1-1..m&gt;[Stop</span> <span class="pre">Time]</span></tt>.  A number scheduled Stop Times are planned for a given Stop.</li>
+</ul>
+<p>What&#8217;s important here is that Route and Stop definitions are heavily reused
+by Trip and Class of Service.</p>
+<p>A trivial hierarchy of <tt class="docutils literal"><span class="pre">[Class]-&gt;[Route]-&gt;[Trip]-&gt;[Stop</span> <span class="pre">Time]-&gt;[Stop]</span></tt> isn&#8217;t
+appropriate because of the repetition of Stop information.</p>
+<p>Separate hierarchies based simply on the relational data may not be appropriate, either.
+A Trip could be seen as a member of either of two hierarchies.</p>
+<ul class="simple">
+<li>Service Class ↦ [Trip, ...]</li>
+<li>Route ↦ [Trip, ...]</li>
+</ul>
+<p>Similarly, A Stop Time could be seen as a member of either of two hierarchies:</p>
+<ul class="simple">
+<li>Trip ↦ [Stop Time, ...]</li>
+<li>Stop ↦ [Stop Time, ...]</li>
+</ul>
+</div>
+<div class="section" id="design-considerations">
+<h2>Design Considerations<a class="headerlink" href="#design-considerations" title="Permalink to this headline">¶</a></h2>
+<p>While these queries can be handled with view that uses linked documents,
+it would be advantageous to
+pick an &#8220;optimal&#8221; document structure and reduce the complexity of views.</p>
+<p>See <a class="reference internal" href="data_stores.html#design-flow"><em>Data Flow and Processing</em></a> for the processing steps.</p>
+<p>See <a class="reference internal" href="RESTapi2.html#design-transit-resource"><em>RESTful API for Transit Resources</em></a> for additional transit system queries.</p>
+<p>See <a class="reference external" href="http://guide.couchdb.org/draft/why.html">http://guide.couchdb.org/draft/why.html</a></p>
+</div>
+<div class="section" id="candidate-document-structures">
+<h2>Candidate Document Structures<a class="headerlink" href="#candidate-document-structures" title="Permalink to this headline">¶</a></h2>
+<p>A Trip-based document seems to contain all but the Route
+and Stop details.</p>
+<blockquote>
+<div>Trip ↦ ( [Class,...], Route, Direction, [ Stop ↦ [Stop Time, ...], ... ] )</div></blockquote>
+<p>A Class, separately, has calendar and calendar date information.</p>
+<p>This is supported by a number of views.</p>
+<p>(Route, Trip Direction) ↦ [ Stop, ... ]</p>
+<blockquote>
+<div><p>This is a simple summary of a routes.</p>
+<p>Each route has a pair of directions. and a number of trips.
+Each direction has a sequence of stop references.
+This is a union of stops from all trips.</p>
+<p>This must be coupled with a simple mapping of stop details.</p>
+<p>Also, it must be coupled with Trip and Service Class information.</p>
+</div></blockquote>
+<p>(Route, Trip Direction, Service Class) ↦ [ [Trip, (Stop Time, Stop), ...], ... ]</p>
+<blockquote>
+<div><p>This ennumerates all route, direction and service combination.
+Each combination has a number of trips.  Each trip has a sequence
+of stop-times.</p>
+<p>This must be coupled with a simple mapping of Stop and Route details.</p>
+<p>This can be filtered to get route by date, weekly service id,
+or even time-of-day.</p>
+</div></blockquote>
+</div>
+<div class="section" id="multi-tree-structure">
+<h2>Multi-Tree Structure<a class="headerlink" href="#multi-tree-structure" title="Permalink to this headline">¶</a></h2>
+<p>One document hierarchy is this:</p>
+<blockquote>
+<div>Class ↦ [ Trip ↦ [ Stop Time, ... ], ... ]</div></blockquote>
+<p>Another this this:</p>
+<blockquote>
+<div>Route ↦ [ Trip ↦ [ Stop Time, ... ], ... ]</div></blockquote>
+<p>Stop details are simply kept separately via references from a Stop Time.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CouchDB Document Model</a><ul>
+<li><a class="reference internal" href="#concerns">Concerns</a></li>
+<li><a class="reference internal" href="#relations">Relations</a></li>
+<li><a class="reference internal" href="#design-considerations">Design Considerations</a></li>
+<li><a class="reference internal" href="#candidate-document-structures">Candidate Document Structures</a></li>
+<li><a class="reference internal" href="#multi-tree-structure">Multi-Tree Structure</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="transit_data.html"
+                        title="previous chapter">General Transit Feed Data</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="RESTapi1.html"
+                        title="next chapter">RESTful API for Reports</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/design/document_model.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="RESTapi1.html" title="RESTful API for Reports"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="transit_data.html" title="General Transit Feed Data"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

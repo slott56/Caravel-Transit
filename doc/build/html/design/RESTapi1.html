@@ -1,0 +1,192 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>RESTful API for Reports &mdash; Caravel-Transit 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
+    <link rel="up" title="Design Notes" href="index.html" />
+    <link rel="next" title="RESTful API for Transit Data" href="RESTapi2.html" />
+    <link rel="prev" title="CouchDB Document Model" href="document_model.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="RESTapi2.html" title="RESTful API for Transit Data"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="document_model.html" title="CouchDB Document Model"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="restful-api-for-reports">
+<h1>RESTful API for Reports<a class="headerlink" href="#restful-api-for-reports" title="Permalink to this headline">¶</a></h1>
+<p>Here are some couch db view and list definitions.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
+    <span class="s">&quot;_id&quot;</span><span class="p">:</span> <span class="s">&quot;_design/app&quot;</span><span class="p">,</span>
+    <span class="s">&quot;language&quot;</span><span class="p">:</span> <span class="s">&quot;javascript&quot;</span><span class="p">,</span>
+    <span class="s">&quot;views&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;all&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&quot;map&quot;</span><span class="p">:</span> <span class="s">&quot;function(doc) {</span><span class="se">\n</span><span class="s">  if(doc.positions.length &gt; 0) {</span><span class="se">\n</span><span class="s">    emit(doc._id, doc.positions);</span><span class="se">\n</span><span class="s">  }</span><span class="se">\n</span><span class="s">}&quot;</span>
+        <span class="p">},</span>
+        <span class="s">&quot;latest&quot;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s">&quot;map&quot;</span><span class="p">:</span> <span class="s">&quot;function(doc) {</span><span class="se">\n</span><span class="s">  if(doc.positions.length &gt; 0) {</span><span class="se">\n</span><span class="s">    emit(doc._id, doc.positions[doc.positions.length-1]);</span><span class="se">\n</span><span class="s">  }</span><span class="se">\n</span><span class="s">}&quot;</span>
+        <span class="p">}</span>
+    <span class="p">},</span>
+    <span class="s">&quot;lists&quot;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s">&quot;positions&quot;</span><span class="p">:</span> <span class="s">&quot;function(head, req) { var row; start({ </span><span class="se">\&quot;</span><span class="s">headers</span><span class="se">\&quot;</span><span class="s">: { </span><span class="se">\&quot;</span><span class="s">Content-Type</span><span class="se">\&quot;</span><span class="s">: </span><span class="se">\&quot;</span><span class="s">application/json</span><span class="se">\&quot;</span><span class="s"> } }); var output = &#39;[&#39;; while(row = getRow()) { if(req.query.route_id) { if(row.key != req.query.route_id) { continue; } else { output += &#39;{</span><span class="se">\&quot;</span><span class="s">route_id</span><span class="se">\&quot;</span><span class="s">: </span><span class="se">\&quot;</span><span class="s">&#39; + row.key + &#39;</span><span class="se">\&quot;</span><span class="s">, </span><span class="se">\&quot;</span><span class="s">positions</span><span class="se">\&quot;</span><span class="s">:&#39; + JSON.stringify(row.value) + &#39;},&#39;; } } else { output += &#39;{</span><span class="se">\&quot;</span><span class="s">route_id</span><span class="se">\&quot;</span><span class="s">: </span><span class="se">\&quot;</span><span class="s">&#39; + row.key + &#39;</span><span class="se">\&quot;</span><span class="s">, </span><span class="se">\&quot;</span><span class="s">positions</span><span class="se">\&quot;</span><span class="s">:&#39; + JSON.stringify(row.value) + &#39;},&#39;; } } output += &#39;{}]&#39;; send(output); }&quot;</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p><tt class="samp docutils literal"><span class="pre">/hrtransit</span></tt></p>
+<blockquote>
+<div><p>Base API URL &#8211; a CouchDB query.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;db_name&quot;</span><span class="p">:</span><span class="s">&quot;hrtransit&quot;</span><span class="p">,</span>
+<span class="s">&quot;doc_count&quot;</span><span class="p">:</span><span class="mi">238</span><span class="p">,</span>
+<span class="s">&quot;doc_del_count&quot;</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span>
+<span class="s">&quot;update_seq&quot;</span><span class="p">:</span><span class="mi">111741</span><span class="p">,</span>
+<span class="s">&quot;purge_seq&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span>
+<span class="s">&quot;compact_running&quot;</span><span class="p">:</span><span class="n">false</span><span class="p">,</span>
+<span class="s">&quot;disk_size&quot;</span><span class="p">:</span><span class="mi">4010076</span><span class="p">,</span>
+<span class="s">&quot;instance_start_time&quot;</span><span class="p">:</span><span class="s">&quot;1330602149238300&quot;</span><span class="p">,</span>
+<span class="s">&quot;disk_format_version&quot;</span><span class="p">:</span><span class="mi">5</span><span class="p">,</span>
+<span class="s">&quot;committed_update_seq&quot;</span><span class="p">:</span><span class="mi">111741</span><span class="p">}</span>
+</pre></div>
+</div>
+</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/hrtransit/_design/app/_list/positions/all</span></tt></p>
+<blockquote>
+<div><p>List all positions reports (current max is last 5 positions) for all routes.</p>
+<div class="highlight-python"><pre>[{"route_id": "2052",
+"positions":[
+{"time":"15:26:39",
+"date":"02/29",
+"lat/lon":"370137445/-763652336",
+"loc_valid":"I",
+"adherence":"0",
+"adh_valid":"I",
+"route":"",
+"description":"","stopid":""},
+
+etc.
+
+]}
+]</pre>
+</div>
+</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/hrtransit/_design/app/_list/positions/all?route_id=2106</span></tt></p>
+<blockquote>
+<div><p>List all positions (current max is last 5 positions) for a specific route.</p>
+<p>See above for sample JSON.</p>
+</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/hrtransit/_design/app/_list/positions/latest</span></tt></p>
+<blockquote>
+<div><p>List latest position reports for all routes.</p>
+<p>See above for sample JSON.</p>
+</div></blockquote>
+<p><tt class="samp docutils literal"><span class="pre">/hrtransit/_design/app/_list/positions/latest?route_id=2106</span></tt></p>
+<blockquote>
+<div><p>List latest position for a specific route</p>
+<p>See above for sample JSON.</p>
+</div></blockquote>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="document_model.html"
+                        title="previous chapter">CouchDB Document Model</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="RESTapi2.html"
+                        title="next chapter">RESTful API for Transit Data</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/design/RESTapi1.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="RESTapi2.html" title="RESTful API for Transit Data"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="document_model.html" title="CouchDB Document Model"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Design Notes</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
