@@ -131,6 +131,30 @@ pick an &#8220;optimal&#8221; document structure and reduce the complexity of vi
 <p>See <a class="reference internal" href="data_stores.html#design-flow"><em>Data Flow and Processing</em></a> for the processing steps.</p>
 <p>See <a class="reference internal" href="RESTapi2.html#design-transit-resource"><em>RESTful API for Transit Resources</em></a> for additional transit system queries.</p>
 <p>See <a class="reference external" href="http://guide.couchdb.org/draft/why.html">http://guide.couchdb.org/draft/why.html</a></p>
+<p>On a related note, some design considerations for other document
+detabases are given here: <a class="reference external" href="http://www.mongodb.org/display/DOCS/Schema+Design">http://www.mongodb.org/display/DOCS/Schema+Design</a>.</p>
+<p>One key point is called &#8220;Embedding and Linking&#8221;.  This seems to apply to any document
+database.</p>
+<blockquote>
+<div><p>A key question when designing a MongoDB schema is when to embed and when to link. Embedding is the nesting of objects and arrays inside a BSON document. Links are references between documents.</p>
+<p>There are no joins in MongoDB - distributed joins would be difficult on a 1,000 server cluster. Embedding is a bit like &#8220;prejoined&#8221; data. Operations within a document are easy for the server to handle; these operations can be fairly rich. Links in contrast must be processed client-side by the application; the application does this by issuing a follow-up query.</p>
+<p>Generally, for &#8220;contains&#8221; relationships between entities, embedding should be be chosen. Use linking when not using linking would result in duplication of data.</p>
+</div></blockquote>
+<p>Because Routes and Stops are a graph theory problem, there&#8217;s no simple answer.</p>
+<p>Here is the &#8220;Summary of Best Practices&#8221;.</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8220;First class&#8221; objects, that are at top level, typically have their own collection.</li>
+<li>Line item detail objects typically are embedded.</li>
+<li>Objects which follow an object modelling &#8220;contains&#8221; relationship should generally be embedded.</li>
+<li>Many to many relationships are generally done by linking.</li>
+<li>Collections with only a few objects may safely exist as separate collections, as the whole collection is quickly cached in application server memory.</li>
+<li>Embedded objects are a bit harder to link to than &#8220;top level&#8221; objects in collections.</li>
+<li>It is more difficult to get a system-level view for embedded objects. When needed an operation of this sort is performed by using MongoDB&#8217;s map/reduce facility.</li>
+<li>If the amount of data to embed is huge (many megabytes), you may reach the limit on size of a single object. See also GridFS.</li>
+<li>If performance is an issue, embed.</li>
+</ul>
+</div></blockquote>
 </div>
 <div class="section" id="candidate-document-structures">
 <h2>Candidate Document Structures<a class="headerlink" href="#candidate-document-structures" title="Permalink to this headline">¶</a></h2>

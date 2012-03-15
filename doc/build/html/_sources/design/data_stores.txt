@@ -11,17 +11,19 @@ reflecting the persistent results of the various processing steps.
 Also, see :ref:`design.document` for database design considerations based
 simply on the structure of the data, independent of the processing.
 
-1.  Acquire Position Information.  See :ref:`design.position`.
+1.  Acquire Feed.  See :ref:`design.position`.
     This is parsed and (in effect) put into a processing queue.
 
-2.  Find Stop.  Position information is used to find a stop location and
-    stop time.  See :ref:`design.stopfinder`.  There are two results possible.
+2.  Find Stop.  Arrival reports have a route, stop and direction.
 
-    -   No good correlation with a stop or stop time.  These are "reject"
+    Location reports require a geospatial query to locate a
+    non-schedule stop.  See :ref:`design.stopfinder`.  There are two results possible.
+
+    -   No good correlation with a known location.  These are "reject"
         locations that can be logged for further analysis and research on
         GPS errors or vehicle deviations from routes and schedules.
 
-    -   A good correlation with a stop and time.
+    -   A good correlation with a known, but non-scheduled stop.
         This use useful data that is persisted for publication.
 
 3.  Time to Next Stop Calculation.  The time and stop information from a good location
@@ -44,8 +46,10 @@ simply on the structure of the data, independent of the processing.
 
 This leads to several tiers of storage.
 
-1.  Raw Position Queue.  The Location, Dwell and Arrival reports, queued
-    up for location correlation via a geospatial query.
+1.  The Feed "queue".  The log tails are lightly reformatted to CSV and pushed.
+    The internal to GTF mappings must also be pushed.
+
+    From this, the Location, Dwell and Arrival reports are extracted for processing.
 
 2.  Stop Status FIFO.  These are Good Arrival reports; i.e., those that have a
     close Stop and Stop Time.  These are stored in a simple FIFO that
@@ -57,8 +61,6 @@ This leads to several tiers of storage.
 
 #.  Day Status.  These are a collection of trip status for a given day.
 
-    Day |map| [ Trip, ... ]
-
 #.  Long-Term History.  The overall history of route/direction/stop arrival
     times effectively describes the actual routes and schedules.
     This is simply a collection of days.
@@ -69,14 +71,21 @@ Stop Status FIFO
 Each Route/Direction FIFO contains the last stop's Dwell or Arrival report followed by
 any Location class position reports for the same vehicle.
 
-These are placed into a structure like this.
+There are two relevant views of this FIFO of stop times.
 
-    (Route, Direction) |map| (Report, Last Stop, Last Stop Time)
+We can look at the history of a particular route.  This shows the sequence
+of trips along the route.  Knowing the first stop on the route allows
+breaking the sequence into trips.
+
+    (Route, Direction) |map| (Stop, Stop Time)
+
+We can look at the history of a particular stop on a route.
+
+    (Route, Direction, Stop) |map| Stop Time
 
 The stops along the route are part of the transit system information.
-This is required to predict all future stops in this route/direction.
-
-    (Route, Direction) |map| [ Stop Time, ... ]
+The sequence of stops and stop-times
+are required to predict all future stops in this route/direction.
 
 Route Status
 --------------
@@ -84,25 +93,23 @@ Route Status
 Good Arrival reports are placed in a structure that tracks the vehicle's progress
 along a trip (and the associated route).
 
-    Trip |map| [ (Report, Stop, Stop Time), ... ]
+    (Route, Direction) |map| [ (Stop, Stop Time), ... ]
 
 Good Arrival reports (and their stop and stop time) are appended to
 the trip's stop sequence.
 
+This can be viewed as the following, also.
+
+    (Route, Direction, Stop) |map| [ Stop Time, ... ]
 
 The sequence of stops along the trip provide a slightly longer-term view of
 delays for the vehicle that will likely arrive at the stop.
 
-This is supplemented with the transit map information.
-
-    Trip |map| Route
-
 Today's Status
 ----------------
 
-Each Route/Direction/Stop contains the Dwell and Arrival data accumulated today.
-
-    (Route, Direction, Stop) |map| [ (Report, Stop Time), ... ]
+Each Route/Direction/Stop contains the Dwell and Arrival data accumulated today,
+irrespective of trip.
 
 This allows calculation of a simple variance and confidence factor between
 scheduled and actual stop times.
@@ -121,8 +128,6 @@ History
 ---------
 
 Each Route/Direction/Stop contains all Dwell and Arrival data.
-
-    (Route, Direction, Stop) |map| [ (Report, Stop Time), ... ]
 
 This is simply accumulated to discover any long-term trends.
 

@@ -15,6 +15,17 @@ create an in-memory database.
 
 ..  todo:: Use Stingray Reader to simplify the load.
 
+Transit System Source
+
+::
+
+    http://googletf.gohrt.com/google_transit.zip
+
+Acquisition
+==============
+
+..  autofunction:: get_source_data
+
 Transit Objects
 =================
 
@@ -75,6 +86,31 @@ import pprint
 import glob
 import zipfile
 import caravel.report
+import urlparse
+import urllib2
+from contextlib import closing
+
+URL_Google_Transit = "http://googletf.gohrt.com/google_transit.zip"
+
+def get_source_data( connection=None, target_dir='.', url=None ):
+    """Get the lastest Route Definition ZIP Archive.
+
+    :param connection: Override to the default of urllib2.OpenerDirector.
+    :param target_dir: Working directory for result file
+    :param url: URL for the file (http://googletf.gohrt.com/google_transit.zip)
+    """
+    if not connection:
+        connection= urllib2.build_opener()
+    if not url:
+        url= URL_Google_Transit
+
+    download=  urlparse.urlparse(url)
+    dir, name = os.path.split( download.path )
+
+    with closing( connection.open( url ) ) as source:
+        with open(os.path.join(target_dir,name),'wb') as target:
+            target.write( source.read() )
+    return name
 
 Calendar = namedtuple('Calendar', 'service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date')
 Calendar_Date = namedtuple('Calendar_Date', 'service_id,date,exception_type' )

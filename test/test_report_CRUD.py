@@ -14,7 +14,7 @@ from caravel.report import Arrival, Dwell, Location
 def setUpModule():
     global connection, db
     connection = Server()
-    db = connection.create_db('couchdbkit_test')
+    db = connection.get_or_create_db('couchdbkit_test')
 
 def tearDownModule():
     global connection
@@ -29,6 +29,7 @@ class Test_Sanity( unittest.TestCase ):
         docid = self.doc['_id']
         doc2 = db.get(docid)
         self.assertEqual( self.doc['string'], doc2['string'] )
+        self.assertEqual( self.doc['number'], doc2['number'] )
         del db[docid]
         self.assertFalse( docid in db )
 

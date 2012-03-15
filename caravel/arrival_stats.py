@@ -25,7 +25,7 @@ def arrival_stats( reader, conn, base='.' ):
     """
     count= 0
     matches= defaultdict(list)
-    for report in caravel.report.report_iter( reader, glob.glob( os.path.join(base,'*.rpt') ) ):
+    for report in caravel.report.report_file_iter( reader, glob.glob( os.path.join(base,'*.rpt') ) ):
         if report and report.rte: # Arrival or Dwell
             count += 1
             services= tuple( transit_system.get_services_today(conn, report.timestamp.date() ) )

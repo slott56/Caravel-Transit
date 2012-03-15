@@ -129,7 +129,7 @@ class TestIterable_V1( unittest.TestCase ):
 
 class TestIterable_V2( unittest.TestCase ):
     def setUp( self ):
-        self.reader= caravel.report.ReportReader_v2()
+        self.reader= caravel.report.ReportReader_v21()
         self.text= """\
 Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
 07:00:38,02/28,3247,368147270/-762487811,V,-1,V

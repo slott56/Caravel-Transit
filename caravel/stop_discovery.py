@@ -55,12 +55,12 @@ Details = namedtuple( 'Details', [ 'rte', 'dir', 'stop', 'id', 'dwell', 'time' ]
 def group_by_rte_dir_stop( report_iter ):
     """Accumulate stops from a sequence of Arrivals.
 
-    Generally, the report_iter is an instance of :func:`caravel.report.report_iter`.
+    Generally, the report_iter is an instance of :func:`caravel.report.report_file_iter`.
 
     It's usually built like this::
 
         reader= caravel.report.ReportReader_v1()
-        rpt_iter= caravel.report.report_iter( reader, [list,of,files] )
+        rpt_iter= caravel.report.report_file_iter( reader, [list,of,files] )
 
     This iterator will examine all the files in the list, extracting
     all Report objects.

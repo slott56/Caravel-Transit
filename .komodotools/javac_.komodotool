@@ -1,0 +1,18 @@
+{
+  "insertOutput": 0, 
+  "parseRegex": "", 
+  "name": "javac ", 
+  "keyboard_shortcut": "", 
+  "operateOnSelection": 0, 
+  "value": [
+    "javac -classpath \"couchdb4j-0.1.2.jar\" %f"
+  ], 
+  "parseOutput": 0, 
+  "version": "1.0.7", 
+  "env": "", 
+  "doNotOpenOutputWindow": 0, 
+  "showParsedOutputList": 0, 
+  "type": "command", 
+  "cwd": "%D", 
+  "runIn": "command-output-window"
+}

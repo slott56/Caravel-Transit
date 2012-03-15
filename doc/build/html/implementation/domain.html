@@ -59,36 +59,34 @@
 <h1>Domain Model Implementation<a class="headerlink" href="#domain-model-implementation" title="Permalink to this headline">¶</a></h1>
 <p>This section contains Sphinx &#8220;automodule&#8221; documentation from the various
 components.</p>
-<p>There are two tiers: <a class="reference internal" href="#low-level-structures">Low-Level Structures</a> which support both
+<p>There are several tiers: <a class="reference internal" href="#extract-transform-load">Extract-Transform-Load</a> gathers data
+and creates the <a class="reference internal" href="#current-status">Current Status</a>.  This is also used to support both
 <a class="reference internal" href="#analysis-and-profiling">Analysis and Profiling</a> and <a class="reference internal" href="#applications">Applications</a>.</p>
-<div class="section" id="low-level-structures">
-<h2>Low-Level Structures<a class="headerlink" href="#low-level-structures" title="Permalink to this headline">¶</a></h2>
-<p>These are supporting structures which define the essential classes.</p>
-<p>This includes reports, the transit system and the raw data server
-from which reports are acquired.</p>
-<div class="section" id="module-caravel.acquire">
-<span id="acquire"></span><h3>Acquire<a class="headerlink" href="#module-caravel.acquire" title="Permalink to this headline">¶</a></h3>
-<p>Caravel Data Acquisition.</p>
-<p>Gather raw FTP position reports as well as transit system
-metadata.</p>
-<p>The transit system data be fetched to a file for unzipping and loading
-into a local database.</p>
-<p>The position reports, however, should not actually be written to a
-persistent file.  Instead, they should be pushed into a queue for processing.
+<div class="section" id="extract-transform-load">
+<h2>Extract-Transform-Load<a class="headerlink" href="#extract-transform-load" title="Permalink to this headline">¶</a></h2>
+<p>There are several parts to the extract, transformation and load of
+the vehicle reports and transit system data.</p>
+<ol class="arabic simple">
+<li>Mappings.</li>
+<li>Real-Time Feed.</li>
+<li>Validation and Creation of usable Tansit Status</li>
+</ol>
+<div class="section" id="module-caravel.LogCapture.acquire">
+<span id="logcapture"></span><h3>LogCapture<a class="headerlink" href="#module-caravel.LogCapture.acquire" title="Permalink to this headline">¶</a></h3>
+<p>Caravel FTP-based Data Acquisition</p>
+<p>Gather raw position reports by polling an FTP server.</p>
+<p>The position reports should be pushed into a queue for processing.
 This can be a conceptual queue in a single-threaded applicaiton, or an
 actual multi-processing queue to improve performance.</p>
-<p>Real-Tiem Position Report Source</p>
+<p>FTP Source</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">host</span><span class="o">=</span><span class="s">&#39;216.54.15.3&#39;</span>
 <span class="n">user</span><span class="o">=</span><span class="s">&#39;anonymous&#39;</span>
 <span class="n">passwd</span><span class="o">=</span><span class="s">&#39;slott56@gmail.com&#39;</span>
 </pre></div>
 </div>
-<p>Transit System Source</p>
-<div class="highlight-python"><pre>http://googletf.gohrt.com/google_transit.zip</pre>
-</div>
 <dl class="function">
-<dt id="caravel.acquire.report_reader">
-<tt class="descclassname">caravel.acquire.</tt><tt class="descname">report_reader</tt><big>(</big><em>connection=None</em>, <em>url=None</em><big>)</big><a class="headerlink" href="#caravel.acquire.report_reader" title="Permalink to this definition">¶</a></dt>
+<dt id="caravel.LogCapture.acquire.report_reader">
+<tt class="descclassname">caravel.LogCapture.acquire.</tt><tt class="descname">report_reader</tt><big>(</big><em>connection=None</em>, <em>url=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/acquire.html#report_reader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.acquire.report_reader" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open the position report file for reading.
 This is a file-like object which must be closed properly.</p>
 <div class="highlight-python"><pre>with closing( report_reader() ):
@@ -110,27 +108,8 @@ This is a file-like object which must be closed properly.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="caravel.acquire.get_route">
-<tt class="descclassname">caravel.acquire.</tt><tt class="descname">get_route</tt><big>(</big><em>connection=None</em>, <em>target_dir='.'</em>, <em>url=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/acquire.html#get_route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.acquire.get_route" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the lastest Route Definition ZIP Archive.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>connection</strong> &#8211; Override to the default of urllib2.OpenerDirector.</li>
-<li><strong>target_dir</strong> &#8211; Working directory for result file</li>
-<li><strong>url</strong> &#8211; URL for the file (<a class="reference external" href="http://googletf.gohrt.com/google_transit.zip">http://googletf.gohrt.com/google_transit.zip</a>)</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="caravel.acquire.get_report_files">
-<tt class="descclassname">caravel.acquire.</tt><tt class="descname">get_report_files</tt><big>(</big><em>connection=None</em>, <em>target_dir='.'</em>, <em>**access</em><big>)</big><a class="headerlink" href="#caravel.acquire.get_report_files" title="Permalink to this definition">¶</a></dt>
+<dt id="caravel.LogCapture.acquire.get_report_files">
+<tt class="descclassname">caravel.LogCapture.acquire.</tt><tt class="descname">get_report_files</tt><big>(</big><em>connection=None</em>, <em>target_dir='.'</em>, <em>**access</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/acquire.html#get_report_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.acquire.get_report_files" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get the lastest position report &#8220;file&#8221; and save it to the
 target directory.</p>
 <p>Check for latest versions of &#8220;Anrd/vid.csv&#8221; and download it only if it changed.</p>
@@ -153,12 +132,123 @@ naming it with a <tt class="docutils literal"><span class="pre">YYYYMMDDHHMM.rpt
 </table>
 </dd></dl>
 
+<span class="target" id="module-caravel.LogCapture.capture"></span><p>Caravel Capture the Feed and Push into CouchDB.</p>
+<p>Real-time feed CSV files are attached to a document with the following
+attributes</p>
+<div class="highlight-python"><pre>timestamp : year-mm-ddThh:mm:ssZ
+status    : "new", "in-process", "transformed"
+doc_type  : "Feed" -- used by couchdbkit.
+The attached file must be named "feed"</pre>
+</div>
+<p>An example in JSON.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
+   <span class="s">&quot;doc_type&quot;</span> <span class="p">:</span> <span class="s">&quot;Feed&quot;</span><span class="p">,</span>
+   <span class="s">&quot;timestamp&quot;</span> <span class="p">:</span> <span class="s">&quot;yyyy-mm-ddThh:mm:ssZ&quot;</span><span class="p">,</span>
+   <span class="s">&quot;status&quot;</span> <span class="p">:</span> <span class="s">&quot;new&quot;</span><span class="p">,</span>
+   <span class="s">&quot;_attachments&quot;</span> <span class="p">:</span> <span class="p">{</span>
+      <span class="s">&quot;feed&quot;</span> <span class="p">:</span> <span class="p">{</span>
+         <span class="s">&quot;content-type&quot;</span> <span class="p">:</span> <span class="s">&quot;text/csv&quot;</span><span class="p">,</span>
+         <span class="s">&quot;data&quot;</span> <span class="p">:</span> <span class="s">&quot;the,csv,data</span><span class="se">\n</span><span class="s">...&quot;</span><span class="p">,</span>
+         <span class="p">},</span>
+   <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>With curl, it&#8217;s a sequence like the following.</p>
+<p>Step 1 &#8211; POST.</p>
+<div class="highlight-python"><pre>curl -X POST http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/ --user &lt;user:password&gt; -H "Content-Type: application/json" -d '{"timestamp":"2012-03-02T16:16:00Z", "status":"new", "doc_type":"Feed"}'</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;1-7750ef2dbce77303f957de17c754852a&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Step 2 &#8211; PUT.</p>
+<div class="highlight-python"><pre>curl -X PUT http://hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/feed/?rev=1-7750ef2dbce77303f957de17c754852a --user &lt;user:password&gt; -H "Content-Type: text/csv" @201203022302.rpt</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;2-748151ff136b0001671fb0fa14eb886d&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Checking for new feeds is this</p>
+<div class="highlight-python"><pre>curl http://hrt.iriscouch.com:5984/couchdbkit_test/_design/feed/_view/new</pre>
+</div>
+<p>Response is a JSON document like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;total_rows&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s">&quot;offset&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&quot;rows&quot;</span><span class="p">:[</span>
+<span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;key&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;value&quot;</span><span class="p">:</span><span class="n">null</span><span class="p">},</span>
+<span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1d98&quot;</span><span class="p">,</span><span class="s">&quot;key&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1d98&quot;</span><span class="p">,</span><span class="s">&quot;value&quot;</span><span class="p">:</span><span class="n">null</span><span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Individual documents are available:</p>
+<div class="highlight-python"><pre>curl http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/feed/</pre>
+</div>
+<span class="target" id="module-caravel.LogCapture.couch_push"></span><p>Caravel Push a Mapping.</p>
+<p>Push Mapping data to HRT CouchDB.</p>
+<p>A mapping file must be CSV format (with well-defined headings.
+They are attached to a document with the following
+attributes</p>
+<div class="highlight-python"><pre>timestamp      : year-mm-ddThh:mm:ssZ
+effective_date : year-mm-dd
+mapping_type   : vehicle, route or stop
+doc_type       : "Mapping" -- used by couchdbkit.
+content        : the file</pre>
+</div>
+<p>Example JSON document</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
+   <span class="s">&quot;doc_type&quot;</span> <span class="p">:</span> <span class="s">&quot;Mapping&quot;</span><span class="p">,</span>
+   <span class="s">&quot;timestamp&quot;</span> <span class="p">:</span> <span class="s">&quot;yyyy-mm-ddThh:mm:ssZ&quot;</span><span class="p">,</span>
+   <span class="s">&quot;effective_date&quot;</span> <span class="p">:</span> <span class="s">&quot;yyyy-mm-dd&quot;</span><span class="p">,</span>
+   <span class="s">&quot;mapping_type&quot;</span> <span class="p">:</span> <span class="s">&quot;vehicle&quot;</span><span class="p">,</span>
+   <span class="s">&quot;status&quot;</span> <span class="p">:</span> <span class="s">&quot;new&quot;</span><span class="p">,</span>
+   <span class="s">&quot;_attachments&quot;</span> <span class="p">:</span> <span class="p">{</span>
+      <span class="s">&quot;content&quot;</span> <span class="p">:</span> <span class="p">{</span>
+         <span class="s">&quot;content-type&quot;</span> <span class="p">:</span> <span class="s">&quot;text/csv&quot;</span><span class="p">,</span>
+         <span class="s">&quot;data&quot;</span> <span class="p">:</span> <span class="s">&quot;the,csv,data</span><span class="se">\n</span><span class="s">...&quot;</span><span class="p">,</span>
+         <span class="p">},</span>
+   <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>With curl, it&#8217;s a sequence like the following</p>
+<div class="highlight-python"><pre>curl -X POST http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/
+--user &lt;user:password&gt;
+-H "Content-Type: application/json"
+-d '{"timestamp":"2012-03-02T16:16:00Z", "mapping_type":"vehicle", "effective_date": "2012-03-03", "doc_type":"Mapping"}'</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;1-7750ef2dbce77303f957de17c754852a&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>curl -X PUT http://hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/content/?rev=1-7750ef2dbce77303f957de17c754852a
+--user &lt;user:password&gt;
+-H "Content-Type: text/csv" @new_vehicle_mapping.csv</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;2-748151ff136b0001671fb0fa14eb886d&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Checking for new feeds is this</p>
+<div class="highlight-python"><pre>curl http://hrt.iriscouch.com:5984/couchdbkit_test/_design/mapping/_view/new</pre>
+</div>
+<p>Response is a JSON document like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;total_rows&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s">&quot;offset&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&quot;rows&quot;</span><span class="p">:[</span>
+<span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;key&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;value&quot;</span><span class="p">:</span><span class="n">null</span><span class="p">},</span>
+<span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1d98&quot;</span><span class="p">,</span><span class="s">&quot;key&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1d98&quot;</span><span class="p">,</span><span class="s">&quot;value&quot;</span><span class="p">:</span><span class="n">null</span><span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Individual documents are available:</p>
+<div class="highlight-python"><pre>curl http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/content/</pre>
+</div>
+</div>
+<div class="section" id="module-caravel.feed">
+<span id="feed"></span><h3>Feed<a class="headerlink" href="#module-caravel.feed" title="Permalink to this headline">¶</a></h3>
 </div>
 <div class="section" id="module-caravel.report">
 <span id="report"></span><h3>Report<a class="headerlink" href="#module-caravel.report" title="Permalink to this headline">¶</a></h3>
-<p>Caravel Report object construction.</p>
-<p>This reads one (or more) YYYYMMDDHHMM.rpt raw files and creates
-a sequence of Report instances.  The subclasses include</p>
+<p>Caravel Report object definitions.</p>
+<p>This reads one (or more) raw files (or file-like CouchDB Attachments)
+and creates a sequence of Report instances.  The subclasses include</p>
 <ul class="simple">
 <li>Location - a simple location report; rte is None and dwell is None.</li>
 <li>Dwell - a Report with route/direction/stop and dwell time;
@@ -200,7 +290,7 @@ This is less helpful and may get filtered out.</p>
 <dl class="class">
 <dt id="caravel.report.ReportReader">
 <em class="property">class </em><tt class="descclassname">caravel.report.</tt><tt class="descname">ReportReader</tt><big>(</big><em>year=None</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader" title="Permalink to this definition">¶</a></dt>
-<dd><p>An iterator over Report items (<a class="reference internal" href="#caravel.report.Location" title="caravel.report.Location"><tt class="xref py py-class docutils literal"><span class="pre">Location</span></tt></a>, <a class="reference internal" href="#caravel.report.Arrival" title="caravel.report.Arrival"><tt class="xref py py-class docutils literal"><span class="pre">Arrival</span></tt></a>, <a class="reference internal" href="#caravel.report.Dwell" title="caravel.report.Dwell"><tt class="xref py py-class docutils literal"><span class="pre">Dwell</span></tt></a>).</p>
+<dd><p>An abstract iterator over Report items (<a class="reference internal" href="#caravel.report.Location" title="caravel.report.Location"><tt class="xref py py-class docutils literal"><span class="pre">Location</span></tt></a>, <a class="reference internal" href="#caravel.report.Arrival" title="caravel.report.Arrival"><tt class="xref py py-class docutils literal"><span class="pre">Arrival</span></tt></a>, <a class="reference internal" href="#caravel.report.Dwell" title="caravel.report.Dwell"><tt class="xref py py-class docutils literal"><span class="pre">Dwell</span></tt></a>).</p>
 <p>This is the abstract superclass for various reader implementations.</p>
 <p>Requires <a class="reference internal" href="#caravel.report.ReportReader.open" title="caravel.report.ReportReader.open"><tt class="xref py py-meth docutils literal"><span class="pre">ReportReader.open()</span></tt></a>
 and <a class="reference internal" href="#caravel.report.ReportReader.factory" title="caravel.report.ReportReader.factory"><tt class="xref py py-meth docutils literal"><span class="pre">ReportReader.factory()</span></tt></a>.</p>
@@ -423,16 +513,16 @@ If the label is not as expected, raise an exception.</p>
 
 <dl class="attribute">
 <dt id="caravel.report.ReportReader_v1.vehicle_pat">
-<tt class="descname">vehicle_pat</tt><em class="property"> = &lt;_sre.SRE_Pattern object at 0x103fbd190&gt;</em><a class="headerlink" href="#caravel.report.ReportReader_v1.vehicle_pat" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">vehicle_pat</tt><em class="property"> = &lt;_sre.SRE_Pattern object at 0x1045402f0&gt;</em><a class="headerlink" href="#caravel.report.ReportReader_v1.vehicle_pat" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="caravel.report.ReportReader_v2">
-<em class="property">class </em><tt class="descclassname">caravel.report.</tt><tt class="descname">ReportReader_v2</tt><big>(</big><em>year=None</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v2" title="Permalink to this definition">¶</a></dt>
+<dt id="caravel.report.ReportReader_v21">
+<em class="property">class </em><tt class="descclassname">caravel.report.</tt><tt class="descname">ReportReader_v21</tt><big>(</big><em>year=None</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v21" title="Permalink to this definition">¶</a></dt>
 <dd><p>An iterator over Report items (<a class="reference internal" href="#caravel.report.Location" title="caravel.report.Location"><tt class="xref py py-class docutils literal"><span class="pre">Location</span></tt></a>, <a class="reference internal" href="#caravel.report.Arrival" title="caravel.report.Arrival"><tt class="xref py py-class docutils literal"><span class="pre">Arrival</span></tt></a>, <a class="reference internal" href="#caravel.report.Dwell" title="caravel.report.Dwell"><tt class="xref py py-class docutils literal"><span class="pre">Dwell</span></tt></a>).</p>
-<p>This handles V2 format, which is CSV.</p>
+<p>This handles V2.1 format, which is CSV and includes Route ID.</p>
 <p>First Line:</p>
 <div class="highlight-python"><pre>Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]</pre>
 </div>
@@ -459,8 +549,8 @@ with open(some_file) as source:
         # process report</pre>
 </div>
 <dl class="method">
-<dt id="caravel.report.ReportReader_v2.factory">
-<tt class="descname">factory</tt><big>(</big><em>line</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v2.factory" title="Permalink to this definition">¶</a></dt>
+<dt id="caravel.report.ReportReader_v21.factory">
+<tt class="descname">factory</tt><big>(</big><em>line</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v21.factory" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse the fields, returning Arrival, Dwell or Location.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -475,8 +565,8 @@ with open(some_file) as source:
 </dd></dl>
 
 <dl class="method">
-<dt id="caravel.report.ReportReader_v2.open">
-<tt class="descname">open</tt><big>(</big><em>source</em>, <em>year=None</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v2.open" title="Permalink to this definition">¶</a></dt>
+<dt id="caravel.report.ReportReader_v21.open">
+<tt class="descname">open</tt><big>(</big><em>source</em>, <em>year=None</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v21.open" title="Permalink to this definition">¶</a></dt>
 <dd><p>Open a given source for processing.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -494,9 +584,123 @@ with open(some_file) as source:
 
 </dd></dl>
 
+<dl class="class">
+<dt id="caravel.report.ReportReader_v22">
+<em class="property">class </em><tt class="descclassname">caravel.report.</tt><tt class="descname">ReportReader_v22</tt><big>(</big><em>year=None</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v22" title="Permalink to this definition">¶</a></dt>
+<dd><p>An iterator over Report items (<a class="reference internal" href="#caravel.report.Location" title="caravel.report.Location"><tt class="xref py py-class docutils literal"><span class="pre">Location</span></tt></a>, <a class="reference internal" href="#caravel.report.Arrival" title="caravel.report.Arrival"><tt class="xref py py-class docutils literal"><span class="pre">Arrival</span></tt></a>, <a class="reference internal" href="#caravel.report.Dwell" title="caravel.report.Dwell"><tt class="xref py py-class docutils literal"><span class="pre">Dwell</span></tt></a>).</p>
+<p>This handles V2.2 format, which is CSV and includes Vehicle ID</p>
+<p>First Line:</p>
+<div class="highlight-python"><pre>Time,Date,Vehicle,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]</pre>
+</div>
+<p>Column Titles:</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8216;Time&#8217;</li>
+<li>&#8216;Date&#8217;</li>
+<li>&#8216;Vehicle&#8217;</li>
+<li>&#8216;Lat/Lon&#8217;</li>
+<li>&#8216;Location Valid/Invalid&#8217;</li>
+<li>&#8216;Adherence&#8217;</li>
+<li>&#8216;Adherence Valid/Invalid[&#8216; # Really.</li>
+<li>&#8216;Route&#8217;</li>
+<li>&#8216;Direction&#8217;</li>
+<li>&#8216;Stop]&#8217; # Also peculiar.</li>
+</ul>
+</div></blockquote>
+<p>This is an iterable object, generally something like the following is done:</p>
+<div class="highlight-python"><pre>reader= ReportReader_v3()
+with open(some_file) as source:
+    reader.open(some_file)
+    for report in reader:
+        # process report</pre>
+</div>
+<dl class="method">
+<dt id="caravel.report.ReportReader_v22.factory">
+<tt class="descname">factory</tt><big>(</big><em>line</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v22.factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the fields, returning Arrival, Dwell or Location.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>line</strong> &#8211; CSV line of raw input.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Report instance, if possible.  <tt class="docutils literal"><span class="pre">None</span></tt> if the fields can&#8217;t be parsed.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="caravel.report.ReportReader_v3">
+<em class="property">class </em><tt class="descclassname">caravel.report.</tt><tt class="descname">ReportReader_v3</tt><big>(</big><em>year=None</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v3" title="Permalink to this definition">¶</a></dt>
+<dd><p>An iterator over Report items (<a class="reference internal" href="#caravel.report.Location" title="caravel.report.Location"><tt class="xref py py-class docutils literal"><span class="pre">Location</span></tt></a>, <a class="reference internal" href="#caravel.report.Arrival" title="caravel.report.Arrival"><tt class="xref py py-class docutils literal"><span class="pre">Arrival</span></tt></a>, <a class="reference internal" href="#caravel.report.Dwell" title="caravel.report.Dwell"><tt class="xref py py-class docutils literal"><span class="pre">Dwell</span></tt></a>).</p>
+<p>This handles V3 format, which is CSV.</p>
+<p>Source:</p>
+<div class="highlight-python"><pre>String[] headings = {
+    "Date", "Time", "Vehicle", "Lat", "Lon", "Location Valid/Invalid",
+    "Adherence", "Adherence Valid/Invalid", "Route", "Direction", "Stop"
+};</pre>
+</div>
+<p>Column Titles:</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8216;Date&#8217;</li>
+<li>&#8216;Time&#8217;</li>
+<li>&#8216;Vehicle&#8217;</li>
+<li>&#8216;Lat&#8217;</li>
+<li>&#8216;Lon&#8217;</li>
+<li>&#8216;Location Valid/Invalid&#8217;</li>
+<li>&#8216;Adherence&#8217;</li>
+<li>&#8216;Adherence Valid/Invalid&#8217;</li>
+<li>&#8216;Route&#8217;</li>
+<li>&#8216;Direction&#8217;</li>
+<li>&#8216;Stop&#8217;</li>
+</ul>
+</div></blockquote>
+<p>This is an iterable object, generally something like the following is done:</p>
+<div class="highlight-python"><pre>reader= ReportReader_v3()
+with open(some_file) as source:
+    reader.open(some_file)
+    for report in reader:
+        # process report</pre>
+</div>
+<dl class="method">
+<dt id="caravel.report.ReportReader_v3.factory">
+<tt class="descname">factory</tt><big>(</big><em>line</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v3.factory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse the fields, returning Arrival, Dwell or Location.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>line</strong> &#8211; CSV line of raw input.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Report instance, if possible.  <tt class="docutils literal"><span class="pre">None</span></tt> if the fields can&#8217;t be parsed.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="caravel.report.ReportReader_v3.open">
+<tt class="descname">open</tt><big>(</big><em>source</em><big>)</big><a class="headerlink" href="#caravel.report.ReportReader_v3.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Open a given source for processing.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>source</strong> &#8211; an open file-like source.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
-<dt id="caravel.report.report_iter">
-<tt class="descclassname">caravel.report.</tt><tt class="descname">report_iter</tt><big>(</big><em>report_reader</em>, <em>files</em><big>)</big><a class="reference internal" href="../_modules/caravel/report.html#report_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.report.report_iter" title="Permalink to this definition">¶</a></dt>
+<dt id="caravel.report.report_file_iter">
+<tt class="descclassname">caravel.report.</tt><tt class="descname">report_file_iter</tt><big>(</big><em>report_reader</em>, <em>files</em><big>)</big><a class="headerlink" href="#caravel.report.report_file_iter" title="Permalink to this definition">¶</a></dt>
 <dd><p>An iterator which applies the <tt class="docutils literal"><span class="pre">report_reader</span></tt> instance to all
 of the named files.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -507,7 +711,7 @@ of the named files.</p>
 <li><strong>report_reader</strong> &#8211; an instance of <a class="reference internal" href="#caravel.report.ReportReader" title="caravel.report.ReportReader"><tt class="xref py py-class docutils literal"><span class="pre">ReportReader</span></tt></a> which parses
 input lines and creates <a class="reference internal" href="#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">Report</span></tt></a> instances.</li>
 <li><strong>files</strong> &#8211; an iterable over the file names.
-To process a single file, use <tt class="docutils literal"><span class="pre">report_iter(</span> <span class="pre">report_reader,</span> <span class="pre">[one_file]</span> <span class="pre">)</span></tt></li>
+To process a single file, use <tt class="docutils literal"><span class="pre">report_file_iter(</span> <span class="pre">report_reader,</span> <span class="pre">[one_file]</span> <span class="pre">)</span></tt></li>
 </ul>
 </td>
 </tr>
@@ -518,6 +722,7 @@ To process a single file, use <tt class="docutils literal"><span class="pre">rep
 </div>
 <div class="section" id="json-codec">
 <h4>JSON Codec<a class="headerlink" href="#json-codec" title="Permalink to this headline">¶</a></h4>
+<p>This is not terribly useful, since CouchDB does this for us.</p>
 <dl class="class">
 <dt id="caravel.report.JSONEncoder">
 <em class="property">class </em><tt class="descclassname">caravel.report.</tt><tt class="descname">JSONEncoder</tt><big>(</big><em>skipkeys=False</em>, <em>ensure_ascii=True</em>, <em>check_circular=True</em>, <em>allow_nan=True</em>, <em>sort_keys=False</em>, <em>indent=None</em>, <em>separators=None</em>, <em>encoding='utf-8'</em>, <em>default=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/report.html#JSONEncoder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.report.JSONEncoder" title="Permalink to this definition">¶</a></dt>
@@ -539,6 +744,340 @@ handles some of the conversion.</p>
 
 </div>
 </div>
+<div class="section" id="module-caravel.admin">
+<span id="administrative-functions"></span><h3>Administrative Functions<a class="headerlink" href="#module-caravel.admin" title="Permalink to this headline">¶</a></h3>
+<p>Caravel CouchDB Admin Functions.</p>
+<p>This will create databases, create applications.</p>
+<p>It will also do things like clean the feed database.</p>
+<span class="target" id="module-caravel.settings"></span><p>Caravel Couch DB settings</p>
+</div>
+</div>
+<div class="section" id="current-status">
+<h2>Current Status<a class="headerlink" href="#current-status" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="status-builder">
+<h3>Status Builder<a class="headerlink" href="#status-builder" title="Permalink to this headline">¶</a></h3>
+<p>This actually include mapping validation, feed validation
+as well as feed transform and load to create transit system
+status.</p>
+<span class="target" id="module-caravel.StatusBuilder.bulk_transform"></span><p>Caravel processing of raw feed and mapping into route, stop and vehicle status
+reports.</p>
+<p>This is a one-time manual operation that can be driven via cron.</p>
+<ol class="arabic simple">
+<li>Handle new mappings.  Validate.  Update Cache.  Cleanup.
+See <a class="reference internal" href="#module-caravel.feed.mapping_load" title="caravel.feed.mapping_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.mapping_load</span></tt></a>.</li>
+<li>Handle new feeds.  Validate.  Apply Mappings.  Cleanup.
+See <a class="reference internal" href="#module-caravel.feed.feed_load" title="caravel.feed.feed_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.feed_load</span></tt></a>.</li>
+<li>Build status.  See <a class="reference internal" href="#module-caravel.status.status_load" title="caravel.status.status_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.status.status_load</span></tt></a>.</li>
+</ol>
+<span class="target" id="module-caravel.StatusBuilder.change_notification"></span><p>Caravel processing of raw feed and mapping into route, stop and vehicle status
+reports.</p>
+<p>This relies on Couchdb Change Notification via long polling.</p>
+<ol class="arabic simple">
+<li>Handle new mappings.  Validate.  Update Cache.  Cleanup.
+See <a class="reference internal" href="#module-caravel.feed.mapping_load" title="caravel.feed.mapping_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.mapping_load</span></tt></a>.</li>
+<li>Handle new feeds.  Validate.  Apply Mappings.  Cleanup.
+See <a class="reference internal" href="#module-caravel.feed.feed_load" title="caravel.feed.feed_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.feed_load</span></tt></a>.</li>
+<li>Build status.  See <a class="reference internal" href="#module-caravel.status.status_load" title="caravel.status.status_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.status.status_load</span></tt></a>.</li>
+</ol>
+<div class="section" id="overall-control">
+<h4>Overall Control<a class="headerlink" href="#overall-control" title="Permalink to this headline">¶</a></h4>
+<p>The overall control is driven by tracking status changes that are emitted
+by the couchdb.  The change notification long polling technique provides
+a sequence of change documents.</p>
+<p>For documents which are mappings, this triggers the mapping
+validation, and cache update.</p>
+<p>For documents which are feeds, this triggers feed validation, and status
+updates.</p>
+<p>The cleanup cycles can triggered asynchronously based on</p>
+<ul class="simple">
+<li>cron in a separate process.</li>
+<li>heartbeat from couchdb.</li>
+<li>watching the clock during ordinary processing cycles (i.e.,
+intermittently after feed processing is completed.).</li>
+</ul>
+</div>
+<div class="section" id="recursion-detection">
+<h4>Recursion Detection<a class="headerlink" href="#recursion-detection" title="Permalink to this headline">¶</a></h4>
+<p>Once we start processing a feed or mapping, we&#8217;ll get renotified of the
+changes we&#8217;re making to that mapping.</p>
+<p>To prevent infinite recursion, we keep a small FIFO of documents that we
+ignore when the appear a second time.  After all, this process does
+numerous updates, so it gets notified of the updates it made.</p>
+</div>
+</div>
+<div class="section" id="id1">
+<h3>Feed<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<span class="target" id="module-caravel.feed.models"></span><p>HRT Couch DB LogCapture Feed Models.</p>
+<p>This describes the data pushed by LogCapture.</p>
+<span class="target" id="module-caravel.feed.mapping_load"></span><p>Caravel ETL of real-time-feed with mappings
+from source encodings to GTFS keys.</p>
+<div class="section" id="load-new-mappings">
+<h4>Load New Mappings<a class="headerlink" href="#load-new-mappings" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic simple">
+<li>Get any new mapping.</li>
+<li>Validate the mapping.<ul>
+<li>Check the timestamp and delete duplicates (same type,
+same effective date, same or older timestamp).</li>
+<li>Check the type.</li>
+<li>Check the attachment size and structure.</li>
+</ul>
+</li>
+<li>Put in a proper effective date range.</li>
+<li>Cache the current mapping chosen from the set of valid mappings.
+It&#8217;s helpful to keep this in memory to save time.</li>
+</ol>
+</div>
+<div class="section" id="components">
+<h4>Components<a class="headerlink" href="#components" title="Permalink to this headline">¶</a></h4>
+<div class="section" id="attachment-handling">
+<h5>Attachment Handling<a class="headerlink" href="#attachment-handling" title="Permalink to this headline">¶</a></h5>
+<dl class="class">
+<dt id="caravel.feed.mapping_load.Invalid_Mapping">
+<em class="property">class </em><tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">Invalid_Mapping</tt><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#Invalid_Mapping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.Invalid_Mapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>An exception raised as part of mapping validation.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="caravel.feed.mapping_load.CSV_Attachment">
+<em class="property">class </em><tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">CSV_Attachment</tt><big>(</big><em>document</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#CSV_Attachment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.CSV_Attachment" title="Permalink to this definition">¶</a></dt>
+<dd><p>The attached file for a mapping.  The file should be a .CSV notation
+file with two specific column names.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="caravel.feed.mapping_load.Vehicle_Attachment">
+<em class="property">class </em><tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">Vehicle_Attachment</tt><big>(</big><em>document</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#Vehicle_Attachment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.Vehicle_Attachment" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#caravel.feed.mapping_load.CSV_Attachment" title="caravel.feed.mapping_load.CSV_Attachment"><tt class="xref py py-class docutils literal"><span class="pre">CSV_Attachment</span></tt></a> for the vehicle mapping.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="caravel.feed.mapping_load.Route_Attachment">
+<em class="property">class </em><tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">Route_Attachment</tt><big>(</big><em>document</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#Route_Attachment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.Route_Attachment" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#caravel.feed.mapping_load.CSV_Attachment" title="caravel.feed.mapping_load.CSV_Attachment"><tt class="xref py py-class docutils literal"><span class="pre">CSV_Attachment</span></tt></a> for the route mapping.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="caravel.feed.mapping_load.Stop_Attachment">
+<em class="property">class </em><tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">Stop_Attachment</tt><big>(</big><em>document</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#Stop_Attachment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.Stop_Attachment" title="Permalink to this definition">¶</a></dt>
+<dd><p>A <a class="reference internal" href="#caravel.feed.mapping_load.CSV_Attachment" title="caravel.feed.mapping_load.CSV_Attachment"><tt class="xref py py-class docutils literal"><span class="pre">CSV_Attachment</span></tt></a> for the stop id mapping.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.feed.mapping_load.mapping_attachment">
+<tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">mapping_attachment</tt><big>(</big><em>mapping</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#mapping_attachment"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.mapping_attachment" title="Permalink to this definition">¶</a></dt>
+<dd><p>Instantiate the proper CSV_Attachment subclass
+for this mapping.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="mapping-processing">
+<h5>Mapping Processing<a class="headerlink" href="#mapping-processing" title="Permalink to this headline">¶</a></h5>
+<dl class="function">
+<dt id="caravel.feed.mapping_load.validate">
+<tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">validate</tt><big>(</big><em>mapping</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate a given mapping object.  This will locate
+an appropriate attachment handler and then invoke the attachment
+handler&#8217;s <tt class="xref py py-meth docutils literal"><span class="pre">CSV_Attachment.validate()</span></tt> method.</p>
+<p>This is the first step when processing a new mapping.</p>
+<p>If anything goes wrong an exception is raised.
+Otherwise this returns the mapping.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.feed.mapping_load.validate_new">
+<tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">validate_new</tt><big>(</big><em>mapping_iter</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#validate_new"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.validate_new" title="Permalink to this definition">¶</a></dt>
+<dd><p>For all new mappings, validate the attached content and update
+the status to mark them as usable.</p>
+<p>Return a dictionary of sequences of the new mappings which are also valid.
+The keys are the mapping types.  The value is a sequence of valid
+mappings of that type.
+This return value signals that we must rework the timeline
+and reload the mappings that are in cache.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.feed.mapping_load.assemble_timeline">
+<tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">assemble_timeline</tt><big>(</big><em>mapping_type</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#assemble_timeline"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.assemble_timeline" title="Permalink to this definition">¶</a></dt>
+<dd><p>For all valid mappings, reassemble the timeline for each type.</p>
+<p>This is the sequence of valid mappings in order by their
+effective_date from most recent to oldest.</p>
+<p>The most recent applies until the end of time.
+Each previous mapping applies until the one more recently added.
+Generally, just the last two mappings need to be tweaked to have
+proper ending dates.  As a simplification, we reset all
+ending dates to assure consistent data.</p>
+<p>Returns the sequence of mappings of the given type.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.feed.mapping_load.fetch_current">
+<tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">fetch_current</tt><big>(</big><em>mapping_type</em>, <em>today</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#fetch_current"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.fetch_current" title="Permalink to this definition">¶</a></dt>
+<dd><p>Locate the mapping of the given type which is active today.
+This requires that mappings are all validated and the timeline
+has been assembled correctly.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.feed.mapping_load.refresh_mapping_cache">
+<tt class="descclassname">caravel.feed.mapping_load.</tt><tt class="descname">refresh_mapping_cache</tt><big>(</big><em>mapping_cache</em>, <em>new_mappings=None</em>, <em>today=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/mapping_load.html#refresh_mapping_cache"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.mapping_load.refresh_mapping_cache" title="Permalink to this definition">¶</a></dt>
+<dd><p>Locate the current mappings so they can be cached and used.</p>
+<ol class="arabic simple">
+<li>Validate all new mappings.
+This uses <a class="reference internal" href="#caravel.feed.mapping_load.validate_new" title="caravel.feed.mapping_load.validate_new"><tt class="xref py py-func docutils literal"><span class="pre">validate_new()</span></tt></a>.</li>
+<li>Among the valid maps, reason out the timeline and make
+sure the effective_dates and ending_dates all make sense.
+This uses <a class="reference internal" href="#caravel.feed.mapping_load.assemble_timeline" title="caravel.feed.mapping_load.assemble_timeline"><tt class="xref py py-func docutils literal"><span class="pre">assemble_timeline()</span></tt></a>.</li>
+<li>Pick the mappings that apply today.
+This uses <a class="reference internal" href="#caravel.feed.mapping_load.fetch_current" title="caravel.feed.mapping_load.fetch_current"><tt class="xref py py-func docutils literal"><span class="pre">fetch_current()</span></tt></a>.</li>
+<li>Compare with the mappings in the local mappings cache.
+If the current mapping is new, then parse the CSV mapping data.
+If the current mapping hasn&#8217;t changed, then we&#8217;re good.</li>
+</ol>
+<p>This must be run based on two events.</p>
+<ul class="simple">
+<li>Beginning of each day.</li>
+<li>Each time a mapping is pushed.</li>
+</ul>
+<p>It can be run before each feed is processed, but that&#8217;s a bit more
+processing than is strictly necessary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">dictionary with &#8216;vehicle&#8217;, &#8216;route&#8217;, &#8216;stop&#8217; mappings.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<span class="target" id="module-caravel.feed.feed_load"></span><p>Caravel ETL of real-time-feed with mappings
+from source encodings to GTFS keys.</p>
+<div class="section" id="load-new-feeds">
+<h4>Load New Feeds<a class="headerlink" href="#load-new-feeds" title="Permalink to this headline">¶</a></h4>
+<ol class="arabic">
+<li><p class="first">Get the next unprocessed feed.</p>
+<ul class="simple">
+<li>Discard unreadable feeds.</li>
+<li>Discard feeds with improper headings.</li>
+</ul>
+</li>
+<li><p class="first">Apply the mapping;
+create the sequence of position reports.
+It&#8217;s not essential to persist the position reports.</p>
+<p>The LogTail application uses the following headings for a feed.</p>
+<div class="highlight-python"><pre>String[] headings = {
+    "Date", "Time", "Vehicle", "Lat", "Lon", "Location Valid/Invalid",
+    "Adherence", "Adherence Valid/Invalid", "Route", "Direction", "Stop"
+};</pre>
+</div>
+</li>
+<li><p class="first">Clean up old feeds.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="id2">
+<h4>Components<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h4>
+<dl class="function">
+<dt id="caravel.feed.feed_load.remove_damaged">
+<tt class="descclassname">caravel.feed.feed_load.</tt><tt class="descname">remove_damaged</tt><big>(</big><em>db</em>, <em>feed_iter</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/feed_load.html#remove_damaged"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.feed_load.remove_damaged" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove feed documents which are so damaged we can&#8217;t map them
+to Python objects.</p>
+<p>This is rare, and usually comes from poor unit testing on LogTail.</p>
+<p>Once in a while, something can go horribly wrong and the
+query needs to be changed to &#8220;feed/all&#8221; to check all feeds
+instead of &#8220;feed/new&#8221;.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.feed.feed_load.remove_old">
+<tt class="descclassname">caravel.feed.feed_load.</tt><tt class="descname">remove_old</tt><big>(</big><em>db</em>, <em>today=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/feed_load.html#remove_old"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.feed_load.remove_old" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="caravel.feed.feed_load.new_feed_iter">
+<tt class="descclassname">caravel.feed.feed_load.</tt><tt class="descname">new_feed_iter</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/feed/feed_load.html#new_feed_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.feed_load.new_feed_iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Query all real-time Feed uploads.
+Do a validation to assure that</p>
+<ol class="loweralpha simple">
+<li>we can build a Feed object,</li>
+<li>there&#8217;s a proper attachment.</li>
+</ol>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.feed.feed_load.transform_new">
+<tt class="descclassname">caravel.feed.feed_load.</tt><tt class="descname">transform_new</tt><big>(</big><em>mappings</em>, <em>feed_iter</em>, <em>track_arrival</em>, <em>track_location</em>, <em>today=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/feed_load.html#transform_new"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.feed_load.transform_new" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+<div class="section" id="module-caravel.status.models">
+<span id="status"></span><h3>Status<a class="headerlink" href="#module-caravel.status.models" title="Permalink to this headline">¶</a></h3>
+<p>Caravel Status object definitions.</p>
+<span class="target" id="module-caravel.status.status_load"></span><p>Caravel ETL of real-time-feed with mappings
+from source encodings to GTFS keys.</p>
+<ol class="arabic simple">
+<li>Get the next position report with the mapping applied.<ul>
+<li>Locations have precious little additional information.</li>
+<li>Arrivals, however, have plenty of additional data, including
+Route, Direction and Stop.</li>
+</ul>
+</li>
+<li>Track route, route-stop, stop and vehicle status.</li>
+<li>Clean up old status reports.</li>
+</ol>
+<div class="section" id="id3">
+<h4>Components<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h4>
+<dl class="function">
+<dt id="caravel.status.status_load.update_route">
+<tt class="descclassname">caravel.status.status_load.</tt><tt class="descname">update_route</tt><big>(</big><em>report</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/status_load.html#update_route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.status_load.update_route" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add to today&#8217;s route/direction documents.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.status.status_load.update_route_stop">
+<tt class="descclassname">caravel.status.status_load.</tt><tt class="descname">update_route_stop</tt><big>(</big><em>report</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/status_load.html#update_route_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.status_load.update_route_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add to today&#8217;s route/direction/stop documents.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.status.status_load.update_stop">
+<tt class="descclassname">caravel.status.status_load.</tt><tt class="descname">update_stop</tt><big>(</big><em>report</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/status_load.html#update_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.status_load.update_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add to today&#8217;s Stop documents.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.status.status_load.update_vehicle">
+<tt class="descclassname">caravel.status.status_load.</tt><tt class="descname">update_vehicle</tt><big>(</big><em>report</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/status_load.html#update_vehicle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.status_load.update_vehicle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add to today&#8217;s vehicle documents at this stop.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.status.status_load.track_arrival">
+<tt class="descclassname">caravel.status.status_load.</tt><tt class="descname">track_arrival</tt><big>(</big><em>mappings</em>, <em>report</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/status_load.html#track_arrival"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.status_load.track_arrival" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply mappings.  Create or update status objects.</p>
+<p>Use a Hard-wired mapping for direction.</p>
+<p>Apply current mappings for route, vehicle and stop.
+If (a) the mapping exists and (b) the value is in the mapping</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.status.status_load.track_location">
+<tt class="descclassname">caravel.status.status_load.</tt><tt class="descname">track_location</tt><big>(</big><em>mappings</em>, <em>report</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/status_load.html#track_location"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.status_load.track_location" title="Permalink to this definition">¶</a></dt>
+<dd><p>Track a simple location report.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.status.status_load.old_status_removal">
+<tt class="descclassname">caravel.status.status_load.</tt><tt class="descname">old_status_removal</tt><big>(</big><em>db</em>, <em>today=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/status_load.html#old_status_removal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.status_load.old_status_removal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove old Route, RouteStop and Vehicle reports.</p>
+<p>This should only be run once in a great while.</p>
+</dd></dl>
+
+</div>
+</div>
 <div class="section" id="module-caravel.transit_system">
 <span id="transit-system"></span><h3>Transit System<a class="headerlink" href="#module-caravel.transit_system" title="Permalink to this headline">¶</a></h3>
 <p>Caravel Transit System &#8220;database&#8221;.</p>
@@ -552,6 +1091,31 @@ create an in-memory database.</p>
 <li>trips.txt</li>
 <li>stop_times.txt</li>
 </ul>
+<p>Transit System Source</p>
+<div class="highlight-python"><pre>http://googletf.gohrt.com/google_transit.zip</pre>
+</div>
+<div class="section" id="acquisition">
+<h4>Acquisition<a class="headerlink" href="#acquisition" title="Permalink to this headline">¶</a></h4>
+<dl class="function">
+<dt id="caravel.transit_system.get_source_data">
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_source_data</tt><big>(</big><em>connection=None</em>, <em>target_dir='.'</em>, <em>url=None</em><big>)</big><a class="headerlink" href="#caravel.transit_system.get_source_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the lastest Route Definition ZIP Archive.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>connection</strong> &#8211; Override to the default of urllib2.OpenerDirector.</li>
+<li><strong>target_dir</strong> &#8211; Working directory for result file</li>
+<li><strong>url</strong> &#8211; URL for the file (<a class="reference external" href="http://googletf.gohrt.com/google_transit.zip">http://googletf.gohrt.com/google_transit.zip</a>)</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 <div class="section" id="transit-objects">
 <h4>Transit Objects<a class="headerlink" href="#transit-objects" title="Permalink to this headline">¶</a></h4>
 <dl class="class">
@@ -1194,89 +1758,6 @@ the defined routes.</p>
 <div class="section" id="applications">
 <h2>Applications<a class="headerlink" href="#applications" title="Permalink to this headline">¶</a></h2>
 <p>These are top-level applications to produce useful results.</p>
-<div class="section" id="module-caravel.split">
-<span id="split"></span><h3>Split<a class="headerlink" href="#module-caravel.split" title="Permalink to this headline">¶</a></h3>
-<p>Filter and split raw input files to create CSV files
-with Location reports separated from Arrival reports.</p>
-<p>Synopsis</p>
-<div class="highlight-python"><pre>python2.7 -m caravel.split [--new] [-l location] [-a arrival] source...</pre>
-</div>
-<p>Description</p>
-<blockquote>
-<div>For each source file, filter the invalid Reports.  Split into two CSV files.
-One file gets Arrival and Dwell reports.  The other file gets Location reports.</div></blockquote>
-<p>Options</p>
-<blockquote>
-<div><dl class="option">
-<dt id="cmdoption-split--format">
-<tt class="descname">--format</tt><tt class="descclassname"> number</tt><a class="headerlink" href="#cmdoption-split--format" title="Permalink to this definition">¶</a></dt>
-<dd><p>Format number.  Generally maps to a subclass of <a class="reference internal" href="#caravel.report.ReportReader" title="caravel.report.ReportReader"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.ReportReader</span></tt></a>.</p>
-</dd></dl>
-
-<dl class="option">
-<dt id="cmdoption-split--new">
-<tt class="descname">--new</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">-n</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-split--new" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a new, live report file.</p>
-</dd></dl>
-
-<dl class="option">
-<dt id="cmdoption-split--location">
-<tt class="descname">--location</tt><tt class="descclassname"> &lt;file&gt;</tt><tt class="descclassname">, </tt><tt class="descname">-l</tt><tt class="descclassname"> &lt;file&gt;</tt><a class="headerlink" href="#cmdoption-split--location" title="Permalink to this definition">¶</a></dt>
-<dd><p>The name of the Location reports (&#8216;location.csv&#8217; is the default)</p>
-</dd></dl>
-
-<dl class="option">
-<dt id="cmdoption-split--arrival">
-<tt class="descname">--arrival</tt><tt class="descclassname"> &lt;file&gt;</tt><tt class="descclassname">, </tt><tt class="descname">-a</tt><tt class="descclassname"> &lt;file&gt;</tt><a class="headerlink" href="#cmdoption-split--arrival" title="Permalink to this definition">¶</a></dt>
-<dd><p>The name of the Arrival/Dwell reports (&#8216;arrival.csv&#8217; is the default)</p>
-</dd></dl>
-
-<dl class="option">
-<dt>
-<tt class="descname">source...</tt></dt>
-<dd><p>List of source files to process.</p>
-</dd></dl>
-
-</div></blockquote>
-<p>Components</p>
-<blockquote>
-<div><dl class="function">
-<dt id="caravel.split.split">
-<tt class="descclassname">caravel.split.</tt><tt class="descname">split</tt><big>(</big><em>report_iter</em>, <em>location_csv</em>, <em>arrival_csv</em><big>)</big><a class="reference internal" href="../_modules/caravel/split.html#split"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.split.split" title="Permalink to this definition">¶</a></dt>
-<dd><p>Split a collection of reports into two subclass: Locations and Arrivals.</p>
-<p>Generally, the report_iter is an instance of <a class="reference internal" href="#caravel.report.report_iter" title="caravel.report.report_iter"><tt class="xref py py-func docutils literal"><span class="pre">caravel.report.report_iter()</span></tt></a>.</p>
-<p>It&#8217;s usually built like this:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">reader</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportReader_v1</span><span class="p">()</span>
-<span class="n">rpt_iter</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_iter</span><span class="p">(</span> <span class="n">reader</span><span class="p">,</span> <span class="p">[</span><span class="nb">list</span><span class="p">,</span><span class="n">of</span><span class="p">,</span><span class="n">files</span><span class="p">]</span> <span class="p">)</span>
-</pre></div>
-</div>
-<p>This iterator will examine all the files in the list, extracting
-all Report objects.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>report_iter</strong> &#8211; an iterator over <a class="reference internal" href="#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a> instances.</li>
-<li><strong>location_csv</strong> &#8211; Name of a file to open and write.  This gets Location reports.</li>
-<li><strong>arrival_csv</strong> &#8211; Name of a file to open and write. This gets
-Arrival and Dwell reports.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="caravel.split.get_args">
-<tt class="descclassname">caravel.split.</tt><tt class="descname">get_args</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/split.html#get_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.split.get_args" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parse command-line arguments.
-:returns: Arguments object.</p>
-</dd></dl>
-
-</div></blockquote>
-</div>
 <div class="section" id="module-caravel.arrival_at_stop">
 <span id="arrival-at-stop"></span><h3>Arrival At Stop<a class="headerlink" href="#module-caravel.arrival_at_stop" title="Permalink to this headline">¶</a></h3>
 <p>From live Arrival and Dwell records, compute the closest stop.</p>
@@ -1783,10 +2264,10 @@ Arrival and Dwell reports.</div></blockquote>
 <dt id="caravel.stop_discovery.group_by_rte_dir_stop">
 <tt class="descclassname">caravel.stop_discovery.</tt><tt class="descname">group_by_rte_dir_stop</tt><big>(</big><em>report_iter</em><big>)</big><a class="reference internal" href="../_modules/caravel/stop_discovery.html#group_by_rte_dir_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.stop_discovery.group_by_rte_dir_stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Accumulate stops from a sequence of Arrivals.</p>
-<p>Generally, the report_iter is an instance of <a class="reference internal" href="#caravel.report.report_iter" title="caravel.report.report_iter"><tt class="xref py py-func docutils literal"><span class="pre">caravel.report.report_iter()</span></tt></a>.</p>
+<p>Generally, the report_iter is an instance of <a class="reference internal" href="#caravel.report.report_file_iter" title="caravel.report.report_file_iter"><tt class="xref py py-func docutils literal"><span class="pre">caravel.report.report_file_iter()</span></tt></a>.</p>
 <p>It&#8217;s usually built like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">reader</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportReader_v1</span><span class="p">()</span>
-<span class="n">rpt_iter</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_iter</span><span class="p">(</span> <span class="n">reader</span><span class="p">,</span> <span class="p">[</span><span class="nb">list</span><span class="p">,</span><span class="n">of</span><span class="p">,</span><span class="n">files</span><span class="p">]</span> <span class="p">)</span>
+<span class="n">rpt_iter</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_file_iter</span><span class="p">(</span> <span class="n">reader</span><span class="p">,</span> <span class="p">[</span><span class="nb">list</span><span class="p">,</span><span class="n">of</span><span class="p">,</span><span class="n">files</span><span class="p">]</span> <span class="p">)</span>
 </pre></div>
 </div>
 <p>This iterator will examine all the files in the list, extracting
@@ -1843,15 +2324,41 @@ The route is an OrderedDict, keyed by Route/Dir/Stop with sequence of arrival ti
   <h3><a href="../caravel.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Domain Model Implementation</a><ul>
-<li><a class="reference internal" href="#low-level-structures">Low-Level Structures</a><ul>
-<li><a class="reference internal" href="#module-caravel.acquire">Acquire</a></li>
+<li><a class="reference internal" href="#extract-transform-load">Extract-Transform-Load</a><ul>
+<li><a class="reference internal" href="#module-caravel.LogCapture.acquire">LogCapture</a></li>
+<li><a class="reference internal" href="#module-caravel.feed">Feed</a></li>
 <li><a class="reference internal" href="#module-caravel.report">Report</a><ul>
 <li><a class="reference internal" href="#report-objects">Report Objects</a></li>
 <li><a class="reference internal" href="#report-factory">Report Factory</a></li>
 <li><a class="reference internal" href="#json-codec">JSON Codec</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#module-caravel.admin">Administrative Functions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#current-status">Current Status</a><ul>
+<li><a class="reference internal" href="#status-builder">Status Builder</a><ul>
+<li><a class="reference internal" href="#overall-control">Overall Control</a></li>
+<li><a class="reference internal" href="#recursion-detection">Recursion Detection</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#id1">Feed</a><ul>
+<li><a class="reference internal" href="#load-new-mappings">Load New Mappings</a></li>
+<li><a class="reference internal" href="#components">Components</a><ul>
+<li><a class="reference internal" href="#attachment-handling">Attachment Handling</a></li>
+<li><a class="reference internal" href="#mapping-processing">Mapping Processing</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#load-new-feeds">Load New Feeds</a></li>
+<li><a class="reference internal" href="#id2">Components</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-caravel.status.models">Status</a><ul>
+<li><a class="reference internal" href="#id3">Components</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#module-caravel.transit_system">Transit System</a><ul>
+<li><a class="reference internal" href="#acquisition">Acquisition</a></li>
 <li><a class="reference internal" href="#transit-objects">Transit Objects</a></li>
 <li><a class="reference internal" href="#transit-connection">Transit &#8220;Connection&#8221;</a></li>
 <li><a class="reference internal" href="#query-functions">Query Functions</a></li>
@@ -1866,7 +2373,6 @@ The route is an OrderedDict, keyed by Route/Dir/Stop with sequence of arrival ti
 </ul>
 </li>
 <li><a class="reference internal" href="#applications">Applications</a><ul>
-<li><a class="reference internal" href="#module-caravel.split">Split</a></li>
 <li><a class="reference internal" href="#module-caravel.arrival_at_stop">Arrival At Stop</a></li>
 <li><a class="reference internal" href="#module-caravel.stop_discovery">Stop Discovery</a></li>
 </ul>

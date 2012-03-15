@@ -21,9 +21,13 @@ class Test_StopFinder( Sample_Transit_Data ):
         timestamp= datetime.datetime( 2012, 2, 28, 6, 33, 0 )
         lat, lon = 36.85192-self.feet250,-76.28732
         time= (timestamp.hour*60+timestamp.minute)*60+timestamp.second
-        self.arr= Arrival( timestamp, '3247', lat, lon, 'V', '-1', 'V',
+        self.arr= Arrival( timestamp=timestamp, id='3247',
+                          lat=lat, lon=lon, ll_valid='V',
+                          adher=-1, adher_valid='V',
                 time=time, rte='28', dir='1', stop='30' )
-        self.loc= Location( timestamp, '3247', lat, lon, 'V', '-1', 'V', )
+        self.loc= Location( timestamp=timestamp, id='3247',
+                        lat=lat, lon=lon, ll_valid='V',
+                        adher=-1, adher_valid='V', )
         self.stop_finder= StopFinder( self.connection )
     def test_should_reject( self ):
         self.assertRaises( InvalidReport, self.stop_finder.process_report, ( self.loc ) )
@@ -39,9 +43,14 @@ class Test_StopFinder_Route_Trip( Sample_Transit_Data ):
         timestamp= datetime.datetime( 2012, 2, 28, 6, 33, 0 )
         lat, lon = 36.85192-self.feet250,-76.28732
         time= (timestamp.hour*60+timestamp.minute)*60+timestamp.second
-        self.arr= Arrival( timestamp, '3247', lat, lon, 'V', '-1', 'V',
+        self.arr= Arrival( timestamp=timestamp, id='3247',
+                        lat=lat, lon=lon, ll_valid='V',
+                        adher=-1, adher_valid='V',
                 time=time, rte='28', dir='1', stop='30' )
-        self.loc= Location( timestamp, '3247', lat, lon, 'V', '-1', 'V', )
+        self.loc= Location( timestamp=timestamp, id='3247',
+                          lat=lat, lon=lon, ll_valid='V',
+                          adher=-1, adher_valid='V',
+        )
         self.stop_finder= StopFinder_Route_Trip( self.connection )
     def test_should_reject( self ):
         self.assertRaises( InvalidReport, self.stop_finder.process_report, ( self.loc ) )
@@ -60,9 +69,13 @@ class Test_StopFinder_Next_Stop( Sample_Transit_Data ):
         timestamp= datetime.datetime( 2012, 2, 28, 6, 33, 0 )
         lat, lon = 36.85192-self.feet250,-76.28732
         time= (timestamp.hour*60+timestamp.minute)*60+timestamp.second
-        self.arr= Arrival( timestamp, '3247', lat, lon, 'V', '-1', 'V',
+        self.arr= Arrival( timestamp=timestamp, id='3247',
+                        lat=lat, lon=lon, ll_valid='V',
+                        adher=-1, adher_valid='V',
                 time=time, rte='28', dir='1', stop='30' )
-        self.loc= Location( timestamp, '3247', lat, lon, 'V', '-1', 'V', )
+        self.loc= Location( timestamp=timestamp, id='3247',
+                        lat=lat, lon=lon, ll_valid='V',
+                        adher=-1, adher_valid='V', )
         self.stop_finder= StopFinder_Next_Stop( self.connection )
     def test_should_reject( self ):
         self.assertRaises( InvalidReport, self.stop_finder.process_report, ( self.loc ) )
@@ -79,7 +92,9 @@ class Test_StopFinder_Write( unittest.TestCase ):
         timestamp= datetime.datetime( 2012, 2, 28, 6, 33, 0 )
         lat, lon = 36.85192,-76.28732
         time= (timestamp.hour*60+timestamp.minute)*60+timestamp.second
-        self.arr= Arrival( timestamp, '3247', lat, lon, 'V', '-1', 'V',
+        self.arr= Arrival( timestamp=timestamp, id='3247',
+                          lat=lat, lon=lon, ll_valid='V',
+                          adher=-1, adher_valid='V',
                 time=time, rte='28', dir='1', stop='30' )
         self.buffer= StringIO.StringIO()
         sf= StopFinder( None )
@@ -89,20 +104,24 @@ class Test_StopFinder_Write( unittest.TestCase ):
         stop_time= Stop_Time('53678',23580,23580,'0001','4','0')
         self.stop( self.arr, Candidate(2,3,stop,stop_time) )
         lines= self.buffer.getvalue().splitlines()
-        titles= ( "__class__,adher,adher_valid,blk,dgps,dir,dwell,fom,id,lat,ll_valid,lon,odom,odom_valid,rte,stop,svc,time,timestamp,tp"
-                 ",distance,time"
-                 ",stop_stop_id,stop_stop_name,stop_stop_lat,stop_stop_lon"
-                 ",stop_time_trip_id,stop_time_arrival_time,stop_time_departure_time,stop_time_stop_id,stop_time_stop_sequence,stop_time_timepoint"
-                )
-        self.assertEqual( titles, lines[0] )
-        self.assertEqual( "Arrival,-1,V,,,1,,,3247,36.85192,V,-76.28732,,,28,30,,3,2012-02-28 06:33:00,,2,3,0001,CHARLOTTE & MONTICELLO,36.85192,-76.28732,53678,23580,23580,0001,4,0", lines[1] )
+        titles= ['adher', 'adher_valid', 'blk', 'dgps', 'dir',
+        'dwell', 'fom', 'id', 'lat', 'll_valid', 'lon', 'odom', 'odom_valid',
+        'rte', 'stop', 'svc', 'time', 'timestamp', 'tp', 'distance', 'time',
+        'stop_stop_id', 'stop_stop_name', 'stop_stop_lat', 'stop_stop_lon',
+        'stop_time_trip_id', 'stop_time_arrival_time',
+        'stop_time_departure_time', 'stop_time_stop_id',
+        'stop_time_stop_sequence', 'stop_time_timepoint']
+        self.assertEqual( set(titles), set(self.stop.fieldnames) )
+        self.assertEqual( "2012-02-28 06:33:00,3247,36.85192,-76.28732,V,-1,V,,,,,3,,28,1,30,,,,2,3,0001,CHARLOTTE & MONTICELLO,36.85192,-76.28732,53678,23580,23580,0001,4,0", lines[1] )
 
 class Test_StopFinder_Route_Trip_Write( unittest.TestCase ):
     def setUp( self ):
         timestamp= datetime.datetime( 2012, 2, 28, 6, 33, 0 )
         lat, lon = 36.85192,-76.28732
         time= (timestamp.hour*60+timestamp.minute)*60+timestamp.second
-        self.arr= Arrival( timestamp, '3247', lat, lon, 'V', '-1', 'V',
+        self.arr= Arrival( timestamp=timestamp, id='3247',
+                          lat=lat, lon=lon, ll_valid='V',
+                          adher=-1, adher_valid='V',
                 time=time, rte='28', dir='1', stop='30' )
         self.buffer= StringIO.StringIO()
         sf= StopFinder_Route_Trip( None )
@@ -114,23 +133,27 @@ class Test_StopFinder_Route_Trip_Write( unittest.TestCase ):
         trip= Trip('004','MR','53678','0','004 -  2')
         self.stop( self.arr, StopFinder_Route_Trip.Best_Fit(2,3,stop,stop_time,route,trip) )
         lines= self.buffer.getvalue().splitlines()
-        titles= (
-            '__class__,adher,adher_valid,blk,dgps,dir,dwell,fom,id,lat,ll_valid,lon,odom,odom_valid,rte,stop,svc,time,timestamp,tp'
-            ',distance,time'
-            ',stop_stop_id,stop_stop_name,stop_stop_lat,stop_stop_lon'
-            ',stop_time_trip_id,stop_time_arrival_time,stop_time_departure_time,stop_time_stop_id,stop_time_stop_sequence,stop_time_timepoint'
-            ',route_route_id,route_route_short_name,route_route_long_name,route_route_desc,route_route_type,route_route_url'
-            ',trip_route_id,trip_service_id,trip_trip_id,trip_direction_id,trip_block_id'
-        )
-        self.assertEqual(titles, lines[0] )
-        self.assertEqual( 'Arrival,-1,V,,,1,,,3247,36.85192,V,-76.28732,,,28,30,,3,2012-02-28 06:33:00,,2,3,0001,CHARLOTTE & MONTICELLO,36.85192,-76.28732,53678,23580,23580,0001,4,0,004,4,CHURCH ST, Norfolk General Hospital/ODU/Downtown Norfolk ,3,http://www.gohrt.com/routes/route-4.pdf,004,MR,53678,0,004 -  2', lines[1] )
+        titles= ['adher', 'adher_valid', 'blk', 'dgps', 'dir',
+        'dwell', 'fom', 'id', 'lat', 'll_valid', 'lon', 'odom', 'odom_valid',
+        'rte', 'stop', 'svc', 'time', 'timestamp', 'tp', 'distance', 'time',
+        'stop_stop_id', 'stop_stop_name', 'stop_stop_lat', 'stop_stop_lon',
+        'stop_time_trip_id', 'stop_time_arrival_time',
+        'stop_time_departure_time', 'stop_time_stop_id',
+        'stop_time_stop_sequence', 'stop_time_timepoint', 'route_route_id',
+        'route_route_short_name', 'route_route_long_name', 'route_route_desc',
+        'route_route_type', 'route_route_url', 'trip_route_id',
+        'trip_service_id', 'trip_trip_id', 'trip_direction_id', 'trip_block_id']
+        self.assertEqual(set(titles), set(self.stop.fieldnames) )
+        self.assertEqual( '2012-02-28 06:33:00,3247,36.85192,-76.28732,V,-1,V,,,,,3,,28,1,30,,,,2,3,0001,CHARLOTTE & MONTICELLO,36.85192,-76.28732,53678,23580,23580,0001,4,0,004,4,CHURCH ST, Norfolk General Hospital/ODU/Downtown Norfolk ,3,http://www.gohrt.com/routes/route-4.pdf,004,MR,53678,0,004 -  2', lines[1] )
 
 class Test_StopFinder_Next_Stop_Write( unittest.TestCase ):
     def setUp( self ):
         timestamp= datetime.datetime( 2012, 2, 28, 6, 33, 0 )
         lat, lon = 36.85192,-76.28732
         time= (timestamp.hour*60+timestamp.minute)*60+timestamp.second
-        self.arr= Arrival( timestamp, '3247', lat, lon, 'V', '-1', 'V',
+        self.arr= Arrival( timestamp=timestamp, id='3247',
+                          lat=lat, lon=lon, ll_valid='V',
+                          adher=-1, adher_valid='V',
                 time=time, rte='28', dir='1', stop='30' )
         self.buffer= StringIO.StringIO()
         sf= StopFinder_Next_Stop( None )
@@ -142,16 +165,18 @@ class Test_StopFinder_Next_Stop_Write( unittest.TestCase ):
         trip= Trip('004','MR','53678','0','004 -  2')
         self.stop( self.arr, StopFinder_Next_Stop.Best_Fit(2,3,stop,stop_time,route,stop) )
         lines= self.buffer.getvalue().splitlines()
-        titles= (
-            '__class__,adher,adher_valid,blk,dgps,dir,dwell,fom,id,lat,ll_valid,lon,odom,odom_valid,rte,stop,svc,time,timestamp,tp'
-            ',distance,time'
-            ',stop_stop_id,stop_stop_name,stop_stop_lat,stop_stop_lon'
-            ',stop_time_trip_id,stop_time_arrival_time,stop_time_departure_time,stop_time_stop_id,stop_time_stop_sequence,stop_time_timepoint'
-            ',route_route_id,route_route_short_name,route_route_long_name,route_route_desc,route_route_type,route_route_url'
-            ',next_stop_id,next_stop_name,next_stop_lat,next_stop_lon'
-        )
-        self.assertEqual(titles, lines[0] )
-        self.assertEqual( 'Arrival,-1,V,,,1,,,3247,36.85192,V,-76.28732,,,28,30,,3,2012-02-28 06:33:00,,2,3,0001,CHARLOTTE & MONTICELLO,36.85192,-76.28732,53678,23580,23580,0001,4,0,004,4,CHURCH ST, Norfolk General Hospital/ODU/Downtown Norfolk ,3,http://www.gohrt.com/routes/route-4.pdf,0001,CHARLOTTE & MONTICELLO,36.85192,-76.28732', lines[1] )
+        titles= ['adher', 'adher_valid', 'blk', 'dgps', 'dir',
+        'dwell', 'fom', 'id', 'lat', 'll_valid', 'lon', 'odom', 'odom_valid',
+        'rte', 'stop', 'svc', 'time', 'timestamp', 'tp', 'distance', 'time',
+        'stop_stop_id', 'stop_stop_name', 'stop_stop_lat', 'stop_stop_lon',
+        'stop_time_trip_id', 'stop_time_arrival_time',
+        'stop_time_departure_time', 'stop_time_stop_id',
+        'stop_time_stop_sequence', 'stop_time_timepoint', 'route_route_id',
+        'route_route_short_name', 'route_route_long_name', 'route_route_desc',
+        'route_route_type', 'route_route_url', 'next_stop_id', 'next_stop_name',
+        'next_stop_lat', 'next_stop_lon']
+        self.assertEqual(set(titles), set(self.stop.fieldnames) )
+        self.assertEqual( '2012-02-28 06:33:00,3247,36.85192,-76.28732,V,-1,V,,,,,3,,28,1,30,,,,2,3,0001,CHARLOTTE & MONTICELLO,36.85192,-76.28732,53678,23580,23580,0001,4,0,004,4,CHURCH ST, Norfolk General Hospital/ODU/Downtown Norfolk ,3,http://www.gohrt.com/routes/route-4.pdf,0001,CHARLOTTE & MONTICELLO,36.85192,-76.28732', lines[1] )
 
 if __name__ == "__main__":
     logging.basicConfig( stream=sys.stderr, level=logging.WARN )

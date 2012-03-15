@@ -1,0 +1,381 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.feed.mapping_load &mdash; Caravel-Transit 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.feed.mapping_load</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel ETL of real-time-feed with mappings</span>
+<span class="sd">from source encodings to GTFS keys.</span>
+
+<span class="sd">Load New Mappings</span>
+<span class="sd">======================</span>
+
+<span class="sd">1.  Get any new mapping.</span>
+
+<span class="sd">#.  Validate the mapping.</span>
+
+<span class="sd">    -   Check the timestamp and delete duplicates (same type,</span>
+<span class="sd">        same effective date, same or older timestamp).</span>
+<span class="sd">    -   Check the type.</span>
+<span class="sd">    -   Check the attachment size and structure.</span>
+
+<span class="sd">#.  Put in a proper effective date range.</span>
+
+<span class="sd">#.  Cache the current mapping chosen from the set of valid mappings.</span>
+<span class="sd">    It&#39;s helpful to keep this in memory to save time.</span>
+
+<span class="sd">Components</span>
+<span class="sd">============</span>
+
+<span class="sd">Attachment Handling</span>
+<span class="sd">--------------------</span>
+
+<span class="sd">..  autoclass:: Invalid_Mapping</span>
+<span class="sd">..  autoclass:: CSV_Attachment</span>
+<span class="sd">..  autoclass:: Vehicle_Attachment</span>
+<span class="sd">..  autoclass:: Route_Attachment</span>
+<span class="sd">..  autoclass:: Stop_Attachment</span>
+
+<span class="sd">..  autofunction:: mapping_attachment</span>
+
+<span class="sd">Mapping Processing</span>
+<span class="sd">--------------------</span>
+
+<span class="sd">..  autofunction:: validate</span>
+<span class="sd">..  autofunction:: validate_new</span>
+<span class="sd">..  autofunction:: assemble_timeline</span>
+<span class="sd">..  autofunction:: fetch_current</span>
+<span class="sd">..  autofunction:: refresh_mapping_cache</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">caravel.settings</span> <span class="kn">as</span> <span class="nn">settings</span>
+<span class="kn">from</span> <span class="nn">caravel.feed.models</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">couchdbkit.exceptions</span> <span class="kn">import</span> <span class="n">ResourceNotFound</span>
+
+<div class="viewcode-block" id="Invalid_Mapping"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.Invalid_Mapping">[docs]</a><span class="k">class</span> <span class="nc">Invalid_Mapping</span><span class="p">(</span> <span class="ne">Exception</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An exception raised as part of mapping validation.&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="CSV_Attachment"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.CSV_Attachment">[docs]</a><span class="k">class</span> <span class="nc">CSV_Attachment</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The attached file for a mapping.  The file should be a .CSV notation</span>
+<span class="sd">    file with two specific column names.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">source_name</span><span class="o">=</span> <span class="s">&quot;&quot;</span>
+    <span class="n">gtf_name</span><span class="o">=</span> <span class="s">&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">document</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Construct a Mapping_Attachement for a given document.</span>
+<span class="sd">        This will fetch the attached document and open it for access.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">=</span> <span class="n">document</span>
+        <span class="n">attachment</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">doc</span><span class="o">.</span><span class="n">fetch_attachment</span><span class="p">(</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;content&quot;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">True</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span> <span class="n">attachment</span> <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="o">=</span> <span class="p">{}</span>
+    <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Validate the attachment.  This is generally a check of the headers</span>
+<span class="sd">        to the sure that the class-level :var:`source_name` column</span>
+<span class="sd">        and :var:`gtf_name` column are present.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gtf_name</span><span class="p">)</span> <span class="p">)</span> <span class="o">&lt;=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">fieldnames</span><span class="p">):</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c">#print( &quot; expected&quot;, set( (self.source_name, self.gtf_name) ) )</span>
+            <span class="c">#print( &quot; found   &quot;, set(self.reader.fieldnames) )</span>
+            <span class="k">raise</span> <span class="n">Invalid_Mapping</span><span class="p">(</span><span class="s">&quot;bad columns: {0} not in {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">gtf_name</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">fieldnames</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Load the attachment, returning a mapping with the &quot;source_name&quot; column</span>
+<span class="sd">        as the key and the gtf_name column as the value.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">map</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">source_name</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">gtf_name</span><span class="p">])</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">map</span>
+</div>
+<div class="viewcode-block" id="Vehicle_Attachment"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.Vehicle_Attachment">[docs]</a><span class="k">class</span> <span class="nc">Vehicle_Attachment</span><span class="p">(</span> <span class="n">CSV_Attachment</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A :class:`CSV_Attachment` for the vehicle mapping.&quot;&quot;&quot;</span>
+    <span class="n">source_name</span><span class="o">=</span> <span class="s">&#39;vid&#39;</span>
+    <span class="n">gtf_name</span><span class="o">=</span> <span class="s">&#39;bus&#39;</span>
+</div>
+<div class="viewcode-block" id="Route_Attachment"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.Route_Attachment">[docs]</a><span class="k">class</span> <span class="nc">Route_Attachment</span><span class="p">(</span> <span class="n">CSV_Attachment</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A :class:`CSV_Attachment` for the route mapping.&quot;&quot;&quot;</span>
+    <span class="n">source_name</span><span class="o">=</span><span class="s">&#39;rid&#39;</span>
+    <span class="n">gtf_name</span><span class="o">=</span> <span class="s">&#39;Route&#39;</span>
+</div>
+<div class="viewcode-block" id="Stop_Attachment"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.Stop_Attachment">[docs]</a><span class="k">class</span> <span class="nc">Stop_Attachment</span><span class="p">(</span> <span class="n">CSV_Attachment</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A :class:`CSV_Attachment` for the stop id mapping.&quot;&quot;&quot;</span>
+    <span class="n">source_name</span><span class="o">=</span><span class="s">&#39;sid&#39;</span>
+    <span class="n">gtf_name</span><span class="o">=</span> <span class="s">&#39;Stop&#39;</span>
+</div>
+<div class="viewcode-block" id="mapping_attachment"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.mapping_attachment">[docs]</a><span class="k">def</span> <span class="nf">mapping_attachment</span><span class="p">(</span><span class="n">mapping</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Instantiate the proper CSV_Attachment subclass</span>
+<span class="sd">    for this mapping.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">handlers</span><span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;vehicle&#39;</span><span class="p">:</span> <span class="n">Vehicle_Attachment</span><span class="p">,</span>
+    <span class="s">&#39;route&#39;</span><span class="p">:</span> <span class="n">Route_Attachment</span><span class="p">,</span>
+    <span class="s">&#39;stop&#39;</span><span class="p">:</span> <span class="n">Stop_Attachment</span><span class="p">,</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">handlers</span><span class="p">[</span><span class="n">mapping</span><span class="o">.</span><span class="n">mapping_type</span><span class="p">](</span><span class="n">mapping</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="validate"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.validate">[docs]</a><span class="k">def</span> <span class="nf">validate</span><span class="p">(</span> <span class="n">mapping</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Validate a given mapping object.  This will locate</span>
+<span class="sd">    an appropriate attachment handler and then invoke the attachment</span>
+<span class="sd">    handler&#39;s :meth:`CSV_Attachment.validate` method.</span>
+
+<span class="sd">    This is the first step when processing a new mapping.</span>
+
+<span class="sd">    If anything goes wrong an exception is raised.</span>
+<span class="sd">    Otherwise this returns the mapping.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">attachment_handler</span><span class="o">=</span> <span class="n">mapping_attachment</span><span class="p">(</span><span class="n">mapping</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">attachment_handler</span><span class="o">.</span><span class="n">is_valid</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">Invalid_Mapping</span><span class="p">(</span><span class="s">&quot;invalid_attachment&quot;</span><span class="p">)</span>
+    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">Invalid_Mapping</span><span class="p">(</span><span class="s">&quot;unknown type: {0.mapping_type}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mapping</span><span class="p">))</span>
+    <span class="n">existing</span><span class="o">=</span> <span class="nb">set</span><span class="p">(</span> <span class="n">k</span><span class="o">.</span><span class="n">effective_date</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">Mapping</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;mapping/&#39;</span><span class="o">+</span><span class="n">mapping</span><span class="o">.</span><span class="n">mapping_type</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="c">#print( &#39;===&#39;, repr(mapping.effective_date), existing )</span>
+    <span class="k">if</span> <span class="n">mapping</span><span class="o">.</span><span class="n">effective_date</span> <span class="ow">in</span> <span class="n">existing</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">Invalid_Mapping</span><span class="p">(</span><span class="s">&quot;duplicate type and effective date&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">mapping</span>
+</div>
+<div class="viewcode-block" id="validate_new"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.validate_new">[docs]</a><span class="k">def</span> <span class="nf">validate_new</span><span class="p">(</span> <span class="n">mapping_iter</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;For all new mappings, validate the attached content and update</span>
+<span class="sd">    the status to mark them as usable.</span>
+
+<span class="sd">    Return a dictionary of sequences of the new mappings which are also valid.</span>
+<span class="sd">    The keys are the mapping types.  The value is a sequence of valid</span>
+<span class="sd">    mappings of that type.</span>
+<span class="sd">    This return value signals that we must rework the timeline</span>
+<span class="sd">    and reload the mappings that are in cache.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">new_valid</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">mapping_iter</span><span class="p">:</span>
+        <span class="c">#print( &quot;validate&quot;, m )</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">validate</span><span class="p">(</span> <span class="n">m</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">status</span> <span class="o">!=</span> <span class="s">&#39;valid&#39;</span><span class="p">:</span>
+                <span class="c"># Rare situation: revalidating an existing mapping.</span>
+                <span class="n">m</span><span class="o">.</span><span class="n">status</span><span class="o">=</span> <span class="s">&#39;valid&#39;</span>
+                <span class="n">m</span><span class="o">.</span><span class="n">ending_date</span><span class="o">=</span> <span class="bp">None</span>
+                <span class="n">m</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="n">new_valid</span><span class="p">[</span><span class="n">m</span><span class="o">.</span><span class="n">mapping_type</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">m</span> <span class="p">)</span>
+        <span class="k">except</span> <span class="n">ResourceNotFound</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="c"># No attached document</span>
+            <span class="c"># Simply ignore these, they may get updated later.</span>
+            <span class="k">continue</span>
+        <span class="k">except</span> <span class="n">Invalid_Mapping</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">e</span><span class="o">.</span><span class="n">message</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="k">continue</span>
+    <span class="k">return</span> <span class="n">new_valid</span>
+</div>
+<span class="n">end_of_days</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span> <span class="mi">2200</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span> <span class="p">)</span> <span class="c"># the end of days.</span>
+
+<div class="viewcode-block" id="assemble_timeline"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.assemble_timeline">[docs]</a><span class="k">def</span> <span class="nf">assemble_timeline</span><span class="p">(</span> <span class="n">mapping_type</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;For all valid mappings, reassemble the timeline for each type.</span>
+
+<span class="sd">    This is the sequence of valid mappings in order by their</span>
+<span class="sd">    effective_date from most recent to oldest.</span>
+
+<span class="sd">    The most recent applies until the end of time.</span>
+<span class="sd">    Each previous mapping applies until the one more recently added.</span>
+<span class="sd">    Generally, just the last two mappings need to be tweaked to have</span>
+<span class="sd">    proper ending dates.  As a simplification, we reset all</span>
+<span class="sd">    ending dates to assure consistent data.</span>
+
+<span class="sd">    Returns the sequence of mappings of the given type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#print( &quot;&gt;&gt;&gt; assemble_timeline&quot;, mapping_type )</span>
+    <span class="n">timeline</span><span class="o">=</span> <span class="p">[]</span>
+    <span class="n">the_iter</span><span class="o">=</span> <span class="nb">iter</span><span class="p">(</span> <span class="n">Mapping</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;mapping/&#39;</span><span class="o">+</span><span class="n">mapping_type</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="bp">True</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="c"># Latest mapping applies until the end of time.</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">prev</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span> <span class="n">the_iter</span> <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+        <span class="c"># No mappings of this type.  A bit of a problem in the long run.</span>
+        <span class="k">return</span>
+    <span class="c">#print( &#39;   &#39;, repr(prev.ending_date), repr(end_of_days) )</span>
+    <span class="k">if</span> <span class="n">prev</span><span class="o">.</span><span class="n">ending_date</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">prev</span><span class="o">.</span><span class="n">ending_date</span> <span class="o">!=</span> <span class="n">end_of_days</span><span class="p">:</span>
+        <span class="n">prev</span><span class="o">.</span><span class="n">ending_date</span> <span class="o">=</span> <span class="n">end_of_days</span>
+        <span class="n">prev</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="c">#print( &quot;    Update&quot;, prev )</span>
+    <span class="n">timeline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">prev</span> <span class="p">)</span>
+    <span class="c"># All Earlier mappings have an ending date of the previous effective date.</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">the_iter</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">m</span><span class="o">.</span><span class="n">ending_date</span> <span class="ow">is</span> <span class="bp">None</span> <span class="ow">or</span> <span class="n">m</span><span class="o">.</span><span class="n">ending_date</span> <span class="o">!=</span> <span class="n">prev</span><span class="o">.</span><span class="n">effective_date</span><span class="p">:</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">ending_date</span><span class="o">=</span> <span class="n">prev</span><span class="o">.</span><span class="n">effective_date</span>
+            <span class="n">m</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+            <span class="c">#print( &quot;    Update&quot;, m )</span>
+        <span class="n">timeline</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">m</span> <span class="p">)</span>
+        <span class="n">prev</span><span class="o">=</span> <span class="n">m</span>
+    <span class="n">timeline</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">timeline</span>
+</div>
+<div class="viewcode-block" id="fetch_current"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.fetch_current">[docs]</a><span class="k">def</span> <span class="nf">fetch_current</span><span class="p">(</span> <span class="n">mapping_type</span><span class="p">,</span> <span class="n">today</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Locate the mapping of the given type which is active today.</span>
+<span class="sd">    This requires that mappings are all validated and the timeline</span>
+<span class="sd">    has been assembled correctly.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#print( &quot;&gt;&gt;&gt; fetch_current&quot;, mapping_type )</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&quot;mapping/&quot;</span><span class="o">+</span><span class="n">mapping_type</span> <span class="p">):</span>
+        <span class="c">#print( &#39;   &#39;, row )</span>
+        <span class="n">effective_str</span><span class="p">,</span> <span class="n">ending_str</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;key&#39;</span><span class="p">]</span>
+        <span class="n">effective</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">effective_str</span><span class="p">,</span> <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">&quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+        <span class="n">ending</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">ending_str</span><span class="p">,</span> <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">&quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">effective</span> <span class="o">&lt;=</span> <span class="n">today</span> <span class="o">&lt;</span> <span class="n">ending</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">Mapping</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="refresh_mapping_cache"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.mapping_load.refresh_mapping_cache">[docs]</a><span class="k">def</span> <span class="nf">refresh_mapping_cache</span><span class="p">(</span> <span class="n">mapping_cache</span><span class="p">,</span> <span class="n">new_mappings</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">today</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Locate the current mappings so they can be cached and used.</span>
+
+<span class="sd">    1.  Validate all new mappings.</span>
+<span class="sd">        This uses :func:`validate_new`.</span>
+
+<span class="sd">    2.  Among the valid maps, reason out the timeline and make</span>
+<span class="sd">        sure the effective_dates and ending_dates all make sense.</span>
+<span class="sd">        This uses :func:`assemble_timeline`.</span>
+
+<span class="sd">    3.  Pick the mappings that apply today.</span>
+<span class="sd">        This uses :func:`fetch_current`.</span>
+
+<span class="sd">    4.  Compare with the mappings in the local mappings cache.</span>
+<span class="sd">        If the current mapping is new, then parse the CSV mapping data.</span>
+<span class="sd">        If the current mapping hasn&#39;t changed, then we&#39;re good.</span>
+
+<span class="sd">    This must be run based on two events.</span>
+
+<span class="sd">    -   Beginning of each day.</span>
+
+<span class="sd">    -   Each time a mapping is pushed.</span>
+
+<span class="sd">    It can be run before each feed is processed, but that&#39;s a bit more</span>
+<span class="sd">    processing than is strictly necessary.</span>
+
+<span class="sd">    :returns: dictionary with &#39;vehicle&#39;, &#39;route&#39;, &#39;stop&#39; mappings.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">today</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+
+    <span class="c"># May have side effect of database update.</span>
+    <span class="k">if</span> <span class="n">new_mappings</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">new</span><span class="o">=</span> <span class="n">validate_new</span><span class="p">(</span> <span class="n">new_mappings</span> <span class="p">)</span>
+
+        <span class="c"># Not **always** necessary.  May have side effect of database update.</span>
+        <span class="k">for</span> <span class="n">mapping_type</span> <span class="ow">in</span> <span class="s">&#39;vehicle&#39;</span><span class="p">,</span> <span class="s">&#39;route&#39;</span><span class="p">,</span> <span class="s">&#39;stop&#39;</span><span class="p">:</span>
+            <span class="n">assemble_timeline</span><span class="p">(</span><span class="n">mapping_type</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">mapping_type</span> <span class="ow">in</span> <span class="s">&#39;vehicle&#39;</span><span class="p">,</span> <span class="s">&#39;route&#39;</span><span class="p">,</span> <span class="s">&#39;stop&#39;</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">current_id</span><span class="o">=</span> <span class="n">mapping_cache</span><span class="p">[</span><span class="n">mapping_type</span><span class="p">]</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">_id</span>
+            <span class="n">current_rev</span><span class="o">=</span> <span class="n">mapping_cache</span><span class="p">[</span><span class="n">mapping_type</span><span class="p">]</span><span class="o">.</span><span class="n">document</span><span class="o">.</span><span class="n">_rev</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">KeyError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">current_id</span><span class="p">,</span> <span class="n">current_rev</span><span class="o">=</span> <span class="bp">None</span><span class="p">,</span> <span class="bp">None</span>
+        <span class="n">potential</span><span class="o">=</span> <span class="n">fetch_current</span><span class="p">(</span> <span class="n">mapping_type</span><span class="p">,</span> <span class="n">today</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="n">potential</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span> <span class="s">&quot;No {0} for {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mapping_type</span><span class="p">,</span> <span class="n">today</span><span class="p">)</span> <span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">potential</span><span class="o">.</span><span class="n">_id</span> <span class="o">!=</span> <span class="n">current_id</span> <span class="ow">or</span> <span class="n">potential</span><span class="o">.</span><span class="n">_rev</span> <span class="o">!=</span> <span class="n">current_rev</span><span class="p">:</span>
+            <span class="n">handler</span><span class="o">=</span> <span class="n">mapping_attachment</span><span class="p">(</span><span class="n">potential</span><span class="p">)</span>
+            <span class="n">handler</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+            <span class="n">mapping_cache</span><span class="p">[</span><span class="n">mapping_type</span><span class="p">]</span><span class="o">=</span> <span class="n">handler</span>
+            <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Change to {0} for {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">potential</span><span class="p">,</span> <span class="n">today</span><span class="p">)</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span> <span class="s">&quot;===&quot;</span><span class="p">,</span> <span class="n">potential</span><span class="p">,</span> <span class="n">current_id</span><span class="p">,</span> <span class="n">current_rev</span> <span class="p">)</span>
+            <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Using {0} for {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mapping_cache</span><span class="p">[</span><span class="n">mapping_type</span><span class="p">],</span> <span class="n">today</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">mapping_cache</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

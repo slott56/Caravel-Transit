@@ -50,19 +50,19 @@ import logging
 import sys
 import argparse
 import caravel.report
-import caravel.acquire
+import caravel.LogCapture.acquire
 
 logger= logging.getLogger( __name__ )
 
 def split( report_iter, location_csv, arrival_csv ):
     """Split a collection of reports into two subclass: Locations and Arrivals.
 
-    Generally, the report_iter is an instance of :func:`caravel.report.report_iter`.
+    Generally, the report_iter is an instance of :func:`caravel.report.report_file_iter`.
 
     It's usually built like this::
 
         reader= caravel.report.ReportReader_v1()
-        rpt_iter= caravel.report.report_iter( reader, [list,of,files] )
+        rpt_iter= caravel.report.report_file_iter( reader, [list,of,files] )
 
     This iterator will examine all the files in the list, extracting
     all Report objects.
@@ -119,7 +119,7 @@ if __name__ == "__main__":
     if args.debug:
         logging.getLogger().setLevel( logging.DEBUG )
     if args.acquire:
-        files= [caravel.acquire.get_report_files()] + args.files
+        files= [caravel.LogCapture.acquire.get_report_files()] + args.files
     else:
         files= args.files
     rdr_class = {
@@ -129,7 +129,7 @@ if __name__ == "__main__":
         }
     reader= rdr_class[args.format]()
     counts= split(
-        caravel.report.report_iter( reader, files ),
+        caravel.report.report_file_iter( reader, files ),
         args.location,
         args.arrival )
     logger.info( "Counts {0}".format( pprint.pformat( counts ) ) )

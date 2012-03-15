@@ -70,6 +70,7 @@
  | <a href="#R"><strong>R</strong></a>
  | <a href="#S"><strong>S</strong></a>
  | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
  | <a href="#V"><strong>V</strong></a>
  | <a href="#W"><strong>W</strong></a>
  
@@ -77,17 +78,6 @@
 <h2 id="Symbols">Symbols</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
-      
-  <dt>
-    --arrival &lt;file&gt;, -a &lt;file&gt;
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="implementation/domain.html#cmdoption-split--arrival">split command line option</a>
-  </dt>
-
-      </dl></dd>
       
   <dt>
     --debug, -d
@@ -110,22 +100,7 @@
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-split--format">split command line option</a>
-  </dt>
-
-        
   <dt><a href="implementation/domain.html#cmdoption-stop_discovery--format">stop_discovery command line option</a>
-  </dt>
-
-      </dl></dd>
-      
-  <dt>
-    --location &lt;file&gt;, -l &lt;file&gt;
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="implementation/domain.html#cmdoption-split--location">split command line option</a>
   </dt>
 
       </dl></dd>
@@ -142,17 +117,6 @@
       </dl></dd>
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
-      
-  <dt>
-    --new, -n
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="implementation/domain.html#cmdoption-split--new">split command line option</a>
-  </dt>
-
-      </dl></dd>
       
   <dt>
     --reject no_stop.csv, -r no_stop.csv
@@ -281,6 +245,10 @@
   <dt><a href="implementation/domain.html#caravel.arrival_stats.arrival_stats">arrival_stats() (in module caravel.arrival_stats)</a>
   </dt>
 
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.assemble_timeline">assemble_timeline() (in module caravel.feed.mapping_load)</a>
+  </dt>
+
   </dl></td>
 </tr></table>
 
@@ -288,7 +256,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="design/route_details.html#test.spike_stats.build_route">build_route() (in module test.spike_stats)</a>
+  <dt><a href="design/route_details.html#test.spike_discovery.build_route">build_route() (in module test.spike_discovery)</a>
   </dt>
 
   </dl></td>
@@ -310,7 +278,7 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.acquire">caravel.acquire (module)</a>
+  <dt><a href="implementation/domain.html#module-caravel.admin">caravel.admin (module)</a>
   </dt>
 
       
@@ -322,17 +290,61 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.report">caravel.report (module)</a>
+  <dt><a href="implementation/domain.html#module-caravel.feed">caravel.feed (module)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.split">caravel.split (module)</a>
+  <dt><a href="implementation/domain.html#module-caravel.feed.feed_load">caravel.feed.feed_load (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.feed.mapping_load">caravel.feed.mapping_load (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.feed.models">caravel.feed.models (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.LogCapture.acquire">caravel.LogCapture.acquire (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.LogCapture.capture">caravel.LogCapture.capture (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.LogCapture.couch_push">caravel.LogCapture.couch_push (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.report">caravel.report (module)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="implementation/domain.html#module-caravel.settings">caravel.settings (module)</a>
+  </dt>
+
+      
   <dt><a href="implementation/domain.html#module-caravel.statistics">caravel.statistics (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.status.models">caravel.status.models (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.status.status_load">caravel.status.status_load (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.StatusBuilder.bulk_transform">caravel.StatusBuilder.bulk_transform (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#module-caravel.StatusBuilder.change_notification">caravel.StatusBuilder.change_notification (module)</a>
   </dt>
 
       
@@ -348,7 +360,7 @@
   </dt>
 
       
-  <dt><a href="design/route_details.html#test.spike_stats.cluster_times">cluster_times() (in module test.spike_stats)</a>
+  <dt><a href="design/route_details.html#test.spike_discovery.cluster_times">cluster_times() (in module test.spike_discovery)</a>
   </dt>
 
       
@@ -357,6 +369,10 @@
 
       
   <dt><a href="implementation/domain.html#caravel.transit_system.Connection">Connection (class in caravel.transit_system)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.CSV_Attachment">CSV_Attachment (class in caravel.feed.mapping_load)</a>
   </dt>
 
   </dl></td>
@@ -409,10 +425,22 @@
   </dt>
 
         
-  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v2.factory">(caravel.report.ReportReader_v2 method)</a>
+  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v21.factory">(caravel.report.ReportReader_v21 method)</a>
+  </dt>
+
+        
+  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v22.factory">(caravel.report.ReportReader_v22 method)</a>
+  </dt>
+
+        
+  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v3.factory">(caravel.report.ReportReader_v3 method)</a>
   </dt>
 
       </dl></dd>
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.fetch_current">fetch_current() (in module caravel.feed.mapping_load)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
@@ -430,10 +458,6 @@
   </dt>
 
       <dd><dl>
-        
-  <dt><a href="implementation/domain.html#caravel.split.get_args">(in module caravel.split)</a>
-  </dt>
-
         
   <dt><a href="implementation/domain.html#caravel.stop_discovery.get_args">(in module caravel.stop_discovery)</a>
   </dt>
@@ -464,21 +488,15 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.acquire.get_report_files">get_report_files() (in module caravel.acquire)</a>
+  <dt><a href="implementation/domain.html#caravel.LogCapture.acquire.get_report_files">get_report_files() (in module caravel.LogCapture.acquire)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.transit_system.get_route">get_route() (in module caravel.transit_system)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
-      
-  <dt><a href="implementation/domain.html#caravel.acquire.get_route">get_route() (in module caravel.acquire)</a>
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="implementation/domain.html#caravel.transit_system.get_route">(in module caravel.transit_system)</a>
-  </dt>
-
-      </dl></dd>
       
   <dt><a href="implementation/domain.html#caravel.transit_system.get_route_from_stop_time">get_route_from_stop_time() (in module caravel.transit_system)</a>
   </dt>
@@ -489,6 +507,10 @@
 
       
   <dt><a href="implementation/domain.html#caravel.transit_system.get_services_today">get_services_today() (in module caravel.transit_system)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.transit_system.get_source_data">get_source_data() (in module caravel.transit_system)</a>
   </dt>
 
       
@@ -509,7 +531,7 @@
 
       <dd><dl>
         
-  <dt><a href="design/route_details.html#test.spike_stats.group_by_rte_dir_stop">(in module test.spike_stats)</a>
+  <dt><a href="design/route_details.html#test.spike_discovery.group_by_rte_dir_stop">(in module test.spike_discovery)</a>
   </dt>
 
       </dl></dd>
@@ -538,6 +560,12 @@
 
 <h2 id="I">I</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.Invalid_Mapping">Invalid_Mapping (class in caravel.feed.mapping_load)</a>
+  </dt>
+
+  </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="implementation/domain.html#caravel.arrival_at_stop.InvalidReport">InvalidReport (class in caravel.arrival_at_stop)</a>
@@ -594,7 +622,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="design/route_details.html#test.spike_stats.main">main() (in module test.spike_stats)</a>
+  <dt><a href="design/route_details.html#test.spike_discovery.main">main() (in module test.spike_discovery)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.mapping_attachment">mapping_attachment() (in module caravel.feed.mapping_load)</a>
   </dt>
 
   </dl></td>
@@ -610,15 +642,19 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.next">next (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
+  <dt><a href="implementation/domain.html#caravel.feed.feed_load.new_feed_iter">new_feed_iter() (in module caravel.feed.feed_load)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.no_stop">no_stop() (in module caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.next">next (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.no_stop">no_stop() (in module caravel.arrival_at_stop)</a>
+  </dt>
+
       
   <dt><a href="implementation/domain.html#caravel.arrival_at_stop.NoStopFound">NoStopFound (class in caravel.arrival_at_stop)</a>
   </dt>
@@ -630,6 +666,12 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="implementation/domain.html#caravel.status.status_load.old_status_removal">old_status_removal() (in module caravel.status.status_load)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
   <dt><a href="implementation/domain.html#caravel.report.ReportReader.open">open() (caravel.report.ReportReader method)</a>
   </dt>
 
@@ -639,7 +681,11 @@
   </dt>
 
         
-  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v2.open">(caravel.report.ReportReader_v2 method)</a>
+  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v21.open">(caravel.report.ReportReader_v21 method)</a>
+  </dt>
+
+        
+  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v3.open">(caravel.report.ReportReader_v3 method)</a>
   </dt>
 
         
@@ -686,15 +732,27 @@
   </dt>
 
       
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.refresh_mapping_cache">refresh_mapping_cache() (in module caravel.feed.mapping_load)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.feed.feed_load.remove_damaged">remove_damaged() (in module caravel.feed.feed_load)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.feed.feed_load.remove_old">remove_old() (in module caravel.feed.feed_load)</a>
+  </dt>
+
+      
   <dt><a href="implementation/domain.html#caravel.report.Report">Report (class in caravel.report)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.report.report_iter">report_iter() (in module caravel.report)</a>
+  <dt><a href="implementation/domain.html#caravel.report.report_file_iter">report_file_iter() (in module caravel.report)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.acquire.report_reader">report_reader() (in module caravel.acquire)</a>
+  <dt><a href="implementation/domain.html#caravel.LogCapture.acquire.report_reader">report_reader() (in module caravel.LogCapture.acquire)</a>
   </dt>
 
       
@@ -708,7 +766,15 @@
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v2">ReportReader_v2 (class in caravel.report)</a>
+  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v21">ReportReader_v21 (class in caravel.report)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v22">ReportReader_v22 (class in caravel.report)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.report.ReportReader_v3">ReportReader_v3 (class in caravel.report)</a>
   </dt>
 
       
@@ -730,6 +796,10 @@
   </dt>
 
       
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.Route_Attachment">Route_Attachment (class in caravel.feed.mapping_load)</a>
+  </dt>
+
+      
   <dt><a href="implementation/domain.html#caravel.transit_stats.route_size">route_size() (in module caravel.transit_stats)</a>
   </dt>
 
@@ -748,33 +818,6 @@
   </dt>
 
       
-  <dt>
-    split command line option
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="implementation/domain.html#cmdoption-split--arrival">--arrival &lt;file&gt;, -a &lt;file&gt;</a>
-  </dt>
-
-        
-  <dt><a href="implementation/domain.html#cmdoption-split--format">--format number</a>
-  </dt>
-
-        
-  <dt><a href="implementation/domain.html#cmdoption-split--location">--location &lt;file&gt;, -l &lt;file&gt;</a>
-  </dt>
-
-        
-  <dt><a href="implementation/domain.html#cmdoption-split--new">--new, -n</a>
-  </dt>
-
-      </dl></dd>
-      
-  <dt><a href="implementation/domain.html#caravel.split.split">split() (in module caravel.split)</a>
-  </dt>
-
-      
   <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop">stop (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
   </dt>
 
@@ -790,6 +833,10 @@
 
       
   <dt><a href="implementation/domain.html#caravel.arrival_at_stop.stop">stop() (in module caravel.arrival_at_stop)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.Stop_Attachment">Stop_Attachment (class in caravel.feed.mapping_load)</a>
   </dt>
 
       
@@ -817,12 +864,12 @@
   </dt>
 
       </dl></dd>
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="implementation/domain.html#caravel.transit_system.Stop_Time">Stop_Time (class in caravel.transit_system)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder">StopFinder (class in caravel.arrival_at_stop)</a>
   </dt>
@@ -858,7 +905,7 @@
 
       </dl></dd>
       
-  <dt><a href="design/route_details.html#test.spike_stats.synth_data_iter">synth_data_iter() (in module test.spike_stats)</a>
+  <dt><a href="design/route_details.html#test.spike_discovery.synth_data_iter">synth_data_iter() (in module test.spike_discovery)</a>
   </dt>
 
   </dl></td>
@@ -881,8 +928,20 @@
   <dt><a href="implementation/domain.html#caravel.transit_system.Connection.time_parse">time_parse() (caravel.transit_system.Connection static method)</a>
   </dt>
 
+      
+  <dt><a href="implementation/domain.html#caravel.status.status_load.track_arrival">track_arrival() (in module caravel.status.status_load)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.status.status_load.track_location">track_location() (in module caravel.status.status_load)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="implementation/domain.html#caravel.feed.feed_load.transform_new">transform_new() (in module caravel.feed.feed_load)</a>
+  </dt>
+
       
   <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.trip">trip (caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
   </dt>
@@ -894,9 +953,47 @@
   </dl></td>
 </tr></table>
 
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="implementation/domain.html#caravel.status.status_load.update_route">update_route() (in module caravel.status.status_load)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.status.status_load.update_route_stop">update_route_stop() (in module caravel.status.status_load)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="implementation/domain.html#caravel.status.status_load.update_stop">update_stop() (in module caravel.status.status_load)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.status.status_load.update_vehicle">update_vehicle() (in module caravel.status.status_load)</a>
+  </dt>
+
+  </dl></td>
+</tr></table>
+
 <h2 id="V">V</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.validate">validate() (in module caravel.feed.mapping_load)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.validate_new">validate_new() (in module caravel.feed.mapping_load)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.Vehicle_Attachment">Vehicle_Attachment (class in caravel.feed.mapping_load)</a>
+  </dt>
+
       
   <dt><a href="implementation/domain.html#caravel.report.ReportReader_v1.vehicle_pat">vehicle_pat (caravel.report.ReportReader_v1 attribute)</a>
   </dt>

@@ -347,7 +347,7 @@ For MT_LOCATION
 11. 'DGPS:Off': 8, 'DGPS:On': 265
 12. ``"FOM:%d"``.  Optional.
 
-For MT_TIMEPOINTCROSSING some additional fields are present.
+For MT_TIMEPOINTCROSSING
 
 5.  Actual Time in ``""Time:%H:%M:%S"`` format
 6.  "Dwell:%d" or "Arrival"
@@ -364,9 +364,9 @@ For MT_TIMEPOINTCROSSING some additional fields are present.
 17.  ``"Odom:%d"``
 18. '[Valid]': 27
 19. 'DGPS:Off': 1, 'DGPS:On': 26
-20. ``"FOM:%d"``.  Optional.
+20. ``"FOM:%d"``
 
-Vehicle Report V2
+Vehicle Report V2.1
 ~~~~~~~~~~~~~~~~~~~~~
 
 There are two types of records::
@@ -381,7 +381,7 @@ The header, however, is unusual.
 The RID value appears to be an internal route id.  It does not
 match the route ID in the :ref:`design.transit` data.
 
-Vehicle Report V3
+Vehicle Report V2.2
 ~~~~~~~~~~~~~~~~~~~~~
 
 There are two types of records::
@@ -390,3 +390,28 @@ There are two types of records::
 
     07:00:38,02/28,3247,368147270/-762487811,V,-1,V
     07:00:41,02/28,2109,368099480/-763510804,V,-1,V,28,1,30
+
+Vehicle Report V3
+~~~~~~~~~~~~~~~~~~~~~
+
+This is built by the HRT Log Capture application.
+
+https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture
+
+Specifically, the org.hrva.capture.Reformat application.
+
+::
+
+    /** CSV Headings. */
+    String[] headings = {
+        "Date", "Time", "Vehicle", "Lat", "Lon", "Location Valid/Invalid",
+        "Adherence", "Adherence Valid/Invalid", "Route", "Direction", "Stop"
+    };
+
+
+There are two types of records::
+
+    Date,Time,Vehicle,Lat,Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid,Route,Direction,Stop
+
+    2012-03-09,09:47:14,V.1.1052,37.0250134,-76.3678144,V,1,V,,,
+    2012-03-09,09:47:14,V.1.1164,36.8465992,-76.1715325,V,5,V,12,1,2153

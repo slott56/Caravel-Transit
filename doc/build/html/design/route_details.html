@@ -346,8 +346,8 @@ data must be tolerated.</li>
 <p>Here&#8217;s a method to generate a set of data that reasonably matches the
 raw data.</p>
 <dl class="function">
-<dt id="test.spike_stats.synth_data_iter">
-<tt class="descclassname">test.spike_stats.</tt><tt class="descname">synth_data_iter</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/test/spike_stats.html#synth_data_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_stats.synth_data_iter" title="Permalink to this definition">¶</a></dt>
+<dt id="test.spike_discovery.synth_data_iter">
+<tt class="descclassname">test.spike_discovery.</tt><tt class="descname">synth_data_iter</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/test/spike_discovery.html#synth_data_iter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_discovery.synth_data_iter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Synthesize data for route discovery.</p>
 <p>This generates data for two routes.  Each route will have four stops.
 Data is generated over 24 &#8220;days&#8221;, each day has a different
@@ -373,8 +373,8 @@ repeats.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="test.spike_stats.group_by_rte_dir_stop">
-<tt class="descclassname">test.spike_stats.</tt><tt class="descname">group_by_rte_dir_stop</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="../_modules/test/spike_stats.html#group_by_rte_dir_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_stats.group_by_rte_dir_stop" title="Permalink to this definition">¶</a></dt>
+<dt id="test.spike_discovery.group_by_rte_dir_stop">
+<tt class="descclassname">test.spike_discovery.</tt><tt class="descname">group_by_rte_dir_stop</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="../_modules/test/spike_discovery.html#group_by_rte_dir_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_discovery.group_by_rte_dir_stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Since the GPS reports are in time order, we need to parition them
 by route/direction/stop and date.</p>
 <p>This creates a RDS (Route/Direction/Stop) dictionay that
@@ -397,8 +397,8 @@ is a dictionary keyed by day.  Each value is a time.</td>
 </dd></dl>
 
 <dl class="function">
-<dt id="test.spike_stats.cluster_times">
-<tt class="descclassname">test.spike_stats.</tt><tt class="descname">cluster_times</tt><big>(</big><em>reports</em>, <em>epsilon=480</em><big>)</big><a class="reference internal" href="../_modules/test/spike_stats.html#cluster_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_stats.cluster_times" title="Permalink to this definition">¶</a></dt>
+<dt id="test.spike_discovery.cluster_times">
+<tt class="descclassname">test.spike_discovery.</tt><tt class="descname">cluster_times</tt><big>(</big><em>reports</em>, <em>epsilon=480</em><big>)</big><a class="reference internal" href="../_modules/test/spike_discovery.html#cluster_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_discovery.cluster_times" title="Permalink to this definition">¶</a></dt>
 <dd><p>Correlate arrival times across the various days in the data set to
 create a cluster of times for each R/D/S with a minimal deviation.</p>
 <p>For a given route/direction/stop, step through each day&#8217;s arrival
@@ -449,8 +449,8 @@ arrival time at the route/direction/stop.</td>
 </dd></dl>
 
 <dl class="function">
-<dt id="test.spike_stats.build_route">
-<tt class="descclassname">test.spike_stats.</tt><tt class="descname">build_route</tt><big>(</big><em>schedule</em><big>)</big><a class="reference internal" href="../_modules/test/spike_stats.html#build_route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_stats.build_route" title="Permalink to this definition">¶</a></dt>
+<dt id="test.spike_discovery.build_route">
+<tt class="descclassname">test.spike_discovery.</tt><tt class="descname">build_route</tt><big>(</big><em>schedule</em><big>)</big><a class="reference internal" href="../_modules/test/spike_discovery.html#build_route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_discovery.build_route" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build the route/direction summary as a sequence of stops throughout
 the day.  This is a small reorganization of the R/D/S schedule
 information to be a dictionary, keyed by R/D with a sequence of time-ordered stops.</p>
@@ -467,8 +467,8 @@ information to be a dictionary, keyed by R/D with a sequence of time-ordered sto
 </dd></dl>
 
 <dl class="function">
-<dt id="test.spike_stats.main">
-<tt class="descclassname">test.spike_stats.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/test/spike_stats.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_stats.main" title="Permalink to this definition">¶</a></dt>
+<dt id="test.spike_discovery.main">
+<tt class="descclassname">test.spike_discovery.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/test/spike_discovery.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#test.spike_discovery.main" title="Permalink to this definition">¶</a></dt>
 <dd><p>Demonstrate the essential three-step route discovery algorithm.</p>
 <ol class="arabic simple">
 <li>Organize raw data by route/direction/stop.  <tt class="xref py py-func docutils literal"><span class="pre">group_by_rte_dir_stop()</span></tt>.</li>

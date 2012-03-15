@@ -350,7 +350,7 @@ curl http://hrt.iriscouch.com:5984/mapping/09833a88a1cbb06f64c555d0245f1af3/cont
 <li>&#8216;DGPS:Off&#8217;: 8, &#8216;DGPS:On&#8217;: 265</li>
 <li><tt class="docutils literal"><span class="pre">&quot;FOM:%d&quot;</span></tt>.  Optional.</li>
 </ol>
-<p>For MT_TIMEPOINTCROSSING some additional fields are present.</p>
+<p>For MT_TIMEPOINTCROSSING</p>
 <ol class="arabic simple" start="5">
 <li>Actual Time in <tt class="docutils literal"><span class="pre">&quot;&quot;Time:%H:%M:%S&quot;</span></tt> format</li>
 <li>&#8220;Dwell:%d&#8221; or &#8220;Arrival&#8221;</li>
@@ -367,11 +367,11 @@ curl http://hrt.iriscouch.com:5984/mapping/09833a88a1cbb06f64c555d0245f1af3/cont
 <li><tt class="docutils literal"><span class="pre">&quot;Odom:%d&quot;</span></tt></li>
 <li>&#8216;[Valid]&#8217;: 27</li>
 <li>&#8216;DGPS:Off&#8217;: 1, &#8216;DGPS:On&#8217;: 26</li>
-<li><tt class="docutils literal"><span class="pre">&quot;FOM:%d&quot;</span></tt>.  Optional.</li>
+<li><tt class="docutils literal"><span class="pre">&quot;FOM:%d&quot;</span></tt></li>
 </ol>
 </div>
-<div class="section" id="vehicle-report-v2">
-<h3>Vehicle Report V2<a class="headerlink" href="#vehicle-report-v2" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="vehicle-report-v2-1">
+<h3>Vehicle Report V2.1<a class="headerlink" href="#vehicle-report-v2-1" title="Permalink to this headline">¶</a></h3>
 <p>There are two types of records:</p>
 <div class="highlight-python"><pre>Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
 
@@ -382,13 +382,31 @@ curl http://hrt.iriscouch.com:5984/mapping/09833a88a1cbb06f64c555d0245f1af3/cont
 <p>The RID value appears to be an internal route id.  It does not
 match the route ID in the <a class="reference internal" href="transit_data.html#design-transit"><em>General Transit Feed Data</em></a> data.</p>
 </div>
-<div class="section" id="vehicle-report-v3">
-<h3>Vehicle Report V3<a class="headerlink" href="#vehicle-report-v3" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="vehicle-report-v2-2">
+<h3>Vehicle Report V2.2<a class="headerlink" href="#vehicle-report-v2-2" title="Permalink to this headline">¶</a></h3>
 <p>There are two types of records:</p>
 <div class="highlight-python"><pre>Time,Date,Vehicle,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
 
 07:00:38,02/28,3247,368147270/-762487811,V,-1,V
 07:00:41,02/28,2109,368099480/-763510804,V,-1,V,28,1,30</pre>
+</div>
+</div>
+<div class="section" id="vehicle-report-v3">
+<h3>Vehicle Report V3<a class="headerlink" href="#vehicle-report-v3" title="Permalink to this headline">¶</a></h3>
+<p>This is built by the HRT Log Capture application.</p>
+<p><a class="reference external" href="https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture">https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</a></p>
+<p>Specifically, the org.hrva.capture.Reformat application.</p>
+<div class="highlight-python"><pre>/** CSV Headings. */
+String[] headings = {
+    "Date", "Time", "Vehicle", "Lat", "Lon", "Location Valid/Invalid",
+    "Adherence", "Adherence Valid/Invalid", "Route", "Direction", "Stop"
+};</pre>
+</div>
+<p>There are two types of records:</p>
+<div class="highlight-python"><pre>Date,Time,Vehicle,Lat,Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid,Route,Direction,Stop
+
+2012-03-09,09:47:14,V.1.1052,37.0250134,-76.3678144,V,1,V,,,
+2012-03-09,09:47:14,V.1.1164,36.8465992,-76.1715325,V,5,V,12,1,2153</pre>
 </div>
 </div>
 </div>
@@ -412,7 +430,8 @@ match the route ID in the <a class="reference internal" href="transit_data.html#
 <li><a class="reference internal" href="#data-model">Data Model</a><ul>
 <li><a class="reference internal" href="#vehicle-information">Vehicle Information</a></li>
 <li><a class="reference internal" href="#vehicle-report-v1">Vehicle Report V1</a></li>
-<li><a class="reference internal" href="#vehicle-report-v2">Vehicle Report V2</a></li>
+<li><a class="reference internal" href="#vehicle-report-v2-1">Vehicle Report V2.1</a></li>
+<li><a class="reference internal" href="#vehicle-report-v2-2">Vehicle Report V2.2</a></li>
 <li><a class="reference internal" href="#vehicle-report-v3">Vehicle Report V3</a></li>
 </ul>
 </li>

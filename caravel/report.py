@@ -1,8 +1,8 @@
 #!/usr/bin/env python2.7
-"""Caravel Report object construction.
+"""Caravel Report object definitions.
 
-This reads one (or more) YYYYMMDDHHMM.rpt raw files and creates
-a sequence of Report instances.  The subclasses include
+This reads one (or more) raw files (or file-like CouchDB Attachments)
+and creates a sequence of Report instances.  The subclasses include
 
 -   Location - a simple location report; rte is None and dwell is None.
 
@@ -32,13 +32,20 @@ Report Factory
 ..  autoclass:: ReportReader_v1
     :members:
 
-..  autoclass:: ReportReader_v2
+..  autoclass:: ReportReader_v21
+    :members:
+..  autoclass:: ReportReader_v22
     :members:
 
-..  autofunction:: report_iter
+..  autoclass:: ReportReader_v3
+    :members:
+
+..  autofunction:: report_file_iter
 
 JSON Codec
 ================
+
+This is not terribly useful, since CouchDB does this for us.
 
 ..  autoclass:: JSONEncoder
 ..  autoclass:: JSONDecoder
@@ -114,7 +121,7 @@ class Location( Report ):
     #svc= schema.StringProperty()
     #blk= schema.StringProperty()
     def __repr__( self ):
-        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat!r}, {0.lon!r}, ll_valid={0.ll_valid!r} )".format( self )
+        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat!r}, {0.lon!r}, ll_valid='{0.ll_valid!r}' )".format( self )
     def __eq__( self, other ):
         return all(
             self.timestamp== other.timestamp,
@@ -133,7 +140,7 @@ class Arrival( Location ):
     """A Location report for a Vehicle arriving at a stop.
     """
     def __repr__( self ):
-        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid={0.ll_valid}, time='{0.time!s}', rte={0.rte!r}, dir={0.dir!r}, stop={0.stop!r} )".format( self )
+        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid='{0.ll_valid}', time={0.time!s}, rte={0.rte!r}, dir={0.dir!r}, stop={0.stop!r} )".format( self )
 
 class Dwell( Arrival ):
     """A Location report for a Vehicle paused at a stop.
@@ -141,10 +148,10 @@ class Dwell( Arrival ):
     """
     dwell= schema.IntegerProperty()
     def __repr__( self ):
-        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid={0.ll_valid}, time='{0.time!s}', rte={0.rte!r}, dir={0.dir!r}, stop={0.stop!r}, dwell={0.dwell!r} )".format( self )
+        return "{0.__class__.__name__}( '{0.timestamp!s}', {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid='{0.ll_valid}', time={0.time!s}, rte={0.rte!r}, dir={0.dir!r}, stop={0.stop!r}, dwell={0.dwell!r} )".format( self )
 
 class ReportReader( Iterable ):
-    """An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).
+    """An abstract iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).
 
     This is the abstract superclass for various reader implementations.
 
@@ -241,9 +248,9 @@ class ReportReader_v1( ReportReader ):
         :returns: (lat, lon) 2-tuple
         """
         latlon= self.label_str( field, expected )
-        lat_st, _, lon_st = latlon.partition('/')
-        lat= int(lat_st)/10000000
-        lon= int(lon_st)/10000000
+        lat_str, _, lon_str = latlon.partition('/')
+        lat= float(lat_str[:2] + "." + lat_str[2:])
+        lon= float(lon_str[:3] + "." + lon_str[3:])
         return lat, lon
 
     def label_time( self, field, expected ):
@@ -361,10 +368,10 @@ class ReportReader_v1( ReportReader ):
         else:
             self.log.error( "Unrecognized {0!r}".format(fields) )
 
-class ReportReader_v2( ReportReader ):
+class ReportReader_v21( ReportReader ):
     """An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).
 
-    This handles V2 format, which is CSV.
+    This handles V2.1 format, which is CSV and includes Route ID.
 
     First Line::
 
@@ -414,9 +421,9 @@ class ReportReader_v2( ReportReader ):
         dt = datetime.datetime.strptime( line['Date'], "%m/%d" ).date().replace( year=self.year )
         tm= datetime.datetime.strptime( line['Time'], "%H:%M:%S" ).time()
         timestamp= datetime.datetime.combine( dt, tm )
-        lat_st, _, lon_st = line['Lat/Lon'].partition('/')
-        lat= int(lat_st)/10000000
-        lon= int(lon_st)/10000000
+        lat_str, _, lon_str = line['Lat/Lon'].partition('/')
+        lat= float(lat_str[:2] + "." + lat_str[2:])
+        lon= float(lon_str[:3] + "." + lon_str[3:])
         time= (tm.hour*60+tm.minute)*60+tm.second
         adher= int(line['Adherence'])
         if all( (line['Route'], line['Direction'], line['StopID]']) ):
@@ -433,14 +440,14 @@ class ReportReader_v2( ReportReader ):
                 adher= adher, adher_valid= line['Adherence Valid/Invalid['],
                 )
 
-class ReportReader_v3( ReportReader_v2 ):
+class ReportReader_v22( ReportReader_v21 ):
     """An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).
 
-    This handles V3 format, which is CSV.
+    This handles V2.2 format, which is CSV and includes Vehicle ID
 
     First Line::
 
-        Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
+        Time,Date,Vehicle,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]
 
     Column Titles:
 
@@ -475,9 +482,9 @@ class ReportReader_v3( ReportReader_v2 ):
         dt = datetime.datetime.strptime( line['Date'], "%m/%d" ).date().replace( year=self.year )
         tm= datetime.datetime.strptime( line['Time'], "%H:%M:%S" ).time()
         timestamp= datetime.datetime.combine( dt, tm )
-        lat_st, _, lon_st = line['Lat/Lon'].partition('/')
-        lat= int(lat_st)/10000000
-        lon= int(lon_st)/10000000
+        lat_str, _, lon_str = line['Lat/Lon'].partition('/')
+        lat= float(lat_str[:2] + "." + lat_str[2:])
+        lon= float(lon_str[:3] + "." + lon_str[3:])
         time= (tm.hour*60+tm.minute)*60+tm.second
         adher= int(line['Adherence'])
         if all( (line['Route'], line['Direction'], line['Stop]']) ):
@@ -494,14 +501,91 @@ class ReportReader_v3( ReportReader_v2 ):
                 adher= adher, adher_valid= line['Adherence Valid/Invalid['],
                 )
 
-def report_iter( report_reader, files ):
+
+class ReportReader_v3( ReportReader ):
+    """An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).
+
+    This handles V3 format, which is CSV.
+
+    Source::
+
+        String[] headings = {
+            "Date", "Time", "Vehicle", "Lat", "Lon", "Location Valid/Invalid",
+            "Adherence", "Adherence Valid/Invalid", "Route", "Direction", "Stop"
+        };
+
+    Column Titles:
+
+        -   'Date'
+        -   'Time'
+        -   'Vehicle'
+        -   'Lat'
+        -   'Lon'
+        -   'Location Valid/Invalid'
+        -   'Adherence'
+        -   'Adherence Valid/Invalid'
+        -   'Route'
+        -   'Direction'
+        -   'Stop'
+
+    This is an iterable object, generally something like the following is done::
+
+        reader= ReportReader_v3()
+        with open(some_file) as source:
+            reader.open(some_file)
+            for report in reader:
+                # process report
+    """
+    columns= [
+        "Date", "Time", "Vehicle", "Lat", "Lon", "Location Valid/Invalid",
+        "Adherence", "Adherence Valid/Invalid", "Route", "Direction", "Stop",
+        ]
+
+    def open( self, source ):
+        """Open a given source for processing.
+
+        :param source: an open file-like source.
+        """
+        self.source= csv.DictReader( source )
+        assert self.columns==self.source.fieldnames, "Unrecognized Heading {0!r}".format( self.source.fieldnames )
+
+    def factory( self, line ):
+        """Parse the fields, returning Arrival, Dwell or Location.
+
+        :param line: CSV line of raw input.
+        :returns: Report instance, if possible.  ``None`` if the fields can't be parsed.
+        """
+        dt = datetime.datetime.strptime( line['Date'], "%Y-%m-%d" ).date().replace( year=self.year )
+        tm= datetime.datetime.strptime( line['Time'], "%H:%M:%S" ).time()
+        timestamp= datetime.datetime.combine( dt, tm )
+        lat= float(line['Lat'])
+        lon= float(line['Lon'])
+        time= (tm.hour*60+tm.minute)*60+tm.second
+        adher= int(line['Adherence'])
+        if all( (line['Route'], line['Direction'], line['Stop']) ):
+            return Arrival(
+                timestamp=timestamp,
+                id=line['Vehicle'],
+                lat=lat, lon=lon, ll_valid=line['Location Valid/Invalid'],
+                adher= adher, adher_valid= line['Adherence Valid/Invalid'],
+                time=time,
+                rte=line['Route'], dir=line['Direction'], stop=line['Stop'] )
+        return Location(
+                timestamp=timestamp,
+                id=line['Vehicle'],
+                lat=lat, lon=lon, ll_valid=line['Location Valid/Invalid'],
+                adher= adher, adher_valid= line['Adherence Valid/Invalid'],
+                )
+
+
+def report_file_iter( report_reader, files ):
     """An iterator which applies the ``report_reader`` instance to all
     of the named files.
 
     :param report_reader: an instance of :class:`ReportReader` which parses
         input lines and creates :class:`Report` instances.
     :param files: an iterable over the file names.
-        To process a single file, use ``report_iter( report_reader, [one_file] )``
+        To process a single file, use ``report_file_iter( report_reader, [one_file] )``
     """
     for report_file in files:
         ts= datetime.datetime.fromtimestamp(os.path.getmtime( report_file ) )

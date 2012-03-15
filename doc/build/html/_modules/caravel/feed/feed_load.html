@@ -1,0 +1,232 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.feed.feed_load &mdash; Caravel-Transit 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.feed.feed_load</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel ETL of real-time-feed with mappings</span>
+<span class="sd">from source encodings to GTFS keys.</span>
+
+<span class="sd">Load New Feeds</span>
+<span class="sd">===================</span>
+
+<span class="sd">1.  Get the next unprocessed feed.</span>
+
+<span class="sd">    -   Discard unreadable feeds.</span>
+<span class="sd">    -   Discard feeds with improper headings.</span>
+
+<span class="sd">2.  Apply the mapping;</span>
+<span class="sd">    create the sequence of position reports.</span>
+<span class="sd">    It&#39;s not essential to persist the position reports.</span>
+
+<span class="sd">    The LogTail application uses the following headings for a feed.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        String[] headings = {</span>
+<span class="sd">            &quot;Date&quot;, &quot;Time&quot;, &quot;Vehicle&quot;, &quot;Lat&quot;, &quot;Lon&quot;, &quot;Location Valid/Invalid&quot;,</span>
+<span class="sd">            &quot;Adherence&quot;, &quot;Adherence Valid/Invalid&quot;, &quot;Route&quot;, &quot;Direction&quot;, &quot;Stop&quot;</span>
+<span class="sd">        };</span>
+
+<span class="sd">3.  Clean up old feeds.</span>
+
+<span class="sd">Components</span>
+<span class="sd">===========</span>
+
+<span class="sd">..  autofunction:: remove_damaged</span>
+<span class="sd">..  autofunction:: remove_old</span>
+<span class="sd">..  autofunction:: new_feed_iter</span>
+<span class="sd">..  autofunction:: transform_new</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">caravel.feed.models</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">caravel.status.models</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">caravel.report</span> <span class="kn">import</span> <span class="n">ReportReader_v3</span>
+<span class="kn">import</span> <span class="nn">caravel.settings</span> <span class="kn">as</span> <span class="nn">settings</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+
+<div class="viewcode-block" id="remove_damaged"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.feed_load.remove_damaged">[docs]</a><span class="k">def</span> <span class="nf">remove_damaged</span><span class="p">(</span> <span class="n">feed_iter</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Remove feed documents which are so damaged we can&#39;t map them</span>
+<span class="sd">    to Python objects.</span>
+
+<span class="sd">    This is rare, and usually comes from poor unit testing on LogTail.</span>
+
+<span class="sd">    Once in a while, something can go horribly wrong and the</span>
+<span class="sd">    query needs to be changed to &quot;feed/all&quot; to check all feeds</span>
+<span class="sd">    instead of &quot;feed/new&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">counts</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">feed_iter</span><span class="p">:</span>
+        <span class="c"># Is this even a proper Feed?</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">feed</span><span class="o">=</span> <span class="n">Feed</span><span class="o">.</span><span class="n">wrap</span><span class="p">(</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">counts</span><span class="p">[</span><span class="s">&#39;new&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">continue</span>
+        <span class="k">except</span> <span class="ne">ValueError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">except</span> <span class="ne">AttributeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Unusable&quot;</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">e</span> <span class="p">)</span>
+        <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">delete_doc</span><span class="p">(</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">counts</span><span class="p">[</span><span class="s">&#39;invalid&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">counts</span>
+</div>
+<div class="viewcode-block" id="remove_old"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.feed_load.remove_old">[docs]</a><span class="k">def</span> <span class="nf">remove_old</span><span class="p">(</span> <span class="n">today</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="k">if</span> <span class="n">today</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+    <span class="n">counts</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">Feed</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;feed/old&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">today</span><span class="o">-</span><span class="n">f</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">date</span><span class="p">())</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Remove&quot;</span><span class="p">,</span> <span class="n">f</span> <span class="p">)</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">delete_doc</span><span class="p">(</span> <span class="n">f</span> <span class="p">)</span>
+            <span class="n">counts</span><span class="p">[</span><span class="n">f</span><span class="o">.</span><span class="n">status</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">counts</span><span class="p">[</span><span class="s">&#39;today&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">counts</span>
+</div>
+<span class="n">feed_headings</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s">&quot;Date&quot;</span><span class="p">,</span> <span class="s">&quot;Time&quot;</span><span class="p">,</span> <span class="s">&quot;Vehicle&quot;</span><span class="p">,</span> <span class="s">&quot;Lat&quot;</span><span class="p">,</span> <span class="s">&quot;Lon&quot;</span><span class="p">,</span> <span class="s">&quot;Location Valid/Invalid&quot;</span><span class="p">,</span>
+    <span class="s">&quot;Adherence&quot;</span><span class="p">,</span> <span class="s">&quot;Adherence Valid/Invalid&quot;</span><span class="p">,</span> <span class="s">&quot;Route&quot;</span><span class="p">,</span> <span class="s">&quot;Direction&quot;</span><span class="p">,</span> <span class="s">&quot;Stop&quot;</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="new_feed_iter"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.feed_load.new_feed_iter">[docs]</a><span class="k">def</span> <span class="nf">new_feed_iter</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Query all real-time Feed uploads.</span>
+<span class="sd">    Do a validation to assure that</span>
+
+<span class="sd">    a. we can build a Feed object,</span>
+<span class="sd">    b. there&#39;s a proper attachment.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">Feed</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;feed/new&#39;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">seq</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="nb">hash</span> <span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s">&#39;_rev&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">seq</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="s">&#39;feed&#39;</span> <span class="ow">in</span> <span class="n">doc</span><span class="p">[</span><span class="s">&#39;_attachments&#39;</span><span class="p">]:</span>
+                <span class="k">yield</span> <span class="n">doc</span>
+        <span class="k">except</span> <span class="n">ResourceNotFound</span><span class="p">:</span>
+            <span class="c"># Ignore them, they may be updated momentarily.</span>
+            <span class="k">pass</span>
+</div>
+<span class="k">def</span> <span class="nf">validate_and_open</span><span class="p">(</span> <span class="n">feed</span> <span class="p">):</span>
+    <span class="n">reader</span><span class="o">=</span> <span class="n">ReportReader_v3</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">att</span><span class="o">=</span> <span class="n">feed</span><span class="o">.</span><span class="n">fetch_attachment</span><span class="p">(</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;feed&quot;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="bp">True</span> <span class="p">)</span>
+        <span class="n">reader</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="n">att</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">feed</span><span class="p">,</span> <span class="n">reader</span>
+    <span class="k">except</span> <span class="ne">AssertionError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">feed</span><span class="o">.</span><span class="n">status</span><span class="o">=</span> <span class="s">&quot;wrong format attachment&quot;</span>
+        <span class="n">feed</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+        <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Wrong Format&quot;</span><span class="p">,</span> <span class="n">feed</span><span class="p">,</span> <span class="n">e</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">feed</span><span class="p">,</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="transform_new"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.feed.feed_load.transform_new">[docs]</a><span class="k">def</span> <span class="nf">transform_new</span><span class="p">(</span> <span class="n">mappings</span><span class="p">,</span> <span class="n">feed_iter</span><span class="p">,</span> <span class="n">track_arrival</span><span class="p">,</span> <span class="n">track_location</span><span class="p">,</span> <span class="n">today</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="k">if</span> <span class="n">today</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">today</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+    <span class="n">counts</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">feed_iter</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span> <span class="n">doc</span> <span class="p">)</span>
+        <span class="n">feed</span><span class="p">,</span> <span class="n">reader</span><span class="o">=</span> <span class="n">validate_and_open</span><span class="p">(</span> <span class="n">doc</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="n">reader</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">report</span><span class="o">.</span><span class="n">rte</span> <span class="ow">and</span> <span class="n">report</span><span class="o">.</span><span class="n">dir</span> <span class="ow">and</span> <span class="n">report</span><span class="o">.</span><span class="n">stop</span><span class="p">:</span>
+                    <span class="c"># Report is an arrival</span>
+                    <span class="n">track_arrival</span><span class="p">(</span> <span class="n">mappings</span><span class="p">,</span> <span class="n">report</span> <span class="p">)</span>
+                    <span class="n">counts</span><span class="p">[</span><span class="s">&#39;arrival&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># Report is a location</span>
+                    <span class="n">track_location</span><span class="p">(</span> <span class="n">mappings</span><span class="p">,</span> <span class="n">report</span> <span class="p">)</span>
+                    <span class="n">counts</span><span class="p">[</span><span class="s">&#39;location&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">counts</span><span class="p">[</span><span class="s">&#39;all&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">feed</span><span class="o">.</span><span class="n">status</span><span class="o">=</span> <span class="s">&#39;processed&#39;</span>
+        <span class="n">feed</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">counts</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,18 +1,13 @@
 #!/usr/bin/env python2.7
-"""Caravel Data Acquisition.
+"""Caravel FTP-based Data Acquisition
 
-Gather raw FTP position reports as well as transit system
-metadata.
+Gather raw position reports by polling an FTP server.
 
-The transit system data be fetched to a file for unzipping and loading
-into a local database.
-
-The position reports, however, should not actually be written to a
-persistent file.  Instead, they should be pushed into a queue for processing.
+The position reports should be pushed into a queue for processing.
 This can be a conceptual queue in a single-threaded applicaiton, or an
 actual multi-processing queue to improve performance.
 
-Real-Tiem Position Report Source
+FTP Source
 
 ::
 
@@ -20,14 +15,7 @@ Real-Tiem Position Report Source
     user='anonymous'
     passwd='slott56@gmail.com'
 
-Transit System Source
-
-::
-
-    http://googletf.gohrt.com/google_transit.zip
-
 ..  autofunction:: report_reader
-..  autofunction:: get_route
 ..  autofunction:: get_report_files
 
 """
@@ -43,7 +31,6 @@ import logging
 
 URL_Positions = "ftp://216.54.15.3/Anrd/hrtrtf.txt"
 URL_Vehicle_ID = "ftp://216.54.15.3/Anrd/vid.csv"
-URL_Google_Transit = "http://googletf.gohrt.com/google_transit.zip"
 
 logger= logging.getLogger( __name__ )
 
@@ -132,24 +119,4 @@ def get_report_files( connection=None, target_dir='.', **access ):
             file_status['hrtrtf.txt'].timestamp.strftime( "%Y%m%d%H%M.rpt") )
         get_current( server, "Anrd/hrtrtf.txt", name )
 
-    return name
-
-def get_route( connection=None, target_dir='.', url=None ):
-    """Get the lastest Route Definition ZIP Archive.
-
-    :param connection: Override to the default of urllib2.OpenerDirector.
-    :param target_dir: Working directory for result file
-    :param url: URL for the file (http://googletf.gohrt.com/google_transit.zip)
-    """
-    if not connection:
-        connection= urllib2.build_opener()
-    if not url:
-        url= URL_Google_Transit
-
-    download=  urlparse.urlparse(url)
-    dir, name = os.path.split( download.path )
-
-    with closing( connection.open( url ) ) as source:
-        with open(os.path.join(target_dir,name),'wb') as target:
-            target.write( source.read() )
     return name

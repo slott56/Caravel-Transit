@@ -10,6 +10,27 @@ import zipfile
 import datetime
 import caravel.transit_system
 import math
+from test.test_acquire import MockHTTP
+
+class Test_Get_Source( unittest.TestCase ):
+    def setUp( self ):
+        self.http_class= MockHTTP
+        try:
+            os.remove( 'test/google_transit.zip' )
+        except OSError as e:
+            self.assertEqual( 2, e.errno )
+    def runTest( self ):
+        self.name= caravel.transit_system.get_source_data( self.http_class(), target_dir='test' )
+        self.assertTrue( os.path.exists( 'test/google_transit.zip' ) )
+        with open('test/google_transit.zip','rb') as new_file:
+            new_data= new_file.read()
+        self.assertEqual( "New Lines Of Data", new_data )
+        self.assertEqual( [("http://googletf.gohrt.com/google_transit.zip",)], self.http_class.history )
+    def tearDown( self ):
+        try:
+            os.remove( 'test/google_transit.zip' )
+        except OSError as e:
+            self.assertEqual( 2, e.errno )
 
 class Test_AccessZip( unittest.TestCase ):
     content= """\

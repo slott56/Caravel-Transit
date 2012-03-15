@@ -99,6 +99,32 @@ See :ref:`design.transit_resource` for additional transit system queries.
 
 See http://guide.couchdb.org/draft/why.html
 
+On a related note, some design considerations for other document
+detabases are given here: http://www.mongodb.org/display/DOCS/Schema+Design.
+
+One key point is called "Embedding and Linking".  This seems to apply to any document
+database.
+
+    A key question when designing a MongoDB schema is when to embed and when to link. Embedding is the nesting of objects and arrays inside a BSON document. Links are references between documents.
+
+    There are no joins in MongoDB - distributed joins would be difficult on a 1,000 server cluster. Embedding is a bit like "prejoined" data. Operations within a document are easy for the server to handle; these operations can be fairly rich. Links in contrast must be processed client-side by the application; the application does this by issuing a follow-up query.
+
+    Generally, for "contains" relationships between entities, embedding should be be chosen. Use linking when not using linking would result in duplication of data.
+
+Because Routes and Stops are a graph theory problem, there's no simple answer.
+
+Here is the "Summary of Best Practices".
+
+    - "First class" objects, that are at top level, typically have their own collection.
+    - Line item detail objects typically are embedded.
+    - Objects which follow an object modelling "contains" relationship should generally be embedded.
+    - Many to many relationships are generally done by linking.
+    - Collections with only a few objects may safely exist as separate collections, as the whole collection is quickly cached in application server memory.
+    - Embedded objects are a bit harder to link to than "top level" objects in collections.
+    - It is more difficult to get a system-level view for embedded objects. When needed an operation of this sort is performed by using MongoDB's map/reduce facility.
+    - If the amount of data to embed is huge (many megabytes), you may reach the limit on size of a single object. See also GridFS.
+    - If performance is an issue, embed.
+
 Candidate Document Structures
 -------------------------------
 

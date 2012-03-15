@@ -96,7 +96,7 @@ import os
 import glob
 import caravel.report
 import caravel.transit_system
-import caravel.acquire
+import caravel.LogCapture.acquire
 import pprint
 import logging
 import sys
@@ -169,7 +169,7 @@ class StopFinder( object ):
     @staticmethod
     def heading( ):
         """Return headings which match the return value from :meth:`supplement`."""
-        return ( caravel.report.Report.headings
+        return ( caravel.report.headings
         + [ 'distance', 'time', ]
         + prefix_fields('stop', caravel.transit_system.Stop)
         + prefix_fields('stop_time', caravel.transit_system.Stop_Time) )
@@ -216,7 +216,7 @@ class StopFinder_Next_Stop( StopFinder ):
         """Return headings which match the return value from :meth:`supplement`."""
         return ( StopFinder.heading()
         + prefix_fields('route', caravel.transit_system.Route)
-        + prefix_fields('next', caravel.transit_system.Stop_Time) )
+        + prefix_fields('next', caravel.transit_system.Stop) )
 
     def supplement( self, best_fit ):
         """Fold in some extra data, the next scheduled stop.
@@ -274,6 +274,7 @@ class WriteStop( Callable ):
         self.heading= stop_finder.heading()
         self.wtr= csv.DictWriter( target, self.heading )
         self.wtr.writeheader()
+        self.fieldnames= self.wtr.fieldnames
         self.count= 0
     def __call__( self, report, best_fit ):
         """Write a row to the stop file.
@@ -375,7 +376,7 @@ def arrival_at_stop( reader, stop_finder, files, no_stop=print, stop=print ):
     :returns: dictionary of counts
     """
     counts= defaultdict(int)
-    for report in caravel.report.report_iter( reader, files ):
+    for report in caravel.report.report_file_iter( reader, files ):
         counts['input'] += 1
         try:
             best_fit= stop_finder.process_report( report )
@@ -405,7 +406,7 @@ def get_args():
     """
     parser= argparse.ArgumentParser( )
     parser.add_argument( 'files', action='store', nargs='*' )
-    parser.add_argument( '--format', '-f', action='store', default='2' )
+    parser.add_argument( '--format', '-f', action='store', default='22' )
     parser.add_argument( '--new', '-n', action='store_true', default=False, dest='acquire' )
     parser.add_argument( '--transit', '-t', action='store', default='google_transit.zip' )
     parser.add_argument( '--reject', '-r', action='store', default='no_stop.csv' )
@@ -421,15 +422,16 @@ if __name__ == "__main__":
     if args.debug:
         logging.getLogger().setLevel( logging.DEBUG )
     if args.acquire:
-        caravel.acquire.get_route()
-        latest= caravel.acquire.get_report_files()
+        caravel.transit_system.get_source_data()
+        latest= caravel.LogCapture.acquire.get_report_files()
         files= [latest] + args.files
     else:
         files= args.files
 
     rdr_class = {
         '1': caravel.report.ReportReader_v1,
-        '2': caravel.report.ReportReader_v2,
+        '21': caravel.report.ReportReader_v21,
+        '22': caravel.report.ReportReader_v22,
         }
     reader= rdr_class[args.format]()
 
