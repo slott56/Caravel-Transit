@@ -124,7 +124,8 @@ if __name__ == "__main__":
         files= args.files
     rdr_class = {
         '1': caravel.report.ReportReader_v1,
-        '2': caravel.report.ReportReader_v2,
+        '21': caravel.report.ReportReader_v21,
+        '22': caravel.report.ReportReader_v22,
         '3': caravel.report.ReportReader_v3,
         }
     reader= rdr_class[args.format]()

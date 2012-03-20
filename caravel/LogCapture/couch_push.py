@@ -3,6 +3,69 @@
 
 Push Mapping data to HRT CouchDB.
 
+Synopsis
+===========
+
+::
+
+    python2.7 -m caravel.LogCapture.couch_push --mapping_type type --effective_date date [--verbose] source.csv
+
+Description
+===========
+
+    Push the given mapping file to the HRTransit CouchDB.
+
+Options
+===========
+
+    ..  program:: couch_push
+
+    ..  option:: --mapping_type name, -m name
+
+        Mapping type.  Must be one of "vehicle", "route" or "stop".
+
+    ..  option:: --effective_date date, -e date
+
+        Effective date for this mapping.  Must be in the form "YYYY-MM-DD".
+
+    .. option:: --vebose, -v
+
+    .. option:: source.csv
+
+        The CSV file with the mapping.  The CSV file must have
+        column names and the column names must match the mapping type.
+
+    The file formats have mandatory column names as shown below.
+
+    ..  csv-table:: Column Names
+
+        "vehicle","\\"vid\\",\\"bus\\""
+        "route","\\"rid\\",\\"Route\\""
+        "stop","\\"sid\\",\\"Stop\\""
+
+Configuration File
+====================
+
+This will read a configuration file, :file:`hrtail_conf.py`
+
+This file provides the CouchDB server name.
+
+Module API
+============
+
+This module can be invoked from a script as follows:
+
+::
+
+    from caravel.LogCapture.couch_push import push, config
+    config( db_url="http://localhost:5984/database" )
+    push( "vehicle", "2012-03-01", "vehicle.csv" )
+    push( "route", "2012-03-01", "route.csv" )
+    push( "stop", "2012-03-01", "stop.csv" )
+
+Database Schema
+==================
+
 A mapping file must be CSV format (with well-defined headings.
 They are attached to a document with the following
 attributes
@@ -11,7 +74,7 @@ attributes
 
     timestamp      : year-mm-ddThh:mm:ssZ
     effective_date : year-mm-dd
-    mapping_type   : vehicle, route or stop
+    mapping_type   : "vehicle", "route" or "stop"
     doc_type       : "Mapping" -- used by couchdbkit.
     content        : the file
 
@@ -73,31 +136,61 @@ Individual documents are available::
 
     curl http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/content/
 
+Components
+=============
+
+..  autofunction:: config
+..  autofunction:: upload_mapping
+..  autofunction:: validate
+..  autofunction:: push
+..  autofunction:: get_args
+..  autofunction:: get_config
 """
 from __future__ import print_function
-
+import logging
+import sys
 import datetime
 import os
 import urllib2
+import urlparse
 from contextlib import closing
 import sched
 import time
+import argparse
+from couchdbkit import Server
 
-import caravel.settings
 from caravel.feed.models import Mapping
 
-def upload_mapping( db, mapping_type, effective_date, filename ):
+logger= logging.getLogger( "couch_push" )
+
+def config( **kwargs ):
+    """Configure this operation by opening the given
+    Couch Server and Database.
+
+    The kwargs must include ``db_url`` with the full URL
+    to the CouchDB server and database.
+    """
+    global db
+    db_url= kwargs.pop("db_url")
+    p = urlparse.urlparse(db_url)
+    server= "{0.scheme}://{0.netloc}".format( p )
+    connection = Server(server)
+    db = connection.get_or_create_db(p.path)
+    logger.debug( "Connection {0!r} {1!r}".format(server, p.path) )
+    return db
+
+def upload_mapping( mapping_type, effective_date, filename ):
     """Upload a specific mapping file with a given effective date.
 
     The effective date must be a datetime.date object.
 
-    :param db: The database
     :param mapping_type: "vehicle", "route" or "stop" mapping type
     :param effective_date: datetime.date at which this mapping becomes effective.
         Mappings remain effective until a mapping with a later effective date
         is pushed and validated.
     :param filename: a file to read and push.
     """
+    global db
     Mapping.set_db(db)
     mapping= Mapping(
         timestamp= datetime.datetime.fromtimestamp(os.path.getmtime(filename)),
@@ -110,6 +203,16 @@ def upload_mapping( db, mapping_type, effective_date, filename ):
     return mapping
 
 def validate( mapping_type, effective_date, filename ):
+    """Validate the arguments.
+
+    :param mapping_type: "vehicle", "route" or "stop" mapping type
+    :param effective_date: datetime.date at which this mapping becomes effective.
+        Mappings remain effective until a mapping with a later effective date
+        is pushed and validated.
+    :param filename: a file to read and push.
+
+    :returns: a dict with cleansed argument values.
+    """
     date= datetime.datetime.strptime( effective_date, "%Y-%m-%d").date()
     if not os.path.exists( filename ):
         raise Exception( "File Not Found {0}".format(filename) )
@@ -122,11 +225,57 @@ def validate( mapping_type, effective_date, filename ):
         )
 
 def push( mapping_type, date_str, filename ):
-    cleaned= validate( mapping_type, date_str, filename )
-    mapping= upload_mapping( caravel.settings.db, **cleaned )
-    print( mapping, mapping._id )
+    """Module API.   Validates the argument values and pushes the file.
+
+    :param mapping_type: "vehicle", "route" or "stop" mapping type
+    :param effective_date: datetime.date at which this mapping becomes effective.
+        Mappings remain effective until a mapping with a later effective date
+        is pushed and validated.
+    :param filename: a file to read and push.
+    """
+    try:
+        cleaned= validate( mapping_type, date_str, filename )
+    except Exception, e:
+        logger.error( "Invalid File: {0!r}".format(e) )
+        return
+    mapping= upload_mapping( **cleaned )
+    logger.info( "{0!s} {1!r}".format(mapping, mapping._id) )
+
+def get_args():
+    """Parse command-line arguments.
+
+    :returns: Arguments object.
+    """
+    parser= argparse.ArgumentParser( )
+    parser.add_argument( 'source', action='store', nargs=1 )
+    parser.add_argument( '--mapping_type', '-m', action='store', choices=["vehicle","route","stop"] )
+    parser.add_argument( '--effective_date', '-e', action='store' )
+    parser.add_argument( '--verbose', '-v', action='store_true', default=False )
+    args= parser.parse_args()
+    return args
+
+def get_config():
+    """Read the config file, :file:`hrtail_conf.py`
+    to get the ``couchpush`` value.
+
+    Usually, the content is this.
+
+    ::
+
+        couchpush = { "db_url": "http://localhost:5984/couchdbkit_test" }
+
+    In principle, we should check ./hrtail_conf.py and ~/hrtail_conf.py.
+    We only check the local directory, however.
+    """
+    settings = {}
+    execfile( "hrtail_conf.py", settings )
+    config( **settings['couchpush'] )
 
 if __name__ == "__main__":
-    push( "vehicle", "2012-03-01", "vehicle.csv" )
-    push( "route", "2012-03-01", "route.csv" )
-    push( "stop", "2012-03-01", "stop.csv" )
+    logging.basicConfig( stream=sys.stderr, level=logging.INFO )
+    settings= get_config()
+    args= get_args()
+    if args.verbose:
+        logging.getLogger().setLevel( logging.DEBUG )
+    push( args.mapping_type, args.effective_date, args.source[0] )
+    logging.shutdown()

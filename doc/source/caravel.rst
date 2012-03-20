@@ -13,6 +13,7 @@ predict next bus arrival times.
     :maxdepth: 2
 
     usecase/index
+    operations/index
     design/index
     implementation/index
 

@@ -7,7 +7,7 @@ It will also do things like clean the feed database.
 """
 from __future__ import print_function
 from couchdbkit.designer import push
-import settings
+from caravel.conf import settings
 import pprint
 from collections import defaultdict
 

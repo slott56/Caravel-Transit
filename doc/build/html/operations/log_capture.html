@@ -1,0 +1,245 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Log and Mapping Capture &mdash; Caravel-Transit 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
+    <link rel="up" title="User’s Guide" href="index.html" />
+    <link rel="next" title="Status Build" href="status_build.html" />
+    <link rel="prev" title="User’s Guide" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="status_build.html" title="Status Build"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="User’s Guide"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="log-and-mapping-capture">
+<h1>Log and Mapping Capture<a class="headerlink" href="#log-and-mapping-capture" title="Permalink to this headline">¶</a></h1>
+<p>The general <a class="reference internal" href="#log-capture-configuration">Log Capture Configuration</a> applies to both use cases.</p>
+<p>The <a class="reference internal" href="#mappings-push">Mappings Push</a> use case pushes the relevant mapping files.</p>
+<p>The <a class="reference internal" href="#log-capture">Log Capture</a> use case does the tail-reformat-push of the feed file.</p>
+<div class="section" id="log-capture-configuration">
+<h2>Log Capture Configuration<a class="headerlink" href="#log-capture-configuration" title="Permalink to this headline">¶</a></h2>
+<p>There are two version of Log Capture.  A Python version, included
+in Caravel, and a Java version.</p>
+<p>See <a class="reference external" href="https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture">https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</a></p>
+<p>The Java version uses a <tt class="file docutils literal"><span class="pre">hrtail.properties</span></tt>.</p>
+<div class="highlight-python"><pre>#hrtail Properties
+
+#Couch Push
+#Test Database
+couchpush.db_url=http://localhost:5984/couchdbkit_test
+#Production Database
+#couchpush.db_url=http://hrt.iriscouch.com:5984/feed
+
+#Log Tail
+logtail.tail_status_filename=logtail.history
+logtail.file_size_limit=1m
+
+# Reformat
+
+# Capture
+capture.extract_filename=hrtrtf.txt
+capture.csv_filename=hrtrtf.csv</pre>
+</div>
+<p>The Python log capture uses a JSON-format file, <tt class="file docutils literal"><span class="pre">hrtail_conf.py</span></tt></p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#hrtail_conf</span>
+
+<span class="c">#Couch Push</span>
+<span class="c">#Test Database</span>
+<span class="n">couchpush</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;db_url&quot;</span><span class="p">:</span> <span class="s">&quot;http://localhost:5984/couchdbkit_test&quot;</span> <span class="p">}</span>
+<span class="c">#Production Database</span>
+<span class="c">#couchpush = { &quot;db_url&quot;: &quot;http://hrt.iriscouch.com:5984/feed&quot; }</span>
+
+<span class="c">#Log Tail</span>
+<span class="n">logtail</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;tail_status_filename&quot;</span><span class="p">:</span> <span class="s">&quot;logtail.history&quot;</span><span class="p">,</span>
+    <span class="s">&quot;file_size_limit&quot;</span><span class="p">:</span> <span class="mi">1000000</span> <span class="p">}</span>
+
+<span class="c"># Reformat</span>
+
+<span class="c"># Capture</span>
+<span class="n">capture</span> <span class="o">=</span> <span class="p">{</span> <span class="s">&quot;extract_filename&quot;</span><span class="p">:</span> <span class="s">&quot;hrtrtf.txt&quot;</span><span class="p">,</span>
+    <span class="s">&quot;csv_filename&quot;</span><span class="p">:</span> <span class="s">&quot;hrtrtf.csv&quot;</span> <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="mappings-push">
+<h2>Mappings Push<a class="headerlink" href="#mappings-push" title="Permalink to this headline">¶</a></h2>
+<p>A mapping is created through a three-step process.</p>
+<ol class="arabic simple">
+<li>Extract the relevant Internal key and GTFS value.</li>
+<li>Create a CSV file in one of three formats:
+&#8220;vehicle&#8221;, &#8220;route&#8221; or &#8220;stop&#8221;.</li>
+<li>Push the CSV file using the CouchPush application.
+You&#8217;ll provide the type of mapping and the effective date for the
+mapping.  On the given day (at midnight) the mapping takes effect.</li>
+</ol>
+<p>The file formats have mandatory column names as shown below.</p>
+<table border="1" class="docutils">
+<caption>Column Names</caption>
+<colgroup>
+<col width="50%" />
+<col width="50%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td>vehicle</td>
+<td>&#8220;vid&#8221;,&#8221;bus&#8221;</td>
+</tr>
+<tr class="row-even"><td>route</td>
+<td>&#8220;rid&#8221;,&#8221;Route&#8221;</td>
+</tr>
+<tr class="row-odd"><td>stop</td>
+<td>&#8220;sid&#8221;,&#8221;Stop&#8221;</td>
+</tr>
+</tbody>
+</table>
+<p>Yes, they&#8217;re inconsistent with respect to capitalization.</p>
+<p>The application is started from the command line</p>
+<div class="highlight-python"><pre>java -cp LogCapture/dist/LogCapture.jar org.hrva.capture.CouchPush -m route -e 2012-03-12 route.csv
+java -cp LogCapture/dist/LogCapture.jar org.hrva.capture.CouchPush -m stop -e 2012-03-12 stop.csv
+java -cp LogCapture/dist/LogCapture.jar org.hrva.capture.CouchPush -m vehicle -e 2012-03-12 vehicle.csv</pre>
+</div>
+<p>The positional argument (<tt class="file docutils literal"><span class="pre">../HRT-Mock/simulated.log</span></tt>) names the log file
+to tail.</p>
+<p>The application is started from the command line</p>
+<div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.couch_push -m route -e 2012-03-12 route.csv
+python2.7 -m caravel.LogCapture.couch_push -m stop -e 2012-03-12 stop.csv
+python2.7 -m caravel.LogCapture.couch_push -m vehicle -e 2012-03-12 vehicle.csv</pre>
+</div>
+</div>
+<div class="section" id="log-capture">
+<h2>Log Capture<a class="headerlink" href="#log-capture" title="Permalink to this headline">¶</a></h2>
+<p>The  log capture operation is simply left running.  Forever.  It can be
+stopped or restarted as needed for system maintenance.  It uses a private
+cache file to record the size of the log so that it captures only the
+new data.</p>
+<p>Also, it has an upper limit on the amount of data that will
+be captured. Real-time position reports rapidly become stale.
+Only position reports from the last hour matter; older reports can be
+safely ignored.</p>
+<p>The application is started from the command line</p>
+<div class="highlight-python"><pre>java -cp LogCapture/dist/LogCapture.jar org.hrva.capture.Capture
+../HRT-Mock/simulated.log</pre>
+</div>
+<p>The positional argument (<tt class="file docutils literal"><span class="pre">../HRT-Mock/simulated.log</span></tt>) names the log file
+to tail.</p>
+<p>The application is started from the command line</p>
+<div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.log_capture ../HRT-Mock/simulated.log</pre>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Log and Mapping Capture</a><ul>
+<li><a class="reference internal" href="#log-capture-configuration">Log Capture Configuration</a></li>
+<li><a class="reference internal" href="#mappings-push">Mappings Push</a></li>
+<li><a class="reference internal" href="#log-capture">Log Capture</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">User&#8217;s Guide</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="status_build.html"
+                        title="next chapter">Status Build</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/operations/log_capture.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="status_build.html" title="Status Build"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="User’s Guide"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="index.html" >User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

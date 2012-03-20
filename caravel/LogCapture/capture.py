@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-"""Caravel Capture the Feed and Push into CouchDB.
+"""Caravel FTP-based Capture the Feed and Push into CouchDB.
 
 Real-time feed CSV files are attached to a document with the following
 attributes
@@ -66,12 +66,9 @@ Individual documents are available::
 
     curl http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/feed/
 
-..  todo:: Deprecated
+..  deprecated:: 4.1
 
-    The FTP interface is obsolete.
-
-    And it needs to have argparse added so that it runs from the
-    command line properly.
+    FTP Polling is no longer preferred.
 
 """
 from __future__ import print_function
@@ -83,7 +80,7 @@ from contextlib import closing
 import sched
 import time
 
-import caravel.settings
+from caravel.conf import settings
 from caravel.feed.models import Feed
 import caravel.LogCapture.acquire # want URL_Positions
 

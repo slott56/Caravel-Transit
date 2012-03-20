@@ -12,25 +12,38 @@ This relies on Couchdb Change Notification via long polling.
 
 3.  Build status.  See :mod:`caravel.status.status_load`.
 
-Overall Control
-===================
+Synopsis
+==========
 
-The overall control is driven by tracking status changes that are emitted
-by the couchdb.  The change notification long polling technique provides
-a sequence of change documents.
+::
+
+    python -m caravel.StatusBuilder.change_notification
+
+Description
+===============
+
+This will start a long-polling request for changes in the given
+couchDB.  This yields  a sequence of change documents.
 
 For documents which are mappings, this triggers the mapping
-validation, and cache update.
+validation, and cache update.  This is defined by
+the :mod:`caravel.feed` package, specifically :mod:`caravel.feed.mapping_load`.
 
 For documents which are feeds, this triggers feed validation, and status
-updates.
+updates.  The initial steps of feed processing are defined by
+the :mod:`caravel.feed` package, specifically :mod:`caravel.feed.feed_load`.
 
-The cleanup cycles can triggered asynchronously based on
+The status updates are part of the :mod:`caravel.status` package,
+specifically :mod:`caravel.status.status_load`.
 
--   cron in a separate process.
+The cleanup cycles are triggered asynchronously based on
+watching the clock during ordinary processing cycles (i.e.,
+intermittently after feed processing is completed.)
+
+Alternatives include
+-   cron in a separate process,
 -   heartbeat from couchdb.
--   watching the clock during ordinary processing cycles (i.e.,
-    intermittently after feed processing is completed.).
+
 
 Recursion Detection
 =====================
@@ -42,11 +55,24 @@ To prevent infinite recursion, we keep a small FIFO of documents that we
 ignore when the appear a second time.  After all, this process does
 numerous updates, so it gets notified of the updates it made.
 
+Configuration
+==================
+
+This relies on :mod:`caravel.conf` to provide the settings
+with the database connection.
+
+Components
+===============
+..  autofunction:: mapping_notification
+..  autofunction:: feed_notification
+..  autofunction:: periodic_tasks
+..  autofunction:: lru_update
+..  autofunction:: long_poll_callback
 """
 from __future__ import print_function
 from caravel.feed.models import *
 from caravel.status.models import *
-import caravel.settings as settings
+from caravel.conf import settings
 import datetime
 import sys
 import caravel.feed.feed_load as feed

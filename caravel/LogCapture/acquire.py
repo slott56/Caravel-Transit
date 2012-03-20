@@ -18,6 +18,7 @@ FTP Source
 ..  autofunction:: report_reader
 ..  autofunction:: get_report_files
 
+..  deprecated:: FTP Polling is no longer preferred.
 """
 from __future__ import print_function, division
 import ftplib

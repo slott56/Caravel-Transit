@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Arrival Detail Enrichment &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>User’s Guide &mdash; Caravel-Transit 1.1 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -25,9 +25,8 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
-    <link rel="up" title="Design Notes" href="index.html" />
-    <link rel="next" title="Route Discovery" href="route_details.html" />
-    <link rel="prev" title="Stop Finding" href="location_finding.html" /> 
+    <link rel="next" title="Log and Mapping Capture" href="log_capture.html" />
+    <link rel="prev" title="Use Cases" href="../usecase/index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,13 +39,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="route_details.html" title="Route Discovery"
+          <a href="log_capture.html" title="Log and Mapping Capture"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="location_finding.html" title="Stop Finding"
+          <a href="../usecase/index.html" title="Use Cases"
              accesskey="P">previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -55,37 +53,35 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="arrival-detail-enrichment">
-<h1>Arrival Detail Enrichment<a class="headerlink" href="#arrival-detail-enrichment" title="Permalink to this headline">¶</a></h1>
-<p>Wait, what?</p>
-<p>When an application locates an appropriate stop that matches a report,
-there is an unlimited number of &#8220;enrichment&#8221; steps that could be performed
-around that stop.</p>
-<ul class="simple">
-<li>Add route and trip information.</li>
-<li>Add next stop information.</li>
-<li>All all next stops in this trip.</li>
-</ul>
-<p>The issue is that there are four closely-related bits of processing.</p>
+  <div class="section" id="user-s-guide">
+<h1>User&#8217;s Guide<a class="headerlink" href="#user-s-guide" title="Permalink to this headline">¶</a></h1>
+<p>There are three parts to gathering and processing transit
+system data to create the current vehicle status.</p>
 <ol class="arabic simple">
-<li>The core algorithm that uses a Report to locate a Stop.
-If a stop is found, enrich it.  Write to one file.
-if a stop cannot be found, Write to a separate file.</li>
-<li>The initial stop lookup.</li>
-<li>Any additional enrichments to that lookup.</li>
-<li>The file writes.</li>
+<li>Log Capture.  The Log Capture application has two key feature sets.
+Note that the log has internal codes for route, stop and vehicle.
+A set of mappings must <em>also</em> be captured to interpret these codes.<ul>
+<li>It gathers the real-time position reports
+once each minute and pushes them to the CouchDB.</li>
+<li>It is used to manually push mappings to the CouchDB.</li>
+</ul>
+</li>
+<li>Status Builder.  This watches the CouchDB for change notification
+and transforms the raw feed into Route, Stop and Vehicle information.</li>
+<li>Route Capture.  This captures GTF data from Google.</li>
 </ol>
-<p>These are entangled because the file writes (to create proper CSV)
-need to know about the enrichments, binding them together with respect
-to attribute names.</p>
-<p>The core algorithm, also, can &#8220;fail&#8221; at during lookup or enrichment.  Any problems mean
-that the report is written to a reject file.  Only success in lookup and
-subsequence enrichment leads to a report written to the &#8220;good&#8221; file.</p>
-<p>To make it more challenging, enrichment could for a kind of <strong>Chain of Command</strong>,
-where multiple enrichments can be used.</p>
-<p>Ideally, each Enrichment is an independent object.  The write polls them
-for column name information.  The core algorothm then passes the results
-to them.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="log_capture.html">Log and Mapping Capture</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="log_capture.html#log-capture-configuration">Log Capture Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="log_capture.html#mappings-push">Mappings Push</a></li>
+<li class="toctree-l2"><a class="reference internal" href="log_capture.html#log-capture">Log Capture</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="status_build.html">Status Build</a></li>
+<li class="toctree-l1"><a class="reference internal" href="route_capture.html">Route Capture</a></li>
+</ul>
+</div>
 </div>
 
 
@@ -98,14 +94,14 @@ to them.</p>
               <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
             </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="location_finding.html"
-                        title="previous chapter">Stop Finding</a></p>
+  <p class="topless"><a href="../usecase/index.html"
+                        title="previous chapter">Use Cases</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="route_details.html"
-                        title="next chapter">Route Discovery</a></p>
+  <p class="topless"><a href="log_capture.html"
+                        title="next chapter">Log and Mapping Capture</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="../_sources/design/arrival_processing.txt"
+    <li><a href="../_sources/operations/index.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -135,13 +131,12 @@ to them.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="route_details.html" title="Route Discovery"
+          <a href="log_capture.html" title="Log and Mapping Capture"
              >next</a> |</li>
         <li class="right" >
-          <a href="location_finding.html" title="Stop Finding"
+          <a href="../usecase/index.html" title="Use Cases"
              >previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
-          <li><a href="index.html" >Design Notes</a> &raquo;</li> 
+        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

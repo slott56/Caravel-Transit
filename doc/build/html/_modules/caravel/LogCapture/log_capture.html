@@ -1,0 +1,507 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.LogCapture.log_capture &mdash; Caravel-Transit 1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.LogCapture.log_capture</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel Log Capture.</span>
+
+<span class="sd">This does a tail-transform-push of an active log.</span>
+
+<span class="sd">See https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</span>
+
+<span class="sd">Synopsis</span>
+<span class="sd">===========</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    python2.7 -m caravel.LogCapture.log_capture [--verbose] path/to/some.log</span>
+
+<span class="sd">Description</span>
+<span class="sd">===========</span>
+
+<span class="sd">    Tail the log file.  Transform the raw log to CSV format to create a feed.</span>
+<span class="sd">    Push the feed file to the HRTransit CouchDB.</span>
+
+<span class="sd">Options</span>
+<span class="sd">===========</span>
+
+<span class="sd">    ..  program:: log_capture</span>
+
+<span class="sd">    .. option:: --vebose, -v</span>
+
+<span class="sd">    .. option:: path/to/some.log</span>
+
+<span class="sd">        The log file to be tailed.</span>
+
+<span class="sd">Configuration File</span>
+<span class="sd">====================</span>
+
+<span class="sd">This will read a configuration file, :file:`hrtail_conf.py`</span>
+
+<span class="sd">This file provides the CouchDB server name as well as temporary</span>
+<span class="sd">file names and other configuration options.</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    #hrtail_conf</span>
+
+<span class="sd">    #Couch Push</span>
+<span class="sd">    #Test Database</span>
+<span class="sd">    couchpush = { &quot;db_url&quot;: &quot;http://localhost:5984/couchdbkit_test&quot; }</span>
+<span class="sd">    #Production Database</span>
+<span class="sd">    #couchpush = { &quot;db_url&quot;: &quot;http://hrt.iriscouch.com:5984/feed&quot; }</span>
+
+<span class="sd">    #Log Tail</span>
+<span class="sd">    logtail = { &quot;tail_status_filename&quot;: &quot;logtail.history&quot;,</span>
+<span class="sd">        &quot;file_size_limit&quot;: 1000000 }</span>
+
+<span class="sd">    # Reformat</span>
+
+<span class="sd">    # Capture</span>
+<span class="sd">    capture = { &quot;extract_filename&quot;: &quot;hrtrtf.txt&quot;,</span>
+<span class="sd">        &quot;csv_filename&quot;: &quot;hrtrtf.csv&quot; }</span>
+
+<span class="sd">Module API</span>
+<span class="sd">============</span>
+
+<span class="sd">This module can be invoked from a script as follows:</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    from caravel.LogCapture.log_capture import config, capture</span>
+<span class="sd">    config( db_url=&quot;http://localhost:5984/database/&quot; )</span>
+<span class="sd">    settings = {</span>
+<span class="sd">        &quot;logtail&quot; : { &quot;tail_status_filename&quot;: &quot;logtail.history&quot;,</span>
+<span class="sd">        &quot;file_size_limit&quot;: 1000000 },</span>
+<span class="sd">        &quot;capture&quot; : { &quot;extract_filename&quot;: &quot;hrtrtf.txt&quot;,</span>
+<span class="sd">        &quot;csv_filename&quot;: &quot;hrtrtf.csv&quot; }</span>
+<span class="sd">    }</span>
+<span class="sd">    capture( &quot;some.log&quot;, 60.0, settings )</span>
+
+<span class="sd">Database Schema</span>
+<span class="sd">==================</span>
+
+<span class="sd">A feed file must be CSV format (with well-defined headings.</span>
+<span class="sd">They are attached to a document with the following</span>
+<span class="sd">attributes</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    timestamp      : year-mm-ddThh:mm:ssZ</span>
+<span class="sd">    status         : &quot;new&quot;</span>
+<span class="sd">    feed           : the file</span>
+
+<span class="sd">Example JSON document</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    {</span>
+<span class="sd">       &quot;doc_type&quot; : &quot;Feed&quot;,</span>
+<span class="sd">       &quot;timestamp&quot; : &quot;yyyy-mm-ddThh:mm:ssZ&quot;,</span>
+<span class="sd">       &quot;status&quot; : &quot;new&quot;,</span>
+<span class="sd">       &quot;_attachments&quot; : {</span>
+<span class="sd">          &quot;feed&quot; : {</span>
+<span class="sd">             &quot;content-type&quot; : &quot;text/csv&quot;,</span>
+<span class="sd">             &quot;data&quot; : &quot;the,csv,data\\n...&quot;,</span>
+<span class="sd">             },</span>
+<span class="sd">       },</span>
+<span class="sd">    }</span>
+
+<span class="sd">With curl, it&#39;s a sequence like the following</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    curl -X POST http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/</span>
+<span class="sd">    --user &lt;user:password&gt;</span>
+<span class="sd">    -H &quot;Content-Type: application/json&quot;</span>
+<span class="sd">    -d &#39;{&quot;timestamp&quot;:&quot;2012-03-02T16:16:00Z&quot;, &quot;doc_type&quot;:&quot;Feed&quot;, &quot;status&quot;:&quot;new&quot;}&#39;</span>
+
+<span class="sd">The response is::</span>
+
+<span class="sd">    {&quot;ok&quot;:true,&quot;id&quot;:&quot;09833a88a1cbb06f64c555d0245f1af3&quot;,&quot;rev&quot;:&quot;1-7750ef2dbce77303f957de17c754852a&quot;}</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    curl -X PUT http://hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/feed/?rev=1-7750ef2dbce77303f957de17c754852a</span>
+<span class="sd">    --user &lt;user:password&gt;</span>
+<span class="sd">    -H &quot;Content-Type: text/csv&quot; @hrtrtf.csv</span>
+
+<span class="sd">The response is::</span>
+
+<span class="sd">    {&quot;ok&quot;:true,&quot;id&quot;:&quot;09833a88a1cbb06f64c555d0245f1af3&quot;,&quot;rev&quot;:&quot;2-748151ff136b0001671fb0fa14eb886d&quot;}</span>
+
+<span class="sd">Checking for new feeds is this</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    curl http://hrt.iriscouch.com:5984/couchdbkit_test/_design/feed/_view/new</span>
+
+<span class="sd">Response is a JSON document like this::</span>
+
+<span class="sd">    {&quot;total_rows&quot;:2,&quot;offset&quot;:0,&quot;rows&quot;:[</span>
+<span class="sd">    {&quot;id&quot;:&quot;09833a88a1cbb06f64c555d0245f1af3&quot;,&quot;key&quot;:&quot;09833a88a1cbb06f64c555d0245f1af3&quot;,&quot;value&quot;:null},</span>
+<span class="sd">    {&quot;id&quot;:&quot;09833a88a1cbb06f64c555d0245f1d98&quot;,&quot;key&quot;:&quot;09833a88a1cbb06f64c555d0245f1d98&quot;,&quot;value&quot;:null}</span>
+<span class="sd">    ]}</span>
+
+<span class="sd">Individual documents are available::</span>
+
+<span class="sd">    curl http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/feed/</span>
+
+<span class="sd">Components</span>
+<span class="sd">=============</span>
+
+<span class="sd">..  autofunction:: config</span>
+<span class="sd">..  autoclass:: Timer</span>
+<span class="sd">..  autofunction:: capture</span>
+<span class="sd">..  autofunction:: tail_format_push</span>
+<span class="sd">..  autofunction:: tail</span>
+<span class="sd">..  autofunction:: reformat</span>
+<span class="sd">..  autofunction:: upload_feed</span>
+<span class="sd">..  autofunction:: get_args</span>
+<span class="sd">..  autofunction:: get_config</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">urlparse</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">Server</span>
+
+<span class="kn">from</span> <span class="nn">caravel.feed.models</span> <span class="kn">import</span> <span class="n">Feed</span>
+<span class="kn">from</span> <span class="nn">caravel.report</span> <span class="kn">import</span> <span class="n">ReportReader_v1</span><span class="p">,</span> <span class="n">headings</span>
+
+<span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="s">&quot;log_capture&quot;</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="config"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.log_capture.config">[docs]</a><span class="k">def</span> <span class="nf">config</span><span class="p">(</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Configure this operation by opening the given</span>
+<span class="sd">    CouchDB Server and Database.</span>
+
+<span class="sd">    The kwargs must include ``db_url`` with the full URL</span>
+<span class="sd">    to the CouchDB server and database.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">db</span>
+    <span class="n">db_url</span><span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&quot;db_url&quot;</span><span class="p">)</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">urlparse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">db_url</span><span class="p">)</span>
+    <span class="n">server</span><span class="o">=</span> <span class="s">&quot;{0.scheme}://{0.netloc}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">p</span> <span class="p">)</span>
+    <span class="n">connection</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="n">server</span><span class="p">)</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">get_or_create_db</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span> <span class="s">&quot;Connection {0!r} {1!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">db</span>
+</div>
+<div class="viewcode-block" id="upload_feed"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.log_capture.upload_feed">[docs]</a><span class="k">def</span> <span class="nf">upload_feed</span><span class="p">(</span> <span class="n">filename</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Upload a specific feed file.</span>
+
+<span class="sd">    This depends on a previous invocation of :func:`config` to set</span>
+<span class="sd">    the global database variable, :var:`db`.</span>
+
+<span class="sd">    :param filename: a file to read and push.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">db</span>
+    <span class="n">Feed</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span><span class="n">db</span><span class="p">)</span>
+    <span class="n">feed</span><span class="o">=</span> <span class="n">Feed</span><span class="p">(</span>
+        <span class="n">timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">filename</span><span class="p">)),</span>
+        <span class="n">status</span><span class="o">=</span> <span class="s">&quot;new&quot;</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">save_doc</span><span class="p">(</span> <span class="n">feed</span> <span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+        <span class="n">feed</span><span class="o">.</span><span class="n">put_attachment</span><span class="p">(</span> <span class="n">source</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;feed&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&quot;text/csv&quot;</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">feed</span>
+</div>
+<div class="viewcode-block" id="Timer"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.log_capture.Timer">[docs]</a><span class="k">class</span> <span class="nc">Timer</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A cycling version of :mod:`sched`.</span>
+
+<span class="sd">    Once created, this will invoke a specific function on a given cycling</span>
+<span class="sd">    interval.  It tries to be very accurate in doing the scheduling.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the Timer.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span><span class="o">=</span> <span class="bp">True</span>
+    <span class="k">def</span> <span class="nf">cancel</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Cancel the timing loop.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">running</span><span class="o">=</span> <span class="bp">False</span>
+    <span class="k">def</span> <span class="nf">delay</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">amount</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Pause for ``amount`` seconds.</span>
+
+<span class="sd">        :param amount: seconds of delay.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span> <span class="n">amount</span> <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">time</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the current time in seconds.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">schedule_fixed_rate</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">pause</span><span class="p">,</span> <span class="n">interval</span><span class="p">,</span> <span class="n">worker</span><span class="p">,</span> <span class="n">args</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Schedule a worker function at a fixed interval.</span>
+
+<span class="sd">        The worker function can signal a normal exit by raising</span>
+<span class="sd">        :exc:`StopIteration`.</span>
+
+<span class="sd">        :param pause: Initial delay in seconds.</span>
+<span class="sd">        :param interval: Scheduling interval in seconds.</span>
+<span class="sd">        :param worker: a function to call.</span>
+<span class="sd">        :param args: a sequence of args to pass to the function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">running</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span> <span class="n">pause</span> <span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">start</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+                <span class="n">worker</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+                <span class="n">end</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">StopIteration</span><span class="p">:</span>
+                <span class="n">end</span><span class="o">=</span> <span class="n">start</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+            <span class="k">except</span> <span class="ne">Exception</span><span class="p">,</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span> <span class="n">e</span> <span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
+                <span class="k">raise</span>
+            <span class="n">pause</span><span class="o">=</span> <span class="p">(</span><span class="n">start</span><span class="o">-</span><span class="n">end</span><span class="p">)</span> <span class="o">%</span> <span class="n">interval</span>
+    <span class="k">def</span> <span class="nf">schedule</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">pause</span><span class="p">,</span> <span class="n">worker</span><span class="p">,</span> <span class="n">args</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Schedule a worker function once after an initial delay.</span>
+
+<span class="sd">        :param pause: Initial delay in seconds.</span>
+<span class="sd">        :param worker: a function to call.</span>
+<span class="sd">        :param args: a sequence of args to pass to the function.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delay</span><span class="p">(</span> <span class="n">pause</span> <span class="p">)</span>
+        <span class="n">worker</span><span class="p">(</span> <span class="o">*</span><span class="n">args</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="capture"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.log_capture.capture">[docs]</a><span class="k">def</span> <span class="nf">capture</span><span class="p">(</span> <span class="n">source</span><span class="p">,</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">config</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Use :class:`Timer` class to schedule a recurring tail-format-push worker.</span>
+<span class="sd">    This uses :func:`tail_format_push` to do the real work.</span>
+
+<span class="sd">    :param source: The log file to tail.</span>
+<span class="sd">    :param seconds: The cycling interval.  60 seconds makes a lot of sense.</span>
+<span class="sd">    :param config: A global configuration as read by :func:`get_config`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">timer</span><span class="o">=</span> <span class="n">Timer</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">seconds</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">:</span>
+        <span class="n">timer</span><span class="o">.</span><span class="n">schedule</span><span class="p">(</span> <span class="mf">2.0</span><span class="p">,</span> <span class="n">tail_format_push</span><span class="p">,</span> <span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>  <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">now</span><span class="o">=</span> <span class="n">timer</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">timer</span><span class="o">.</span><span class="n">schedule_fixed_rate</span><span class="p">(</span> <span class="p">(</span><span class="mi">60</span><span class="o">-</span><span class="n">now</span><span class="p">)</span><span class="o">%</span><span class="mi">60</span><span class="p">,</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">tail_format_push</span><span class="p">,</span> <span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">config</span><span class="p">)</span>  <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="tail_format_push"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.log_capture.tail_format_push">[docs]</a><span class="k">def</span> <span class="nf">tail_format_push</span><span class="p">(</span> <span class="n">source</span><span class="p">,</span> <span class="n">config</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tail the source file to an extract; reformat the extract</span>
+<span class="sd">    to CSV; push the CSV.</span>
+
+<span class="sd">    This relies on :func:`tail`, :func:`reformat` and :func:`upload_feed`.</span>
+
+<span class="sd">    :param source: The log file to tail.</span>
+<span class="sd">    :param config: A global configuration as read by :func:`get_config`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">extract_filename</span><span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;capture&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;extract_filename&#39;</span><span class="p">,</span><span class="s">&#39;hrtrtf.txt&#39;</span><span class="p">)</span>
+    <span class="n">csv_filename</span><span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;capture&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;csv_filename&#39;</span><span class="p">,</span><span class="s">&#39;hrtrtf.csv&#39;</span><span class="p">)</span>
+    <span class="n">tail</span><span class="p">(</span> <span class="n">source</span><span class="p">,</span> <span class="n">extract_filename</span><span class="p">,</span> <span class="n">config</span> <span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">extract_filename</span><span class="p">,</span> <span class="s">&quot;r&quot;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">csv_filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">reformat</span><span class="p">(</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span> <span class="p">)</span>
+    <span class="n">upload_feed</span><span class="p">(</span> <span class="n">csv_filename</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="tail"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.log_capture.tail">[docs]</a><span class="k">def</span> <span class="nf">tail</span><span class="p">(</span> <span class="n">source_filename</span><span class="p">,</span> <span class="n">extract_filename</span><span class="p">,</span> <span class="n">config</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tail a log, writing an extract file, and maintaining state</span>
+<span class="sd">    in a history file.  This allows tailing via a seek to the end of the file.</span>
+
+<span class="sd">    :param source_filename: The log to tail.</span>
+<span class="sd">    :param extract_filename: A temporary file to be written with the tailings.</span>
+<span class="sd">    :param config: A global configuration as read by :func:`get_config`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">tail_status_filename</span><span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;logtail&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;tail_status_filename&quot;</span><span class="p">,</span> <span class="s">&quot;logtail.history&quot;</span><span class="p">)</span>
+    <span class="n">file_size_limit</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;logtail&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&quot;file_size_limit&quot;</span><span class="p">,</span> <span class="s">&quot;1000000&quot;</span><span class="p">))</span>
+
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tail_status_filename</span><span class="p">,</span><span class="s">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tail_status_file</span><span class="p">:</span>
+            <span class="n">status</span><span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span> <span class="n">tail_status_file</span> <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+        <span class="n">status</span><span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">prev_size</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">status</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="s">&#39;size.&#39;</span><span class="o">+</span><span class="n">source_filename</span><span class="p">,</span> <span class="s">&#39;0&#39;</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="n">sequence</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">status</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="s">&#39;seq.&#39;</span><span class="o">+</span><span class="n">source_filename</span><span class="p">,</span> <span class="s">&#39;0&#39;</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Tailing {0} to {1}</span><span class="se">\n</span><span class="s">Count {2}, Bytes {3}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">source_filename</span><span class="p">,</span> <span class="n">extract_filename</span><span class="p">,</span> <span class="n">sequence</span><span class="p">,</span> <span class="n">prev_size</span> <span class="p">))</span>
+    <span class="n">sequence</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="n">current_size</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span> <span class="n">source_filename</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">current_size</span> <span class="o">==</span> <span class="n">prev_size</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">source_filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">current_size</span> <span class="o">&lt;</span> <span class="n">prev_size</span><span class="p">:</span>
+                <span class="c"># Truncated.  Read from beginning.</span>
+                <span class="n">sequence</span><span class="o">=</span> <span class="mi">0</span>
+                <span class="n">prev_size</span><span class="o">=</span> <span class="mi">0</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Got bigger</span>
+                <span class="n">source</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span> <span class="n">prev_size</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="n">current_size</span> <span class="o">-</span> <span class="n">prev_size</span> <span class="o">&gt;</span> <span class="n">file_size_limit</span><span class="p">:</span>
+                <span class="c"># Got a lot bigger.</span>
+                <span class="n">read_size</span><span class="o">=</span> <span class="n">limit</span>
+                <span class="n">source</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span> <span class="n">current_size</span> <span class="o">-</span> <span class="n">limit</span> <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">read_size</span> <span class="o">=</span> <span class="n">current_size</span> <span class="o">-</span> <span class="n">prev_size</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">extract_filename</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">sequence</span><span class="p">),</span> <span class="s">&#39;w&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">target</span><span class="p">:</span>
+                <span class="n">target</span><span class="o">.</span><span class="n">write</span><span class="p">(</span> <span class="n">source</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">read_size</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">status</span><span class="p">[</span><span class="s">&#39;size.&#39;</span><span class="o">+</span><span class="n">source_filename</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_size</span>
+    <span class="n">status</span><span class="p">[</span><span class="s">&#39;seq.&#39;</span><span class="o">+</span><span class="n">source_filename</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">tail_status_filename</span><span class="p">,</span><span class="s">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">tail_status_file</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span> <span class="n">status</span><span class="p">,</span> <span class="n">tail_status_file</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">extract_filename</span>
+</div>
+<div class="viewcode-block" id="reformat"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.log_capture.reformat">[docs]</a><span class="k">def</span> <span class="nf">reformat</span><span class="p">(</span><span class="n">extract_file</span><span class="p">,</span> <span class="n">target_file</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reformat an extract from a log file.</span>
+
+<span class="sd">    :param extract_file: A file-like object suitable for reading.</span>
+<span class="sd">    :param target_file: A file-like object which can be used by :mod:`csv`</span>
+<span class="sd">        to create a CSV file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">reader</span><span class="o">=</span> <span class="n">ReportReader_v1</span><span class="p">()</span>
+    <span class="n">reader</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="n">extract_file</span> <span class="p">)</span>
+    <span class="n">wtr</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictWriter</span><span class="p">(</span> <span class="n">target_file</span><span class="p">,</span> <span class="n">headings</span> <span class="p">)</span>
+    <span class="n">wtr</span><span class="o">.</span><span class="n">writeheader</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span> <span class="n">item</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="n">item</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">wtr</span><span class="o">.</span><span class="n">writerow</span><span class="p">(</span> <span class="n">item</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span> <span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.log_capture.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Parse command-line arguments.</span>
+
+<span class="sd">    :returns: Arguments object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span><span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;source&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">1</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;-1&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_const&#39;</span><span class="p">,</span> <span class="n">const</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s">&quot;cycle&quot;</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--cycle&#39;</span><span class="p">,</span> <span class="s">&#39;-c&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mf">60.0</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">float</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--verbose&#39;</span><span class="p">,</span> <span class="s">&#39;-v&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span> <span class="p">)</span>
+    <span class="n">args</span><span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">args</span>
+</div>
+<div class="viewcode-block" id="get_config"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.log_capture.get_config">[docs]</a><span class="k">def</span> <span class="nf">get_config</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Read the config file, :file:`hrtail_conf.py`</span>
+<span class="sd">    to get the ``couchpush`` value.</span>
+
+<span class="sd">    Usually, the content is this.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        couchpush = { &quot;db_url&quot;: &quot;http://localhost:5984/couchdbkit_test&quot; }</span>
+<span class="sd">        logtail = { &quot;tail_status_filename&quot;: &quot;logtail.history&quot;,</span>
+<span class="sd">            &quot;file_size_limit&quot;: 1000000 }</span>
+<span class="sd">        capture = { &quot;extract_filename&quot;: &quot;hrtrtf.txt&quot;,</span>
+<span class="sd">            &quot;csv_filename&quot;: &quot;hrtrtf.csv&quot; }</span>
+
+<span class="sd">    In principle, we should check ./hrtail_conf.py and ~/hrtail_conf.py.</span>
+<span class="sd">    We only check the local directory, however.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="nb">execfile</span><span class="p">(</span> <span class="s">&quot;hrtail_conf.py&quot;</span><span class="p">,</span> <span class="n">settings</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">settings</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span> <span class="n">stream</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span> <span class="p">)</span>
+    <span class="n">settings</span><span class="o">=</span> <span class="n">get_config</span><span class="p">()</span>
+    <span class="n">args</span><span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="p">)</span>
+    <span class="n">config</span><span class="p">(</span> <span class="o">**</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;couchpush&#39;</span><span class="p">]</span> <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">capture</span><span class="p">(</span> <span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">60.0</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">cycle</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">else</span> <span class="n">args</span><span class="o">.</span><span class="n">cycle</span><span class="p">,</span> <span class="n">settings</span> <span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">KeyboardInterrupt</span><span class="p">,</span><span class="ne">SystemExit</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Stopped&quot;</span> <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span> <span class="n">e</span> <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

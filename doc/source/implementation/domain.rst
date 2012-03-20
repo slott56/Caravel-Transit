@@ -5,33 +5,37 @@ Domain Model Implementation
 This section contains Sphinx "automodule" documentation from the various
 components.
 
-There are several tiers: `Extract-Transform-Load`_ gathers data
-and creates the `Current Status`_.  This is also used to support both
-`Analysis and Profiling`_ and `Applications`_.
+There is a multi-stage data flow.
 
-Extract-Transform-Load
+-   `Extract`_ is the extraction and push via log tailing.
+    It also includes a manual push of mappings.
+
+-   `Transform-Load`_ applies the mappings to capture current
+    transit system status.
+
+-   `Transit System`_ is the capture of transit system route and stop
+    definitions from GTF.
+
+This is also used to support both `Analysis and Profiling`_ and `Applications`_.
+
+Extract
 =======================
 
-There are several parts to the extract, transformation and load of
-the vehicle reports and transit system data.
+These are the Python implementations.
+A seaprate project has a Java implementation.
 
-1.  Mappings.
-
-2.  Real-Time Feed.
-
-3.  Validation and Creation of usable Tansit Status
-
-LogCapture
+couch_push
 -----------------
 
-..  automodule:: caravel.LogCapture.acquire
-..  automodule:: caravel.LogCapture.capture
 ..  automodule:: caravel.LogCapture.couch_push
 
-Feed
-----------------
+log_capture
+-----------------
 
-..  automodule:: caravel.feed
+..  automodule:: caravel.LogCapture.log_capture
+
+Transform-Load
+=======================
 
 Report
 -----------------
@@ -43,20 +47,7 @@ Administrative Functions
 
 ..  automodule:: caravel.admin
 
-..  automodule:: caravel.settings
-
-Current Status
-=================
-
-Status Builder
------------------
-
-This actually include mapping validation, feed validation
-as well as feed transform and load to create transit system
-status.
-
-..  automodule:: caravel.StatusBuilder.bulk_transform
-..  automodule:: caravel.StatusBuilder.change_notification
+..  automodule:: caravel.conf
 
 Feed
 ------
@@ -71,8 +62,26 @@ Status
 ..  automodule:: caravel.status.models
 ..  automodule:: caravel.status.status_load
 
-Transit System
+Status Builder
 -----------------
+
+This is the status builder which relies on CouchDB change notification.
+It includes mapping validation, feed validation
+as well as feed transform and load to create transit system
+status.
+
+..  automodule:: caravel.StatusBuilder.change_notification
+
+Status Builder Manual
+------------------------
+
+This is a one-time builk status builder that simply queries the database
+for all mappings and all feeds.
+
+..  automodule:: caravel.StatusBuilder.bulk_transform
+
+Transit System
+=========================
 
 ..  automodule:: caravel.transit_system
 

@@ -16,7 +16,7 @@ This is a one-time manual operation that can be driven via cron.
 from __future__ import print_function
 from caravel.feed.models import *
 from caravel.status.models import *
-import caravel.settings as settings
+from caravel.conf import settings
 import datetime
 import caravel.feed.feed_load as feed
 import caravel.feed.mapping_load as mapping
