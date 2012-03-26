@@ -37,16 +37,20 @@ Options
 
     The file formats have mandatory column names as shown below.
 
-    ..  csv-table:: Column Names
+    ======= =============================
+    Type    Column Names
+    ======= =============================
+    vehicle "vid","bus"
+    route   "rid","Route"
+    stop    "sid","Stop"
+    ======= =============================
 
-        "vehicle","\\"vid\\",\\"bus\\""
-        "route","\\"rid\\",\\"Route\\""
-        "stop","\\"sid\\",\\"Stop\\""
+    Yes, the upper-case/lower-case rules are inconsistent.
 
 Configuration File
 ====================
 
-This will read a configuration file, :file:`hrtail_conf.py`
+This will read a configuration file, :file:`settings.py`
 
 This file provides the CouchDB server name.
 
@@ -139,12 +143,10 @@ Individual documents are available::
 Components
 =============
 
-..  autofunction:: config
 ..  autofunction:: upload_mapping
 ..  autofunction:: validate
 ..  autofunction:: push
 ..  autofunction:: get_args
-..  autofunction:: get_config
 """
 from __future__ import print_function
 import logging
@@ -158,26 +160,10 @@ import sched
 import time
 import argparse
 from couchdbkit import Server
-
+from caravel.conf import settings
 from caravel.feed.models import Mapping
 
 logger= logging.getLogger( "couch_push" )
-
-def config( **kwargs ):
-    """Configure this operation by opening the given
-    Couch Server and Database.
-
-    The kwargs must include ``db_url`` with the full URL
-    to the CouchDB server and database.
-    """
-    global db
-    db_url= kwargs.pop("db_url")
-    p = urlparse.urlparse(db_url)
-    server= "{0.scheme}://{0.netloc}".format( p )
-    connection = Server(server)
-    db = connection.get_or_create_db(p.path)
-    logger.debug( "Connection {0!r} {1!r}".format(server, p.path) )
-    return db
 
 def upload_mapping( mapping_type, effective_date, filename ):
     """Upload a specific mapping file with a given effective date.
@@ -190,8 +176,7 @@ def upload_mapping( mapping_type, effective_date, filename ):
         is pushed and validated.
     :param filename: a file to read and push.
     """
-    global db
-    Mapping.set_db(db)
+    Mapping.set_db(settings.db)
     mapping= Mapping(
         timestamp= datetime.datetime.fromtimestamp(os.path.getmtime(filename)),
         effective_date= effective_date,
@@ -254,26 +239,8 @@ def get_args():
     args= parser.parse_args()
     return args
 
-def get_config():
-    """Read the config file, :file:`hrtail_conf.py`
-    to get the ``couchpush`` value.
-
-    Usually, the content is this.
-
-    ::
-
-        couchpush = { "db_url": "http://localhost:5984/couchdbkit_test" }
-
-    In principle, we should check ./hrtail_conf.py and ~/hrtail_conf.py.
-    We only check the local directory, however.
-    """
-    settings = {}
-    execfile( "hrtail_conf.py", settings )
-    config( **settings['couchpush'] )
-
 if __name__ == "__main__":
     logging.basicConfig( stream=sys.stderr, level=logging.INFO )
-    settings= get_config()
     args= get_args()
     if args.verbose:
         logging.getLogger().setLevel( logging.DEBUG )

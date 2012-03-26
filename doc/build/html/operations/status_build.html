@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Status Build &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>Status Build &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,10 +24,10 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
     <link rel="up" title="User’s Guide" href="index.html" />
-    <link rel="next" title="Route Capture" href="route_capture.html" />
-    <link rel="prev" title="Log and Mapping Capture" href="log_capture.html" /> 
+    <link rel="next" title="Design Notes" href="../design/index.html" />
+    <link rel="prev" title="Route Capture" href="route_capture.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,12 +40,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="route_capture.html" title="Route Capture"
+          <a href="../design/index.html" title="Design Notes"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="log_capture.html" title="Log and Mapping Capture"
+          <a href="route_capture.html" title="Route Capture"
              accesskey="P">previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
       </ul>
     </div>  
@@ -57,13 +57,20 @@
             
   <div class="section" id="status-build">
 <h1>Status Build<a class="headerlink" href="#status-build" title="Permalink to this headline">¶</a></h1>
-<p>The status build operation listens for update notifications in
+<p>The status build application listens for update notifications in
 the CouchDB.  It responds two two kinds o notifications.</p>
 <ol class="arabic simple">
 <li>Mappings.  This is a change to one of the mappings that provides
 GTF values for the feed.</li>
 <li>Feeds.  This is a one-minute tail of the position log.</li>
 </ol>
+<p>The  status build application is simply left running.  Forever.  It can be
+stopped or restarted as needed for system maintenance.  It uses a private
+cache file to record the last change sequence number in the database.</p>
+<div class="highlight-python"><pre>python2.7 -m caravel.StatusBuilder.change_notification</pre>
+</div>
+<p>Since this works entirely inside the database, it doesn&#8217;t need any
+additional configuration beyond the settings file described above.</p>
 </div>
 
 
@@ -76,11 +83,11 @@ GTF values for the feed.</li>
               <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
             </a></p>
   <h4>Previous topic</h4>
-  <p class="topless"><a href="log_capture.html"
-                        title="previous chapter">Log and Mapping Capture</a></p>
-  <h4>Next topic</h4>
   <p class="topless"><a href="route_capture.html"
-                        title="next chapter">Route Capture</a></p>
+                        title="previous chapter">Route Capture</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../design/index.html"
+                        title="next chapter">Design Notes</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/operations/status_build.txt"
@@ -113,12 +120,12 @@ GTF values for the feed.</li>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="route_capture.html" title="Route Capture"
+          <a href="../design/index.html" title="Design Notes"
              >next</a> |</li>
         <li class="right" >
-          <a href="log_capture.html" title="Log and Mapping Capture"
+          <a href="route_capture.html" title="Route Capture"
              >previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User&#8217;s Guide</a> &raquo;</li> 
       </ul>
     </div>

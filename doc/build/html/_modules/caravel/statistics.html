@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.statistics &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>caravel.statistics &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -58,7 +58,7 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 
-<div class="viewcode-block" id="FQTable"><a class="viewcode-back" href="../../implementation/domain.html#caravel.statistics.FQTable">[docs]</a><span class="k">class</span> <span class="nc">FQTable</span><span class="p">(</span> <span class="n">defaultdict</span> <span class="p">):</span>
+<div class="viewcode-block" id="FQTable"><a class="viewcode-back" href="../../implementation/analysis.html#caravel.statistics.FQTable">[docs]</a><span class="k">class</span> <span class="nc">FQTable</span><span class="p">(</span> <span class="n">defaultdict</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Subclass of :class:`collections.defaultdict` that</span>
 <span class="sd">    enforces an integer count similar to :class:`collections.Count`</span>
 <span class="sd">    but also adds mean and standard deviation descriptive statistics.</span>
@@ -70,11 +70,11 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span> <span class="n">FQTable</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="nb">int</span> <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
-<div class="viewcode-block" id="FQTable.reset"><a class="viewcode-back" href="../../implementation/domain.html#caravel.statistics.FQTable.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<div class="viewcode-block" id="FQTable.reset"><a class="viewcode-back" href="../../implementation/analysis.html#caravel.statistics.FQTable.reset">[docs]</a>    <span class="k">def</span> <span class="nf">reset</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Reset the descriptive statistics.&quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="o">=</span> <span class="bp">None</span></div>
-<div class="viewcode-block" id="FQTable.mean"><a class="viewcode-back" href="../../implementation/domain.html#caravel.statistics.FQTable.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<div class="viewcode-block" id="FQTable.mean"><a class="viewcode-back" href="../../implementation/analysis.html#caravel.statistics.FQTable.mean">[docs]</a>    <span class="k">def</span> <span class="nf">mean</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the mean of this frequency table.</span>
 
 <span class="sd">        :return: mean</span>
@@ -87,7 +87,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">m</span><span class="o">=</span> <span class="nb">sum</span><span class="o">/</span><span class="n">count</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">count</span><span class="o">=</span> <span class="n">count</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">m</span></div>
-<div class="viewcode-block" id="FQTable.sd"><a class="viewcode-back" href="../../implementation/domain.html#caravel.statistics.FQTable.sd">[docs]</a>    <span class="k">def</span> <span class="nf">sd</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+<div class="viewcode-block" id="FQTable.sd"><a class="viewcode-back" href="../../implementation/analysis.html#caravel.statistics.FQTable.sd">[docs]</a>    <span class="k">def</span> <span class="nf">sd</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the standard deviation of this frequency table.</span>
 
 <span class="sd">        :return: standard deviation.  Returns None if there are fewer</span>
@@ -135,7 +135,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

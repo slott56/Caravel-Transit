@@ -16,7 +16,7 @@ from couchdbkit import Server
 from caravel.status.models import Route, RouteStop, Stop, Vehicle
 from caravel.report import Arrival, Location
 from caravel.status.status_load import update_route, update_route_stop, update_stop, update_vehicle
-from caravel.status.status_load import track_arrival, track_location, old_status_removal
+from caravel.status.status_load import track_arrival, track_location, remove_old
 from couchdbkit.designer import push
 from couchdbkit.exceptions import ResourceNotFound
 
@@ -35,13 +35,13 @@ class Test_Should_Handle_Arrival( unittest.TestCase ):
         global db
 
         self.loc= Location(
-            timestamp= datetime.datetime.now(),
+            timestamp= datetime.datetime(2012,3,15,1,2,3),
             id= '1.1.1234',
             lat= 36.0,
             lon= -76.0,
         )
         self.arr= Arrival(
-            timestamp= datetime.datetime.now(),
+            timestamp= datetime.datetime(2012,3,15,1,2,3),
             id= '1.1.2345',
             lat= 36.1,
             lon= -76.2,

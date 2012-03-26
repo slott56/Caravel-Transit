@@ -2,121 +2,65 @@
 Domain Model Implementation
 ============================
 
-This section contains Sphinx "automodule" documentation from the various
-components.
+The problem domain includes objects of the following broad subject areas.
 
-There is a multi-stage data flow.
+-   `Feed`_ includes the real-time Spysocket.log data
+    and the  mappings between the real-time feed and GTF transit system.
 
--   `Extract`_ is the extraction and push via log tailing.
-    It also includes a manual push of mappings.
+-   `Report`_ are the real-time position reports.
 
--   `Transform-Load`_ applies the mappings to capture current
-    transit system status.
+-   `Transit System`_ contains the GTF transit system description.
 
--   `Transit System`_ is the capture of transit system route and stop
-    definitions from GTF.
+-   `Status`_ contains the final reports on vehicles, routes and stops.
 
-This is also used to support both `Analysis and Profiling`_ and `Applications`_.
+Feed
+====
 
-Extract
-=======================
+The raw data includes mappings and position feeds.
 
-These are the Python implementations.
-A seaprate project has a Java implementation.
+Feed Models
+------------
 
-couch_push
------------------
+..  automodule:: caravel.feed.models
 
-..  automodule:: caravel.LogCapture.couch_push
+Mapping Load
+--------------
 
-log_capture
------------------
+..  automodule:: caravel.feed.mapping_load
 
-..  automodule:: caravel.LogCapture.log_capture
+Feed Load
+-----------
 
-Transform-Load
-=======================
+..  automodule:: caravel.feed.feed_load
 
 Report
------------------
+========
+
+An intermediate position report can be built from the raw
+position feed.
 
 ..  automodule:: caravel.report
 
-Administrative Functions
---------------------------
-
-..  automodule:: caravel.admin
-
-..  automodule:: caravel.conf
-
-Feed
-------
-
-..  automodule:: caravel.feed.models
-..  automodule:: caravel.feed.mapping_load
-..  automodule:: caravel.feed.feed_load
-
-Status
---------
-
-..  automodule:: caravel.status.models
-..  automodule:: caravel.status.status_load
-
-Status Builder
------------------
-
-This is the status builder which relies on CouchDB change notification.
-It includes mapping validation, feed validation
-as well as feed transform and load to create transit system
-status.
-
-..  automodule:: caravel.StatusBuilder.change_notification
-
-Status Builder Manual
-------------------------
-
-This is a one-time builk status builder that simply queries the database
-for all mappings and all feeds.
-
-..  automodule:: caravel.StatusBuilder.bulk_transform
 
 Transit System
 =========================
 
+The current transit system description.
+
 ..  automodule:: caravel.transit_system
 
-Analysis and Profiling
-=========================
+Status
+======
 
-These are analysis and profiling modules and applications.
+The final, useful status reports.
 
-Statistics
-------------
-
-..  automodule:: caravel.statistics
-
-Arrival Statistics
---------------------
-
-..  automodule:: caravel.arrival_stats
-
-Transit System Statistics
----------------------------
-
-..  automodule:: caravel.transit_stats
-
-Applications
-=====================
-
-These are top-level applications to produce useful results.
-
-Arrival At Stop
+Status Models
 ----------------
 
-..  automodule:: caravel.arrival_at_stop
+..  automodule:: caravel.status.models
 
+Status Load
+--------------
 
-Stop Discovery
-----------------
+..  automodule:: caravel.status.status_load
 
-..  automodule:: caravel.stop_discovery

@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.report &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>caravel.report &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -49,10 +49,10 @@
             
   <h1>Source code for caravel.report</h1><div class="highlight"><pre>
 <span class="c">#!/usr/bin/env python2.7</span>
-<span class="sd">&quot;&quot;&quot;Caravel Report object construction.</span>
+<span class="sd">&quot;&quot;&quot;Caravel Report object definitions.</span>
 
-<span class="sd">This reads one (or more) YYYYMMDDHHMM.rpt raw files and creates</span>
-<span class="sd">a sequence of Report instances.  The subclasses include</span>
+<span class="sd">This reads one (or more) raw files (or file-like CouchDB Attachments)</span>
+<span class="sd">and creates a sequence of Report instances.  The subclasses include</span>
 
 <span class="sd">-   Location - a simple location report; rte is None and dwell is None.</span>
 
@@ -75,20 +75,34 @@
 <span class="sd">Report Factory</span>
 <span class="sd">================</span>
 
-<span class="sd">..  autoclass:: ReportFactory</span>
+<span class="sd">..  autoclass:: ReportReader</span>
+<span class="sd">    :members:</span>
+<span class="sd">    :special-members:</span>
+
+<span class="sd">..  autoclass:: ReportReader_v1</span>
 <span class="sd">    :members:</span>
 
-<span class="sd">..  autofunction:: report_iter</span>
+<span class="sd">..  autoclass:: ReportReader_v21</span>
+<span class="sd">    :members:</span>
+<span class="sd">..  autoclass:: ReportReader_v22</span>
+<span class="sd">    :members:</span>
+
+<span class="sd">..  autoclass:: ReportReader_v3</span>
+<span class="sd">    :members:</span>
+
+<span class="sd">..  autofunction:: report_file_iter</span>
 
 <span class="sd">JSON Codec</span>
 <span class="sd">================</span>
+
+<span class="sd">This is not terribly useful, since CouchDB does this for us.</span>
 
 <span class="sd">..  autoclass:: JSONEncoder</span>
 <span class="sd">..  autoclass:: JSONDecoder</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">Callable</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">Iterable</span>
 <span class="kn">import</span> <span class="nn">csv</span>
 <span class="kn">import</span> <span class="nn">pprint</span>
 <span class="kn">import</span> <span class="nn">re</span>
@@ -96,45 +110,24 @@
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">os.path</span>
 <span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">abc</span> <span class="kn">import</span> <span class="n">abstractmethod</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">schema</span>
 
 <span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="n">__name__</span> <span class="p">)</span>
 
-<div class="viewcode-block" id="Report"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Report">[docs]</a><span class="k">class</span> <span class="nc">Report</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+<span class="n">headings</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">,</span> <span class="s">&#39;id&#39;</span><span class="p">,</span>
+    <span class="s">&#39;lat&#39;</span><span class="p">,</span> <span class="s">&#39;lon&#39;</span><span class="p">,</span> <span class="s">&#39;ll_valid&#39;</span><span class="p">,</span>
+    <span class="s">&#39;adher&#39;</span><span class="p">,</span> <span class="s">&#39;adher_valid&#39;</span><span class="p">,</span>
+    <span class="s">&#39;odom&#39;</span><span class="p">,</span> <span class="s">&#39;odom_valid&#39;</span><span class="p">,</span> <span class="s">&#39;dgps&#39;</span><span class="p">,</span> <span class="s">&#39;fom&#39;</span><span class="p">,</span>
+    <span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="s">&#39;dwell&#39;</span><span class="p">,</span> <span class="s">&#39;rte&#39;</span><span class="p">,</span>  <span class="s">&#39;dir&#39;</span><span class="p">,</span>  <span class="s">&#39;stop&#39;</span><span class="p">,</span>
+     <span class="s">&#39;tp&#39;</span><span class="p">,</span> <span class="s">&#39;svc&#39;</span><span class="p">,</span> <span class="s">&#39;blk&#39;</span><span class="p">,</span>
+<span class="p">]</span>
+
+<div class="viewcode-block" id="Report"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Report">[docs]</a><span class="k">class</span> <span class="nc">Report</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Abstract superclass of the various kinds of reports.&quot;&quot;&quot;</span>
-    <span class="n">headings</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="s">&#39;__class__&#39;</span><span class="p">,</span> <span class="s">&#39;adher&#39;</span><span class="p">,</span> <span class="s">&#39;adher_valid&#39;</span><span class="p">,</span> <span class="s">&#39;blk&#39;</span><span class="p">,</span> <span class="s">&#39;dgps&#39;</span><span class="p">,</span> <span class="s">&#39;dir&#39;</span><span class="p">,</span> <span class="s">&#39;dwell&#39;</span><span class="p">,</span>
-        <span class="s">&#39;fom&#39;</span><span class="p">,</span> <span class="s">&#39;id&#39;</span><span class="p">,</span> <span class="s">&#39;lat&#39;</span><span class="p">,</span> <span class="s">&#39;ll_valid&#39;</span><span class="p">,</span> <span class="s">&#39;lon&#39;</span><span class="p">,</span> <span class="s">&#39;odom&#39;</span><span class="p">,</span> <span class="s">&#39;odom_valid&#39;</span><span class="p">,</span> <span class="s">&#39;rte&#39;</span><span class="p">,</span>
-        <span class="s">&#39;stop&#39;</span><span class="p">,</span> <span class="s">&#39;svc&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="s">&#39;timestamp&#39;</span><span class="p">,</span> <span class="s">&#39;tp&#39;</span>
-    <span class="p">]</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span> <span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="o">=</span> <span class="n">timestamp</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="o">=</span> <span class="nb">id</span>
-</div>
-<div class="viewcode-block" id="Location"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Location">[docs]</a><span class="k">class</span> <span class="nc">Location</span><span class="p">(</span> <span class="n">Report</span> <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A Location report for a given vehicle.&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span> <span class="n">Location</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span> <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lat</span><span class="o">=</span> <span class="n">lat</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lon</span><span class="o">=</span> <span class="n">lon</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ll_valid</span><span class="o">=</span> <span class="n">ll_valid</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">adher</span><span class="o">=</span> <span class="n">adher</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">adher_valid</span><span class="o">=</span> <span class="n">adher_valid</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">odom</span><span class="o">=</span> <span class="n">odom</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">odom_valid</span><span class="o">=</span> <span class="n">odom_valid</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dgps</span><span class="o">=</span> <span class="n">dgps</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">fom</span><span class="o">=</span> <span class="n">fom</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dwell</span><span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rte</span><span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tp</span><span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">svc</span><span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">blk</span><span class="o">=</span> <span class="bp">None</span>
-        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="p">),</span> <span class="s">&quot;Extra {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;{0.__class__.__name__}( &#39;{0.timestamp!s}&#39;, {0.id!r}, {0.lat!r}, {0.lon!r}, ll_valid={0.ll_valid!r}, odom_valid={0.odom_valid!r} )&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+    <span class="n">timestamp</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateTimeProperty</span><span class="p">()</span>
+    <span class="nb">id</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
     <span class="k">def</span> <span class="nf">as_dict</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
         <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
             <span class="n">timestamp</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="p">,</span>
@@ -144,65 +137,80 @@
             <span class="n">ll_valid</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ll_valid</span><span class="p">,</span>
             <span class="n">adher</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adher</span><span class="p">,</span>
             <span class="n">adher_valid</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adher_valid</span><span class="p">,</span>
-            <span class="n">odom</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">odom</span><span class="p">,</span>
-            <span class="n">odom_valid</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">odom_valid</span><span class="p">,</span>
-            <span class="n">dgps</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dgps</span><span class="p">,</span>
-            <span class="n">fom</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fom</span><span class="p">,</span>
+            <span class="c">#odom= self.odom,</span>
+            <span class="c">#odom_valid= self.odom_valid,</span>
+            <span class="c">#dgps= self.dgps,</span>
+            <span class="c">#fom= self.fom,</span>
             <span class="n">time</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="p">,</span>
-            <span class="n">dwell</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dwell</span><span class="p">,</span>
+            <span class="c">#dwell= self.dwell,</span>
             <span class="n">rte</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rte</span><span class="p">,</span>
             <span class="nb">dir</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span>
             <span class="n">stop</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span>
-            <span class="n">tp</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tp</span><span class="p">,</span>
-            <span class="n">svc</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">svc</span><span class="p">,</span>
-            <span class="n">blk</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">blk</span><span class="p">,</span>
-            <span class="n">__class__</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+            <span class="c">#tp= self.tp,</span>
+            <span class="c">#svc= self.svc,</span>
+            <span class="c">#blk= self.blk,</span>
+        <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Location"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Location">[docs]</a><span class="k">class</span> <span class="nc">Location</span><span class="p">(</span> <span class="n">Report</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A Location report for a Vehicle in motion.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lat</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">FloatProperty</span><span class="p">()</span>
+    <span class="n">lon</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">FloatProperty</span><span class="p">()</span>
+    <span class="n">ll_valid</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">adher</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">IntegerProperty</span><span class="p">()</span>
+    <span class="n">adher_valid</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="c">#odom= schema.IntegerProperty()</span>
+    <span class="c">#odom_valid= schema.StringProperty()</span>
+    <span class="c">#dgps= schema.StringProperty()</span>
+    <span class="c">#fom= schema.IntegerProperty()</span>
+    <span class="n">time</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">IntegerProperty</span><span class="p">()</span>
+    <span class="n">rte</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="nb">dir</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">stop</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="c">#tp= schema.StringProperty()</span>
+    <span class="c">#svc= schema.StringProperty()</span>
+    <span class="c">#blk= schema.StringProperty()</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;{0.__class__.__name__}( &#39;{0.timestamp!s}&#39;, {0.id!r}, {0.lat!r}, {0.lon!r}, ll_valid=&#39;{0.ll_valid!r}&#39; )&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">other</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">timestamp</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lat</span><span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">lat</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">lon</span><span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">lon</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ll_valid</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">ll_valid</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">adher</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">adher</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">ader_valid</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">aher_valid</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">time</span><span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">time</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">rte</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">rte</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">==</span> <span class="n">other</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span>
         <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Arrival"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Arrival">[docs]</a><span class="k">class</span> <span class="nc">Arrival</span><span class="p">(</span> <span class="n">Location</span> <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;At a given stop on a route?&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="p">,</span>
-            <span class="n">time</span><span class="p">,</span> <span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">svc</span><span class="p">,</span> <span class="n">blk</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span> <span class="n">Arrival</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span> <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dwell</span><span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rte</span> <span class="o">=</span> <span class="n">rte</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">=</span> <span class="nb">dir</span> <span class="c"># 1 == out? 2 == in?</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tp</span> <span class="o">=</span> <span class="n">tp</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="n">stop</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">svc</span> <span class="o">=</span> <span class="n">svc</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">blk</span> <span class="o">=</span> <span class="n">blk</span>
+    <span class="sd">&quot;&quot;&quot;A Location report for a Vehicle arriving at a stop.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
-        <span class="k">return</span> <span class="s">&quot;{0.__class__.__name__}( &#39;{0.timestamp!s}&#39;, {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid={0.ll_valid}, time=&#39;{0.time!s}&#39;, rte={0.rte!r}, dir={0.dir!r}, tp={0.tp!r}, stop={0.stop!r}, svc={0.svc!r}, blk={0.blk!r}, dwell={0.dwell!r} )&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="s">&quot;{0.__class__.__name__}( &#39;{0.timestamp!s}&#39;, {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid=&#39;{0.ll_valid}&#39;, time={0.time!s}, rte={0.rte!r}, dir={0.dir!r}, stop={0.stop!r} )&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Dwell"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.Dwell">[docs]</a><span class="k">class</span> <span class="nc">Dwell</span><span class="p">(</span> <span class="n">Arrival</span> <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Paused in traffic?&quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="p">,</span>
-            <span class="n">time</span><span class="p">,</span> <span class="n">dwell</span><span class="p">,</span> <span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">svc</span><span class="p">,</span> <span class="n">blk</span> <span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span> <span class="n">Arrival</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="n">timestamp</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span> <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">time</span> <span class="o">=</span> <span class="n">time</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dwell</span> <span class="o">=</span> <span class="n">dwell</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">rte</span> <span class="o">=</span> <span class="n">rte</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dir</span> <span class="o">=</span> <span class="nb">dir</span> <span class="c"># 1 == out? 2 == in?</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">tp</span> <span class="o">=</span> <span class="n">tp</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">stop</span> <span class="o">=</span> <span class="n">stop</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">svc</span> <span class="o">=</span> <span class="n">svc</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">blk</span> <span class="o">=</span> <span class="n">blk</span>
-</div>
-<div class="viewcode-block" id="ReportFactory"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory">[docs]</a><span class="k">class</span> <span class="nc">ReportFactory</span><span class="p">(</span> <span class="n">Callable</span> <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Emit Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).</span>
-<span class="sd">    A subclass can implement different parsing rules.</span>
-
-<span class="sd">    This is a callable objects, generally something like the following is done::</span>
-
-<span class="sd">        factory= ReportFactory()</span>
-<span class="sd">        for line in some_file:</span>
-<span class="sd">            fields = line.strip().split()</span>
-<span class="sd">            obj= factory( fields )</span>
+    <span class="sd">&quot;&quot;&quot;A Location report for a Vehicle paused at a stop.</span>
+<span class="sd">    This is less helpful and may get filtered out.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">vehicle_pat</span><span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span> <span class="s">r&quot;V\.\d+\.(\d+)&quot;</span> <span class="p">)</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Build a ReportFactory with a given default year.</span>
+    <span class="n">dwell</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">IntegerProperty</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;{0.__class__.__name__}( &#39;{0.timestamp!s}&#39;, {0.id!r}, {0.lat:.6f}, {0.lon:.6f}, valid=&#39;{0.ll_valid}&#39;, time={0.time!s}, rte={0.rte!r}, dir={0.dir!r}, stop={0.stop!r}, dwell={0.dwell!r} )&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ReportReader"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader">[docs]</a><span class="k">class</span> <span class="nc">ReportReader</span><span class="p">(</span> <span class="n">Iterable</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An abstract iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).</span>
+
+<span class="sd">    This is the abstract superclass for various reader implementations.</span>
+
+<span class="sd">    Requires :meth:`ReportReader.open`</span>
+<span class="sd">    and :meth:`ReportReader.factory`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ReportReader.__init__"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader.__init__">[docs]</a>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Build a ReportReader_v1 with a given default year.</span>
 
 <span class="sd">        The year is required because the timestamps only have month and day.</span>
 
@@ -213,9 +221,50 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">year</span><span class="o">=</span> <span class="n">year</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">today</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="o">.</span><span class="n">today</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">year</span><span class="o">=</span> <span class="n">today</span><span class="o">.</span><span class="n">year</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">year</span><span class="o">=</span> <span class="n">today</span><span class="o">.</span><span class="n">year</span></div>
+<div class="viewcode-block" id="ReportReader.__iter__"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader.__iter__">[docs]</a>    <span class="k">def</span> <span class="nf">__iter__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Iterate over Report instances in this source.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">factory</span><span class="p">(</span> <span class="n">line</span> <span class="p">)</span></div>
+    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="ReportReader.open"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span> <span class="bp">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open a given source for processing.</span>
 
-<div class="viewcode-block" id="ReportFactory.label_str"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.label_str">[docs]</a>    <span class="k">def</span> <span class="nf">label_str</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">):</span>
+<span class="sd">        :param source: an open file-like source.</span>
+<span class="sd">        :param year: a potential override for the default year.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+    <span class="nd">@abstractmethod</span>
+<div class="viewcode-block" id="ReportReader.factory"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader.factory">[docs]</a>    <span class="k">def</span> <span class="nf">factory</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">line</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse the fields, returning Arrival, Dwell or Location.</span>
+
+<span class="sd">        :param line: line of raw input.</span>
+<span class="sd">        :returns: Report instance, if possible.  ``None`` if the fields can&#39;t be parsed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="ReportReader_v1"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v1">[docs]</a><span class="k">class</span> <span class="nc">ReportReader_v1</span><span class="p">(</span> <span class="n">ReportReader</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).</span>
+
+<span class="sd">    This handles V1 format, with space-delimited fields in the following form.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        07:04:42 02/15  V.1.2233  H.0.0  MT_LOCATION    Lat/Lon:370620935/-763413842 [Valid]  Adher:-1 [Valid]  Odom:2668 [Valid]  DGPS:On  FOM:2</span>
+
+<span class="sd">    This is an iterable object, generally something like the following is done::</span>
+
+<span class="sd">        reader= ReportReader_v1()</span>
+<span class="sd">        with open(some_file) as source:</span>
+<span class="sd">            reader.open(some_file)</span>
+<span class="sd">            for report in reader:</span>
+<span class="sd">                # process report</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">vehicle_pat</span><span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span> <span class="s">r&quot;V\.\d+\.(\d+)&quot;</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="ReportReader_v1.label_str"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v1.label_str">[docs]</a>    <span class="k">def</span> <span class="nf">label_str</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Split a &quot;label:value&quot; field, doing no further conversion.</span>
 <span class="sd">        If the label is not as expected, raise an exception.</span>
 
@@ -227,7 +276,7 @@
         <span class="k">assert</span> <span class="n">expected</span> <span class="o">==</span> <span class="n">label</span><span class="p">,</span> <span class="s">&quot;expected {0!r} not actual {1!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">expected</span><span class="p">,</span> <span class="n">label</span> <span class="p">)</span>
         <span class="k">return</span> <span class="n">value</span>
 </div>
-<div class="viewcode-block" id="ReportFactory.label_int"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.label_int">[docs]</a>    <span class="k">def</span> <span class="nf">label_int</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">):</span>
+<div class="viewcode-block" id="ReportReader_v1.label_int"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v1.label_int">[docs]</a>    <span class="k">def</span> <span class="nf">label_int</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Split a &quot;label:value&quot; field, attempting an integer conversion.</span>
 <span class="sd">        If the label is not as expected, raise an exception.</span>
 
@@ -240,7 +289,7 @@
             <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">None</span>
 </div>
-<div class="viewcode-block" id="ReportFactory.label_lat_lon"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.label_lat_lon">[docs]</a>    <span class="k">def</span> <span class="nf">label_lat_lon</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span><span class="o">=</span><span class="s">&quot;Lat/Lon&quot;</span> <span class="p">):</span>
+<div class="viewcode-block" id="ReportReader_v1.label_lat_lon"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v1.label_lat_lon">[docs]</a>    <span class="k">def</span> <span class="nf">label_lat_lon</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span><span class="o">=</span><span class="s">&quot;Lat/Lon&quot;</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Split a &quot;label:lat/lon&quot; field, attempting an fairly complex conversion.</span>
 <span class="sd">        If the label is not as expected, raise an exception.</span>
 
@@ -249,12 +298,12 @@
 <span class="sd">        :returns: (lat, lon) 2-tuple</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">latlon</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">)</span>
-        <span class="n">lat_st</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">lon_st</span> <span class="o">=</span> <span class="n">latlon</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
-        <span class="n">lat</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lat_st</span><span class="p">)</span><span class="o">/</span><span class="mi">10000000</span>
-        <span class="n">lon</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">lon_st</span><span class="p">)</span><span class="o">/</span><span class="mi">10000000</span>
+        <span class="n">lat_str</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">lon_str</span> <span class="o">=</span> <span class="n">latlon</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">lat</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lat_str</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span> <span class="o">+</span> <span class="n">lat_str</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+        <span class="n">lon</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lon_str</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span> <span class="o">+</span> <span class="n">lon_str</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
         <span class="k">return</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span>
 </div>
-<div class="viewcode-block" id="ReportFactory.label_time"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.label_time">[docs]</a>    <span class="k">def</span> <span class="nf">label_time</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">):</span>
+<div class="viewcode-block" id="ReportReader_v1.label_time"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v1.label_time">[docs]</a>    <span class="k">def</span> <span class="nf">label_time</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">expected</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Split a &quot;label:time&quot; field, to create a seconds-after-midnight value.</span>
 <span class="sd">        If the label is not as expected, raise an exception.</span>
 
@@ -266,7 +315,7 @@
         <span class="n">hh</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">ss</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span> <span class="nb">int</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span> <span class="p">)</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">hh</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">mm</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">ss</span>
 </div>
-<div class="viewcode-block" id="ReportFactory.common_fields"><a class="viewcode-back" href="../../implementation/index.html#caravel.report.ReportFactory.common_fields">[docs]</a>    <span class="k">def</span> <span class="nf">common_fields</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">fields</span> <span class="p">):</span>
+<div class="viewcode-block" id="ReportReader_v1.common_fields"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v1.common_fields">[docs]</a>    <span class="k">def</span> <span class="nf">common_fields</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">fields</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parse the common set of fields.</span>
 <span class="sd">        These are Fields 13-20 of MT_TIMEPOINTCROSSING.</span>
 <span class="sd">        They are also Fields 5-12 of MT_LOCATION.</span>
@@ -283,11 +332,11 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_lat_lon</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s">&quot;Lat/Lon&quot;</span> <span class="p">)</span>
-            <span class="n">ll_valid</span><span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;[Valid]&quot;</span>
+            <span class="n">ll_valid</span><span class="o">=</span> <span class="s">&#39;V&#39;</span> <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;[Valid]&quot;</span> <span class="k">else</span> <span class="s">&quot;I&quot;</span>
             <span class="n">adher</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="s">&#39;Adher&#39;</span> <span class="p">)</span>
-            <span class="n">adher_valid</span><span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;[Valid]&quot;</span>
+            <span class="n">adher_valid</span><span class="o">=</span>  <span class="s">&#39;V&#39;</span> <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;[Valid]&quot;</span> <span class="k">else</span> <span class="s">&quot;I&quot;</span>
             <span class="n">odom</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="s">&#39;Odom&#39;</span> <span class="p">)</span>
-            <span class="n">odom_valid</span> <span class="o">=</span> <span class="n">fields</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;[Valid]&quot;</span>
+            <span class="n">odom_valid</span> <span class="o">=</span> <span class="s">&#39;V&#39;</span> <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;[Valid]&quot;</span> <span class="k">else</span> <span class="s">&quot;I&quot;</span>
             <span class="n">dgps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="s">&quot;DGPS&quot;</span> <span class="p">)</span>
             <span class="n">fom</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="s">&#39;FOM&#39;</span> <span class="p">)</span>
             <span class="k">return</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span>
@@ -295,20 +344,31 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span> <span class="s">&quot;Invalid Common Fields {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="p">)</span>
             <span class="k">raise</span>
 </div>
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">fields</span> <span class="p">):</span>
+<div class="viewcode-block" id="ReportReader_v1.open"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v1.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open a given source for processing.</span>
+
+<span class="sd">        :param source: an open file-like source.</span>
+<span class="sd">        :param year: a potential override for the default year.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">year</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">year</span><span class="o">=</span> <span class="n">year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">=</span> <span class="n">source</span>
+</div>
+<div class="viewcode-block" id="ReportReader_v1.factory"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v1.factory">[docs]</a>    <span class="k">def</span> <span class="nf">factory</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">line</span> <span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Parse the fields, returning Arrival, Dwell or Location.</span>
 
-<span class="sd">        :param fields: tuple of fields, already split and stripped.</span>
+<span class="sd">        :param line: line of raw input.</span>
 <span class="sd">        :returns: Report instance, if possible.  ``None`` if the fields can&#39;t be parsed.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">try</span><span class="p">:</span>
+            <span class="n">fields</span><span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
             <span class="n">partial_ts</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="n">fields</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="s">&quot;%H:%M:%S&quot;</span><span class="o">+</span><span class="s">&quot;%m/</span><span class="si">%d</span><span class="s">&quot;</span> <span class="p">)</span>
             <span class="n">timestamp</span><span class="o">=</span> <span class="n">partial_ts</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span> <span class="n">year</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="p">)</span>
             <span class="n">vehicle</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">vehicle_pat</span><span class="o">.</span><span class="n">match</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
             <span class="k">assert</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;MT_TIMEPOINTCROSSING&#39;</span><span class="p">,</span> <span class="s">&#39;MT_LOCATION&#39;</span><span class="p">)</span>
             <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="o">==</span> <span class="p">(</span><span class="mi">21</span> <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;MT_TIMEPOINTCROSSING&#39;</span> <span class="k">else</span> <span class="mi">13</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span> <span class="s">&quot;Invalid {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span> <span class="s">&quot;Invalid {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">line</span><span class="p">)</span> <span class="p">)</span>
             <span class="k">return</span>
 
         <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;MT_TIMEPOINTCROSSING&#39;</span><span class="p">:</span>
@@ -318,61 +378,290 @@
             <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">common_fields</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">13</span><span class="p">:]</span> <span class="p">)</span>
             <span class="n">time</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_time</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="s">&quot;Time&quot;</span> <span class="p">)</span>
             <span class="n">rte</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">7</span><span class="p">],</span> <span class="s">&quot;Rte&quot;</span> <span class="p">)</span>
-            <span class="nb">dir</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span> <span class="s">&quot;Dir&quot;</span> <span class="p">)</span>
+            <span class="nb">dir</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">8</span><span class="p">],</span> <span class="s">&quot;Dir&quot;</span> <span class="p">)</span>
             <span class="n">tp</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">9</span><span class="p">],</span> <span class="s">&quot;TP&quot;</span> <span class="p">)</span>
             <span class="n">stop</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">10</span><span class="p">],</span> <span class="s">&quot;Stop&quot;</span> <span class="p">)</span>
             <span class="n">svc</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">11</span><span class="p">],</span> <span class="s">&quot;Svc&quot;</span> <span class="p">)</span>
             <span class="n">blk</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_str</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">12</span><span class="p">],</span> <span class="s">&quot;Blk&quot;</span> <span class="p">)</span>
             <span class="k">if</span> <span class="n">fields</span><span class="p">[</span><span class="mi">6</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;Arrival&quot;</span><span class="p">:</span>
-                <span class="k">return</span> <span class="n">Arrival</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">vehicle</span><span class="p">,</span>
-                    <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="p">,</span>
-                    <span class="n">time</span><span class="p">,</span> <span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">svc</span><span class="p">,</span> <span class="n">blk</span><span class="p">,</span>
+                <span class="k">return</span> <span class="n">Arrival</span><span class="p">(</span>
+                    <span class="n">timestamp</span><span class="o">=</span><span class="n">timestamp</span><span class="p">,</span>
+                    <span class="nb">id</span><span class="o">=</span><span class="n">vehicle</span><span class="p">,</span>
+                    <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="o">=</span><span class="n">ll_valid</span><span class="p">,</span>
+                    <span class="n">adher</span><span class="o">=</span><span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="o">=</span><span class="n">adher_valid</span><span class="p">,</span>
+                    <span class="n">odom</span><span class="o">=</span><span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="o">=</span><span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="o">=</span><span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="o">=</span><span class="n">fom</span><span class="p">,</span>
+                    <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">rte</span><span class="o">=</span><span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="nb">dir</span><span class="p">,</span> <span class="n">tp</span><span class="o">=</span><span class="n">tp</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop</span><span class="p">,</span> <span class="n">svc</span><span class="o">=</span><span class="n">svc</span><span class="p">,</span>
+                    <span class="n">blk</span><span class="o">=</span><span class="n">blk</span><span class="p">,</span>
                     <span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">dwell</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">label_int</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">6</span><span class="p">],</span> <span class="s">&quot;Dwell&quot;</span><span class="p">)</span>
-                <span class="k">return</span> <span class="n">Dwell</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">vehicle</span><span class="p">,</span>
-                    <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="p">,</span>
-                    <span class="n">time</span><span class="p">,</span> <span class="n">dwell</span><span class="p">,</span> <span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">tp</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">svc</span><span class="p">,</span> <span class="n">blk</span><span class="p">,</span>
+                <span class="k">return</span> <span class="n">Dwell</span><span class="p">(</span>
+                    <span class="n">timestamp</span><span class="o">=</span><span class="n">timestamp</span><span class="p">,</span>
+                    <span class="nb">id</span><span class="o">=</span><span class="n">vehicle</span><span class="p">,</span>
+                    <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="o">=</span><span class="n">ll_valid</span><span class="p">,</span>
+                    <span class="n">adher</span><span class="o">=</span><span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="o">=</span><span class="n">adher_valid</span><span class="p">,</span>
+                    <span class="n">odom</span><span class="o">=</span><span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="o">=</span><span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="o">=</span><span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="o">=</span><span class="n">fom</span><span class="p">,</span>
+                    <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">rte</span><span class="o">=</span><span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="nb">dir</span><span class="p">,</span> <span class="n">tp</span><span class="o">=</span><span class="n">tp</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop</span><span class="p">,</span> <span class="n">svc</span><span class="o">=</span><span class="n">svc</span><span class="p">,</span>
+                    <span class="n">blk</span><span class="o">=</span><span class="n">blk</span><span class="p">,</span> <span class="n">dwell</span><span class="o">=</span><span class="n">dwell</span><span class="p">,</span>
                     <span class="p">)</span>
         <span class="k">elif</span> <span class="n">fields</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;MT_LOCATION&#39;</span><span class="p">:</span>
             <span class="c"># Fields 5, 7, 9, 11 and 12 are label:value</span>
             <span class="c"># Fields 6, 8, 10 are [valid]/[invalid]</span>
             <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">common_fields</span><span class="p">(</span> <span class="n">fields</span><span class="p">[</span><span class="mi">5</span><span class="p">:]</span> <span class="p">)</span>
-            <span class="k">return</span> <span class="n">Location</span><span class="p">(</span><span class="n">timestamp</span><span class="p">,</span> <span class="n">vehicle</span><span class="p">,</span>
-                <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="p">,</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="p">,</span> <span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span> <span class="p">)</span>
+            <span class="k">return</span> <span class="n">Location</span><span class="p">(</span>
+                    <span class="n">timestamp</span><span class="o">=</span><span class="n">timestamp</span><span class="p">,</span>
+                    <span class="nb">id</span><span class="o">=</span><span class="n">vehicle</span><span class="p">,</span>
+                    <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="o">=</span><span class="n">ll_valid</span><span class="p">,</span>
+                    <span class="n">adher</span><span class="o">=</span><span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="o">=</span><span class="n">adher_valid</span><span class="p">,</span>
+                    <span class="n">odom</span><span class="o">=</span><span class="n">odom</span><span class="p">,</span> <span class="n">odom_valid</span><span class="o">=</span><span class="n">odom_valid</span><span class="p">,</span> <span class="n">dgps</span><span class="o">=</span><span class="n">dgps</span><span class="p">,</span> <span class="n">fom</span><span class="o">=</span><span class="n">fom</span><span class="p">,</span>
+                    <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span> <span class="s">&quot;Unrecognized {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">fields</span><span class="p">)</span> <span class="p">)</span>
-</div>
-<div class="viewcode-block" id="report_iter"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.report_iter">[docs]</a><span class="k">def</span> <span class="nf">report_iter</span><span class="p">(</span> <span class="n">report_factory</span><span class="p">,</span> <span class="n">files</span> <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;An iterator which applies the report_factory to all lines</span>
-<span class="sd">    in all of the named files.</span>
+</div></div>
+<div class="viewcode-block" id="ReportReader_v21"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v21">[docs]</a><span class="k">class</span> <span class="nc">ReportReader_v21</span><span class="p">(</span> <span class="n">ReportReader</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).</span>
 
-<span class="sd">    :param report_factory: a function (or callable object) which parses</span>
-<span class="sd">        input lines and creates Report instances.</span>
-<span class="sd">    :param: files an iterable over file names.  To process</span>
-<span class="sd">        a single file, use ``report_iter( report_factor, [one_file] )``</span>
+<span class="sd">    This handles V2.1 format, which is CSV and includes Route ID.</span>
+
+<span class="sd">    First Line::</span>
+
+<span class="sd">        Time,Date,RID,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]</span>
+
+<span class="sd">    Column Titles:</span>
+
+<span class="sd">        -   &#39;Time&#39;</span>
+<span class="sd">        -   &#39;Date&#39;</span>
+<span class="sd">        -   &#39;RID&#39;</span>
+<span class="sd">        -   &#39;Lat/Lon&#39;</span>
+<span class="sd">        -   &#39;Location Valid/Invalid&#39;</span>
+<span class="sd">        -   &#39;Adherence&#39;</span>
+<span class="sd">        -   &#39;Adherence Valid/Invalid[&#39; # Really.</span>
+<span class="sd">        -   &#39;Route&#39;</span>
+<span class="sd">        -   &#39;Direction&#39;</span>
+<span class="sd">        -   &#39;StopID]&#39; # Also peculiar.</span>
+
+<span class="sd">    This is an iterable object, generally something like the following is done::</span>
+
+<span class="sd">        reader= ReportReader_v2()</span>
+<span class="sd">        with open(some_file) as source:</span>
+<span class="sd">            reader.open(some_file)</span>
+<span class="sd">            for report in reader:</span>
+<span class="sd">                # process report</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">columns</span><span class="o">=</span> <span class="p">[</span>
+        <span class="s">&#39;Time&#39;</span><span class="p">,</span> <span class="s">&#39;Date&#39;</span><span class="p">,</span> <span class="s">&#39;RID&#39;</span><span class="p">,</span> <span class="s">&#39;Lat/Lon&#39;</span><span class="p">,</span> <span class="s">&#39;Location Valid/Invalid&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Adherence&#39;</span><span class="p">,</span> <span class="s">&#39;Adherence Valid/Invalid[&#39;</span><span class="p">,</span> <span class="s">&#39;Route&#39;</span><span class="p">,</span> <span class="s">&#39;Direction&#39;</span><span class="p">,</span> <span class="s">&#39;StopID]&#39;</span><span class="p">]</span>
+<div class="viewcode-block" id="ReportReader_v21.open"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v21.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">,</span> <span class="n">year</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open a given source for processing.</span>
+
+<span class="sd">        :param source: an open file-like source.</span>
+<span class="sd">        :param year: a potential override for the default year.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">year</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">year</span><span class="o">=</span> <span class="n">year</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span> <span class="n">source</span> <span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">fieldnames</span><span class="p">,</span> <span class="s">&quot;Unrecognized Heading {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">fieldnames</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ReportReader_v21.factory"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v21.factory">[docs]</a>    <span class="k">def</span> <span class="nf">factory</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">line</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse the fields, returning Arrival, Dwell or Location.</span>
+
+<span class="sd">        :param line: CSV line of raw input.</span>
+<span class="sd">        :returns: Report instance, if possible.  ``None`` if the fields can&#39;t be parsed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Date&#39;</span><span class="p">],</span> <span class="s">&quot;%m/</span><span class="si">%d</span><span class="s">&quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span> <span class="n">year</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="p">)</span>
+        <span class="n">tm</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Time&#39;</span><span class="p">],</span> <span class="s">&quot;%H:%M:%S&quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tm</span> <span class="p">)</span>
+        <span class="n">lat_str</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">lon_str</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Lat/Lon&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">lat</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lat_str</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span> <span class="o">+</span> <span class="n">lat_str</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+        <span class="n">lon</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lon_str</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span> <span class="o">+</span> <span class="n">lon_str</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+        <span class="n">time</span><span class="o">=</span> <span class="p">(</span><span class="n">tm</span><span class="o">.</span><span class="n">hour</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">tm</span><span class="o">.</span><span class="n">minute</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">tm</span><span class="o">.</span><span class="n">second</span>
+        <span class="n">adher</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Adherence&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span> <span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Route&#39;</span><span class="p">],</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Direction&#39;</span><span class="p">],</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;StopID]&#39;</span><span class="p">])</span> <span class="p">):</span>
+            <span class="k">return</span> <span class="n">Arrival</span><span class="p">(</span>
+                <span class="n">timestamp</span><span class="o">=</span><span class="n">timestamp</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;RID&#39;</span><span class="p">],</span>
+                <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Location Valid/Invalid&#39;</span><span class="p">],</span>
+                <span class="n">adher</span><span class="o">=</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Adherence Valid/Invalid[&#39;</span><span class="p">],</span>
+                <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span>
+                <span class="n">rte</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Route&#39;</span><span class="p">],</span> <span class="nb">dir</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Direction&#39;</span><span class="p">],</span> <span class="n">stop</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;StopID]&#39;</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">Location</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;RID&#39;</span><span class="p">],</span>
+                <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Location Valid/Invalid&#39;</span><span class="p">],</span>
+                <span class="n">adher</span><span class="o">=</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Adherence Valid/Invalid[&#39;</span><span class="p">],</span>
+                <span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="ReportReader_v22"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v22">[docs]</a><span class="k">class</span> <span class="nc">ReportReader_v22</span><span class="p">(</span> <span class="n">ReportReader_v21</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).</span>
+
+<span class="sd">    This handles V2.2 format, which is CSV and includes Vehicle ID</span>
+
+<span class="sd">    First Line::</span>
+
+<span class="sd">        Time,Date,Vehicle,Lat/Lon,Location Valid/Invalid,Adherence,Adherence Valid/Invalid[,Route,Direction,StopID]</span>
+
+<span class="sd">    Column Titles:</span>
+
+<span class="sd">        -   &#39;Time&#39;</span>
+<span class="sd">        -   &#39;Date&#39;</span>
+<span class="sd">        -   &#39;Vehicle&#39;</span>
+<span class="sd">        -   &#39;Lat/Lon&#39;</span>
+<span class="sd">        -   &#39;Location Valid/Invalid&#39;</span>
+<span class="sd">        -   &#39;Adherence&#39;</span>
+<span class="sd">        -   &#39;Adherence Valid/Invalid[&#39; # Really.</span>
+<span class="sd">        -   &#39;Route&#39;</span>
+<span class="sd">        -   &#39;Direction&#39;</span>
+<span class="sd">        -   &#39;Stop]&#39; # Also peculiar.</span>
+
+<span class="sd">    This is an iterable object, generally something like the following is done::</span>
+
+<span class="sd">        reader= ReportReader_v3()</span>
+<span class="sd">        with open(some_file) as source:</span>
+<span class="sd">            reader.open(some_file)</span>
+<span class="sd">            for report in reader:</span>
+<span class="sd">                # process report</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">columns</span><span class="o">=</span>  <span class="p">[</span>
+        <span class="s">&#39;Time&#39;</span><span class="p">,</span> <span class="s">&#39;Date&#39;</span><span class="p">,</span> <span class="s">&#39;Vehicle&#39;</span><span class="p">,</span> <span class="s">&#39;Lat/Lon&#39;</span><span class="p">,</span> <span class="s">&#39;Location Valid/Invalid&#39;</span><span class="p">,</span>
+        <span class="s">&#39;Adherence&#39;</span><span class="p">,</span> <span class="s">&#39;Adherence Valid/Invalid[&#39;</span><span class="p">,</span> <span class="s">&#39;Route&#39;</span><span class="p">,</span> <span class="s">&#39;Direction&#39;</span><span class="p">,</span> <span class="s">&#39;Stop]&#39;</span><span class="p">]</span>
+<div class="viewcode-block" id="ReportReader_v22.factory"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v22.factory">[docs]</a>    <span class="k">def</span> <span class="nf">factory</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">line</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse the fields, returning Arrival, Dwell or Location.</span>
+
+<span class="sd">        :param line: CSV line of raw input.</span>
+<span class="sd">        :returns: Report instance, if possible.  ``None`` if the fields can&#39;t be parsed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Date&#39;</span><span class="p">],</span> <span class="s">&quot;%m/</span><span class="si">%d</span><span class="s">&quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span> <span class="n">year</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="p">)</span>
+        <span class="n">tm</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Time&#39;</span><span class="p">],</span> <span class="s">&quot;%H:%M:%S&quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tm</span> <span class="p">)</span>
+        <span class="n">lat_str</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">lon_str</span> <span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Lat/Lon&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
+        <span class="n">lat</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lat_str</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span> <span class="o">+</span> <span class="n">lat_str</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+        <span class="n">lon</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lon_str</span><span class="p">[:</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;.&quot;</span> <span class="o">+</span> <span class="n">lon_str</span><span class="p">[</span><span class="mi">3</span><span class="p">:])</span>
+        <span class="n">time</span><span class="o">=</span> <span class="p">(</span><span class="n">tm</span><span class="o">.</span><span class="n">hour</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">tm</span><span class="o">.</span><span class="n">minute</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">tm</span><span class="o">.</span><span class="n">second</span>
+        <span class="n">adher</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Adherence&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span> <span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Route&#39;</span><span class="p">],</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Direction&#39;</span><span class="p">],</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Stop]&#39;</span><span class="p">])</span> <span class="p">):</span>
+            <span class="k">return</span> <span class="n">Arrival</span><span class="p">(</span>
+                <span class="n">timestamp</span><span class="o">=</span><span class="n">timestamp</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Vehicle&#39;</span><span class="p">],</span>
+                <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Location Valid/Invalid&#39;</span><span class="p">],</span>
+                <span class="n">adher</span><span class="o">=</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Adherence Valid/Invalid[&#39;</span><span class="p">],</span>
+                <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span>
+                <span class="n">rte</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Route&#39;</span><span class="p">],</span> <span class="nb">dir</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Direction&#39;</span><span class="p">],</span> <span class="n">stop</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Stop]&#39;</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">Location</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Vehicle&#39;</span><span class="p">],</span>
+                <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Location Valid/Invalid&#39;</span><span class="p">],</span>
+                <span class="n">adher</span><span class="o">=</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Adherence Valid/Invalid[&#39;</span><span class="p">],</span>
+                <span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="ReportReader_v3"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v3">[docs]</a><span class="k">class</span> <span class="nc">ReportReader_v3</span><span class="p">(</span> <span class="n">ReportReader</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An iterator over Report items (:class:`Location`, :class:`Arrival`, :class:`Dwell`).</span>
+
+<span class="sd">    This handles V3 format, which is CSV.</span>
+
+<span class="sd">    Source::</span>
+
+<span class="sd">        String[] headings = {</span>
+<span class="sd">            &quot;Date&quot;, &quot;Time&quot;, &quot;Vehicle&quot;, &quot;Lat&quot;, &quot;Lon&quot;, &quot;Location Valid/Invalid&quot;,</span>
+<span class="sd">            &quot;Adherence&quot;, &quot;Adherence Valid/Invalid&quot;, &quot;Route&quot;, &quot;Direction&quot;, &quot;Stop&quot;</span>
+<span class="sd">        };</span>
+
+<span class="sd">    Column Titles:</span>
+
+<span class="sd">        -   &#39;Date&#39;</span>
+<span class="sd">        -   &#39;Time&#39;</span>
+<span class="sd">        -   &#39;Vehicle&#39;</span>
+<span class="sd">        -   &#39;Lat&#39;</span>
+<span class="sd">        -   &#39;Lon&#39;</span>
+<span class="sd">        -   &#39;Location Valid/Invalid&#39;</span>
+<span class="sd">        -   &#39;Adherence&#39;</span>
+<span class="sd">        -   &#39;Adherence Valid/Invalid&#39;</span>
+<span class="sd">        -   &#39;Route&#39;</span>
+<span class="sd">        -   &#39;Direction&#39;</span>
+<span class="sd">        -   &#39;Stop&#39;</span>
+
+<span class="sd">    This is an iterable object, generally something like the following is done::</span>
+
+<span class="sd">        reader= ReportReader_v3()</span>
+<span class="sd">        with open(some_file) as source:</span>
+<span class="sd">            reader.open(some_file)</span>
+<span class="sd">            for report in reader:</span>
+<span class="sd">                # process report</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">columns</span><span class="o">=</span> <span class="p">[</span>
+        <span class="s">&quot;Date&quot;</span><span class="p">,</span> <span class="s">&quot;Time&quot;</span><span class="p">,</span> <span class="s">&quot;Vehicle&quot;</span><span class="p">,</span> <span class="s">&quot;Lat&quot;</span><span class="p">,</span> <span class="s">&quot;Lon&quot;</span><span class="p">,</span> <span class="s">&quot;Location Valid/Invalid&quot;</span><span class="p">,</span>
+        <span class="s">&quot;Adherence&quot;</span><span class="p">,</span> <span class="s">&quot;Adherence Valid/Invalid&quot;</span><span class="p">,</span> <span class="s">&quot;Route&quot;</span><span class="p">,</span> <span class="s">&quot;Direction&quot;</span><span class="p">,</span> <span class="s">&quot;Stop&quot;</span><span class="p">,</span>
+        <span class="p">]</span>
+
+<div class="viewcode-block" id="ReportReader_v3.open"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v3.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">source</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open a given source for processing.</span>
+
+<span class="sd">        :param source: an open file-like source.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span> <span class="n">source</span> <span class="p">)</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="o">==</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">fieldnames</span><span class="p">,</span> <span class="s">&quot;Unrecognized Heading {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="o">.</span><span class="n">fieldnames</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ReportReader_v3.factory"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.ReportReader_v3.factory">[docs]</a>    <span class="k">def</span> <span class="nf">factory</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">line</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Parse the fields, returning Arrival, Dwell or Location.</span>
+
+<span class="sd">        :param line: CSV line of raw input.</span>
+<span class="sd">        :returns: Report instance, if possible.  ``None`` if the fields can&#39;t be parsed.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Date&#39;</span><span class="p">],</span> <span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">&quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span> <span class="n">year</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">year</span> <span class="p">)</span>
+        <span class="n">tm</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Time&#39;</span><span class="p">],</span> <span class="s">&quot;%H:%M:%S&quot;</span> <span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="n">timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span> <span class="n">dt</span><span class="p">,</span> <span class="n">tm</span> <span class="p">)</span>
+        <span class="n">lat</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Lat&#39;</span><span class="p">])</span>
+        <span class="n">lon</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Lon&#39;</span><span class="p">])</span>
+        <span class="n">time</span><span class="o">=</span> <span class="p">(</span><span class="n">tm</span><span class="o">.</span><span class="n">hour</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">tm</span><span class="o">.</span><span class="n">minute</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">tm</span><span class="o">.</span><span class="n">second</span>
+        <span class="n">adher</span><span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Adherence&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">all</span><span class="p">(</span> <span class="p">(</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Route&#39;</span><span class="p">],</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Direction&#39;</span><span class="p">],</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Stop&#39;</span><span class="p">])</span> <span class="p">):</span>
+            <span class="k">return</span> <span class="n">Arrival</span><span class="p">(</span>
+                <span class="n">timestamp</span><span class="o">=</span><span class="n">timestamp</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Vehicle&#39;</span><span class="p">],</span>
+                <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Location Valid/Invalid&#39;</span><span class="p">],</span>
+                <span class="n">adher</span><span class="o">=</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Adherence Valid/Invalid&#39;</span><span class="p">],</span>
+                <span class="n">time</span><span class="o">=</span><span class="n">time</span><span class="p">,</span>
+                <span class="n">rte</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Route&#39;</span><span class="p">],</span> <span class="nb">dir</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Direction&#39;</span><span class="p">],</span> <span class="n">stop</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Stop&#39;</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">return</span> <span class="n">Location</span><span class="p">(</span>
+                <span class="n">timestamp</span><span class="o">=</span><span class="n">timestamp</span><span class="p">,</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Vehicle&#39;</span><span class="p">],</span>
+                <span class="n">lat</span><span class="o">=</span><span class="n">lat</span><span class="p">,</span> <span class="n">lon</span><span class="o">=</span><span class="n">lon</span><span class="p">,</span> <span class="n">ll_valid</span><span class="o">=</span><span class="n">line</span><span class="p">[</span><span class="s">&#39;Location Valid/Invalid&#39;</span><span class="p">],</span>
+                <span class="n">adher</span><span class="o">=</span> <span class="n">adher</span><span class="p">,</span> <span class="n">adher_valid</span><span class="o">=</span> <span class="n">line</span><span class="p">[</span><span class="s">&#39;Adherence Valid/Invalid&#39;</span><span class="p">],</span>
+                <span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="report_file_iter"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.report_file_iter">[docs]</a><span class="k">def</span> <span class="nf">report_file_iter</span><span class="p">(</span> <span class="n">report_reader</span><span class="p">,</span> <span class="n">files</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An iterator which applies the ``report_reader`` instance to all</span>
+<span class="sd">    of the named files.</span>
+
+<span class="sd">    :param report_reader: an instance of :class:`ReportReader` which parses</span>
+<span class="sd">        input lines and creates :class:`Report` instances.</span>
+<span class="sd">    :param files: an iterable over the file names.</span>
+<span class="sd">        To process a single file, use ``report_file_iter( report_reader, [one_file] )``</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">report_file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
         <span class="n">ts</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span> <span class="n">report_file</span> <span class="p">)</span> <span class="p">)</span>
-        <span class="n">report_factory</span><span class="o">.</span><span class="n">year</span><span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">year</span>
         <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">report_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">source</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span> <span class="k">continue</span>
-                <span class="n">fields</span><span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">rstrip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
-                <span class="n">report</span><span class="o">=</span> <span class="n">report_factory</span><span class="p">(</span> <span class="n">fields</span> <span class="p">)</span>
+            <span class="n">report_reader</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">ts</span><span class="o">.</span><span class="n">year</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">report_reader</span><span class="p">:</span>
                 <span class="k">yield</span> <span class="n">report</span>
 </div>
 <div class="viewcode-block" id="JSONEncoder"><a class="viewcode-back" href="../../implementation/domain.html#caravel.report.JSONEncoder">[docs]</a><span class="k">class</span> <span class="nc">JSONEncoder</span><span class="p">(</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONEncoder</span> <span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Encode any of the Report subclasses into JSON.&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Encode any of the Report subclasses into JSON.</span>
+
+<span class="sd">    Not needed, since couchdbkit.schema.Document objects</span>
+<span class="sd">    have a :meth:`couchdbkit.schema.Document.to_json` method that</span>
+<span class="sd">    handles some of the conversion.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        json.dumps( rpt.to_json() )</span>
+
+<span class="sd">    Far better than this.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">def</span> <span class="nf">default</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">obj</span> <span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">Report</span><span class="p">):</span>
             <span class="n">as_dict</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span>
-            <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%x</span><span class="s"> </span><span class="si">%X</span><span class="s">&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">):</span>
-                <span class="n">hh</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">time</span><span class="o">//</span><span class="mi">3600</span>
-                <span class="n">mm</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">time</span><span class="o">-</span><span class="p">(</span><span class="n">hh</span><span class="o">*</span><span class="mi">3600</span><span class="p">)</span><span class="o">//</span><span class="mi">60</span>
-                <span class="n">ss</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">time</span><span class="o">-</span><span class="n">hh</span><span class="o">*</span><span class="mi">3600</span><span class="o">-</span><span class="n">mm</span><span class="o">*</span><span class="mi">60</span>
-                <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">=</span> <span class="s">&quot;{0:2d}:{1:2d}:{2:2d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">hh</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">ss</span> <span class="p">)</span>
+            <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;doc_type&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+            <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">T</span><span class="si">%X</span><span class="s">Z&quot;</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">as_dict</span>
         <span class="nb">super</span><span class="p">(</span> <span class="n">JSONEncoder</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">default</span><span class="p">(</span> <span class="n">obj</span> <span class="p">)</span>
 </div>
@@ -381,14 +670,11 @@
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span> <span class="n">JSONDecoder</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">object_hook</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">make_report</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">)</span>
     <span class="k">def</span> <span class="nf">make_report</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">as_dict</span> <span class="p">):</span>
-        <span class="k">if</span> <span class="s">&quot;__class__&quot;</span> <span class="ow">in</span> <span class="n">as_dict</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">&quot;doc_type&quot;</span> <span class="ow">in</span> <span class="n">as_dict</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">cn</span><span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">as_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;__class__&#39;</span><span class="p">))</span>
-                <span class="n">timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">],</span><span class="s">&quot;</span><span class="si">%x</span><span class="s"> </span><span class="si">%X</span><span class="s">&quot;</span><span class="p">)</span>
+                <span class="n">cn</span><span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">as_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s">&#39;doc_type&#39;</span><span class="p">))</span>
+                <span class="n">timestamp</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">],</span><span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">T</span><span class="si">%X</span><span class="s">Z&quot;</span><span class="p">)</span>
                 <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">]</span><span class="o">=</span> <span class="n">timestamp</span>
-                <span class="k">if</span> <span class="n">as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">):</span>
-                    <span class="n">hh</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">ss</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span> <span class="nb">int</span><span class="p">,</span> <span class="n">as_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;time&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&quot;:&quot;</span><span class="p">)</span> <span class="p">)</span>
-                    <span class="n">as_dict</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span><span class="o">=</span> <span class="p">(</span><span class="n">hh</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">mm</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">ss</span>
                 <span class="k">return</span> <span class="n">cn</span><span class="p">(</span><span class="o">**</span><span class="n">as_dict</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
                 <span class="k">print</span><span class="p">(</span> <span class="n">cn</span><span class="p">,</span> <span class="n">as_dict</span><span class="p">,</span> <span class="n">cn</span><span class="o">.</span><span class="n">__init__</span><span class="o">.</span><span class="n">__code__</span><span class="o">.</span><span class="n">co_varnames</span> <span class="p">)</span>
@@ -433,7 +719,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

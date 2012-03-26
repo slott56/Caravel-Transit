@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-"""Caravel Log Capture.
+"""Caravel Log Capture via Tail.
 
 This does a tail-transform-push of an active log.
 
@@ -10,7 +10,7 @@ Synopsis
 
 ::
 
-    python2.7 -m caravel.LogCapture.log_capture [--verbose] path/to/some.log
+    python2.7 -m caravel.LogCapture.log_capture [--verbose] [-t task] [-c 60] path/to/some.log
 
 Description
 ===========
@@ -23,16 +23,23 @@ Options
 
     ..  program:: log_capture
 
-    .. option:: --vebose, -v
+    ..  option:: --vebose, -v
 
-    .. option:: path/to/some.log
+    ..  option:: --task task_name, -t task_name
 
-        The log file to be tailed.
+        The task is either ``Tail_Only`` or ``Tail_Format_Push``.
+
+    ..  option:: --cycle time, -c time
+
+        The cycle interval.  Default is 60 seconds.
+
+    The positional argument, :file:`path/to/some.log`,
+    identifies The log file to be tailed.
 
 Configuration File
 ====================
 
-This will read a configuration file, :file:`hrtail_conf.py`
+This will read a configuration file, :file:`settings.py`
 
 This file provides the CouchDB server name as well as temporary
 file names and other configuration options.
@@ -43,19 +50,19 @@ file names and other configuration options.
 
     #Couch Push
     #Test Database
-    couchpush = { "db_url": "http://localhost:5984/couchdbkit_test" }
+    db_url= "http://localhost:5984/couchdbkit_test"
     #Production Database
-    #couchpush = { "db_url": "http://hrt.iriscouch.com:5984/feed" }
+    #db_url= "http://hrt.iriscouch.com:5984/feed"
 
     #Log Tail
-    logtail = { "tail_status_filename": "logtail.history",
-        "file_size_limit": 1000000 }
+    logtail_status_filename= "logtail.history"
+    logtail_size_limit= 1*1000*1000
 
     # Reformat
 
     # Capture
-    capture = { "extract_filename": "hrtrtf.txt",
-        "csv_filename": "hrtrtf.csv" }
+    capture_extract_filename= "hrtrtf.txt"
+    capture_csv_filename= "hrtrtf.csv"
 
 Module API
 ============
@@ -64,15 +71,9 @@ This module can be invoked from a script as follows:
 
 ::
 
-    from caravel.LogCapture.log_capture import config, capture
-    config( db_url="http://localhost:5984/database/" )
-    settings = {
-        "logtail" : { "tail_status_filename": "logtail.history",
-        "file_size_limit": 1000000 },
-        "capture" : { "extract_filename": "hrtrtf.txt",
-        "csv_filename": "hrtrtf.csv" }
-    }
-    capture( "some.log", 60.0, settings )
+    from caravel.conf import settings
+    from caravel.LogCapture.log_capture import capture
+    capture( "Tail_Format_Push", 60.0, "some.log" )
 
 Database Schema
 ==================
@@ -146,15 +147,15 @@ Individual documents are available::
 Components
 =============
 
-..  autofunction:: config
 ..  autoclass:: Timer
 ..  autofunction:: capture
+..  autofunction:: tail_only
 ..  autofunction:: tail_format_push
 ..  autofunction:: tail
+..  autofunction:: transform
 ..  autofunction:: reformat
 ..  autofunction:: upload_feed
 ..  autofunction:: get_args
-..  autofunction:: get_config
 """
 from __future__ import print_function
 import logging
@@ -168,45 +169,11 @@ import time
 import argparse
 from couchdbkit import Server
 
+from caravel.conf import settings
 from caravel.feed.models import Feed
 from caravel.report import ReportReader_v1, headings
 
 logger= logging.getLogger( "log_capture" )
-
-def config( **kwargs ):
-    """Configure this operation by opening the given
-    CouchDB Server and Database.
-
-    The kwargs must include ``db_url`` with the full URL
-    to the CouchDB server and database.
-    """
-    global db
-    db_url= kwargs.pop("db_url")
-    p = urlparse.urlparse(db_url)
-    server= "{0.scheme}://{0.netloc}".format( p )
-    connection = Server(server)
-    db = connection.get_or_create_db(p.path)
-    logger.debug( "Connection {0!r} {1!r}".format(server, p.path) )
-    return db
-
-def upload_feed( filename ):
-    """Upload a specific feed file.
-
-    This depends on a previous invocation of :func:`config` to set
-    the global database variable, :data:`db`.
-
-    :param filename: a file to read and push.
-    """
-    global db
-    Feed.set_db(db)
-    feed= Feed(
-        timestamp= datetime.datetime.fromtimestamp(os.path.getmtime(filename)),
-        status= "new",
-    )
-    db.save_doc( feed )
-    with open(filename,'r') as source:
-        feed.put_attachment( source, name="feed", content_type="text/csv" )
-    return feed
 
 class Timer( object ):
     """A cycling version of :mod:`sched`.
@@ -249,7 +216,7 @@ class Timer( object ):
             except StopIteration:
                 end= start
                 self.cancel()
-            except Exception, e:
+            except Exception as e:
                 logger.exception( e )
                 self.cancel()
                 raise
@@ -264,48 +231,58 @@ class Timer( object ):
         self.delay( pause )
         worker( *args )
 
-def capture( source, seconds, config ):
+def capture( task_name, seconds, source ):
     """Use :class:`Timer` class to schedule a recurring tail-format-push worker.
-    This uses :func:`tail_format_push` to do the real work.
+    This uses :func:`tail_format_push` or :func:`tail_only` to do the real work.
 
-    :param source: The log file to tail.
+    :param task_name: Name of the task to perform.
     :param seconds: The cycling interval.  60 seconds makes a lot of sense.
-    :param config: A global configuration as read by :func:`get_config`.
+    :param source: The log file to tail.
     """
+    task= { 'tail_format_push' : tail_format_push,
+           'tail_only': tail_only }[task_name.lower()]
     timer= Timer()
     if seconds == 0.0:
-        timer.schedule( 2.0, tail_format_push, (source, config)  )
+        timer.schedule( 2.0, task, (source,)  )
     else:
         now= timer.time()
-        timer.schedule_fixed_rate( (60-now)%60, seconds, tail_format_push, (source, config)  )
+        timer.schedule_fixed_rate( (60-now)%60, seconds, task, (source,)  )
 
-def tail_format_push( source, config ):
+def tail_only( source ):
+    """Tail the source file to an extract.
+
+    This relies on :func:`tail`.
+
+    :param source: The log file to tail.
+    """
+    extract_filename= settings.capture_extract_filename
+    tail( source, extract_filename )
+
+def tail_format_push( source ):
     """Tail the source file to an extract; reformat the extract
     to CSV; push the CSV.
 
     This relies on :func:`tail`, :func:`reformat` and :func:`upload_feed`.
 
     :param source: The log file to tail.
-    :param config: A global configuration as read by :func:`get_config`.
     """
-    extract_filename= config['capture'].get('extract_filename','hrtrtf.txt')
-    csv_filename= config['capture'].get('csv_filename','hrtrtf.csv')
+    extract_filename= settings.capture_extract_filename
+    csv_filename= settings.capture_csv_filename
     tail( source, extract_filename, config )
     with open( extract_filename, "r" ) as source:
         with open( csv_filename, "w" ) as target:
             reformat( source, target )
     upload_feed( csv_filename )
 
-def tail( source_filename, extract_filename, config ):
+def tail( source_filename, extract_filename ):
     """Tail a log, writing an extract file, and maintaining state
     in a history file.  This allows tailing via a seek to the end of the file.
 
     :param source_filename: The log to tail.
     :param extract_filename: A temporary file to be written with the tailings.
-    :param config: A global configuration as read by :func:`get_config`.
     """
-    tail_status_filename= config['logtail'].get("tail_status_filename", "logtail.history")
-    file_size_limit= int(config['logtail'].get("file_size_limit", "1000000"))
+    tail_status_filename= settings.logtail_status_filename
+    file_size_limit= settings.logtail_size_limit
 
     try:
         with open(tail_status_filename,"r") as tail_status_file:
@@ -344,8 +321,39 @@ def tail( source_filename, extract_filename, config ):
         json.dump( status, tail_status_file, indent=2 )
     return extract_filename
 
+# HRT-Log-Capture headings used by status package and capture package.
+capture_headings = [
+        "Date", "Time", "Vehicle", "Lat", "Lon", "Location Valid/Invalid",
+        "Adherence", "Adherence Valid/Invalid", "Route", "Direction", "Stop"
+]
+
+def transform( report ):
+    """Transform a :class:`Report` instance into a dictionary
+    with column names that match HRT-Log-Capture.
+    """
+    return {
+        "Date": report.timestamp.date(),
+        "Time": report.timestamp.time(),
+        "Vehicle": report.id,
+        "Lat": report.lat,
+        "Lon": report.lon,
+        "Location Valid/Invalid": report.ll_valid,
+        "Adherence": report.adher,
+        "Adherence Valid/Invalid": report.adher_valid,
+        "Route": report.rte,
+        "Direction": report.dir,
+        "Stop": report.stop,
+    }
+
 def reformat(extract_file, target_file):
     """Reformat an extract from a log file.
+
+    The output file has headings defined by the report module.
+    These are also used by the status package.
+
+    These must be compatible with the HRT-Log-Capture headings.
+    The :func:`transform` function reformats the source data
+    into the result strcuture.
 
     :param extract_file: A file-like object suitable for reading.
     :param target_file: A file-like object which can be used by :mod:`csv`
@@ -353,13 +361,30 @@ def reformat(extract_file, target_file):
     """
     reader= ReportReader_v1()
     reader.open( extract_file )
-    wtr= csv.DictWriter( target_file, headings )
+    wtr= csv.DictWriter( target_file, capture_headings )
     wtr.writeheader()
     for item in reader:
         logger.debug( item )
         if item is not None:
-            wtr.writerow( item.as_dict() )
+            wtr.writerow( transform(item) )
 
+def upload_feed( filename ):
+    """Upload a specific feed file.
+
+    This depends on a previous invocation of :func:`config` to set
+    the global database variable, :data:`settings.db`.
+
+    :param filename: a file to read and push.
+    """
+    Feed.set_db(settings.db)
+    feed= Feed(
+        timestamp= datetime.datetime.fromtimestamp(os.path.getmtime(filename)),
+        status= "new",
+    )
+    settings.db.save_doc( feed )
+    with open(filename,'r') as source:
+        feed.put_attachment( source, name="feed", content_type="text/csv" )
+    return feed
 
 def get_args():
     """Parse command-line arguments.
@@ -369,44 +394,21 @@ def get_args():
     parser= argparse.ArgumentParser( )
     parser.add_argument( 'source', action='store', nargs=1 )
     parser.add_argument( '-1', action='store_const', const=0.0, dest="cycle" )
+    parser.add_argument( '--task', '-t', action='store', choices=["Tail_Only", "Tail_Format_Push"] )
     parser.add_argument( '--cycle', '-c', action='store', default=60.0, type=float )
     parser.add_argument( '--verbose', '-v', action='store_true', default=False )
     args= parser.parse_args()
     return args
 
-def get_config():
-    """Read the config file, :file:`hrtail_conf.py`
-    to get the ``couchpush`` value.
-
-    Usually, the content is this.
-
-    ::
-
-        couchpush = { "db_url": "http://localhost:5984/couchdbkit_test" }
-        logtail = { "tail_status_filename": "logtail.history",
-            "file_size_limit": 1000000 }
-        capture = { "extract_filename": "hrtrtf.txt",
-            "csv_filename": "hrtrtf.csv" }
-
-    In principle, we should check ./hrtail_conf.py and ~/hrtail_conf.py.
-    We only check the local directory, however.
-    """
-    settings = {}
-    execfile( "hrtail_conf.py", settings )
-    return settings
-
 if __name__ == "__main__":
     logging.basicConfig( stream=sys.stderr, level=logging.INFO )
-    settings= get_config()
     args= get_args()
     if args.verbose:
-        logging.getLogger().setLevel( logging.DEBUG )
-    config( **settings['couchpush'] )
+        logger.setLevel( logging.DEBUG )
     try:
-        capture( args.source[0], 60.0 if args.cycle is None else args.cycle, settings )
+        capture( args.task, 60.0 if args.cycle is None else args.cycle, args.source[0] )
     except (KeyboardInterrupt,SystemExit) as e:
         logger.info( "Stopped" )
     except Exception as e:
         logger.exception( e )
     logging.shutdown()
-

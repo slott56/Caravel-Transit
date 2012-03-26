@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-"""Test Caravel Acquire module.
+"""Test Caravel FTP_acquire module.
 """
 from __future__ import print_function
 import unittest
@@ -9,7 +9,7 @@ import datetime
 import os
 import time
 from contextlib import closing
-import caravel.LogCapture.acquire
+import caravel.LogCapture.ftp_acquire
 
 class MockFTP( object ):
     dirlist= ""
@@ -76,7 +76,7 @@ class Test_No_VID( Temp_File_Cleanup ):
             self.assertEqual( 2, e.errno )
         self.name= None
     def runTest( self ):
-        self.name= caravel.LogCapture.acquire.get_report_files( self.ftp_class, target_dir='test' )
+        self.name= caravel.LogCapture.ftp_acquire.get_report_files( self.ftp_class, target_dir='test' )
         self.assertTrue( os.path.exists( 'test/vid.csv' ) )
         self.assertEqual( ['Anrd', 'RETR Anrd/vid.csv', 'RETR Anrd/hrtrtf.txt'], self.ftp_class.history )
         with open('test/vid.csv','rb') as new_file:
@@ -102,7 +102,7 @@ class Test_New_VID( Temp_File_Cleanup ):
         os.utime( 'test/vid.csv', (old, old) )
         self.name= None
     def runTest( self ):
-        self.name= caravel.LogCapture.acquire.get_report_files( self.ftp_class, target_dir='test' )
+        self.name= caravel.LogCapture.ftp_acquire.get_report_files( self.ftp_class, target_dir='test' )
         self.assertTrue( os.path.exists( 'test/vid.csv' ) )
         with open('test/vid.csv','rb') as new_file:
             new_data= new_file.read()
@@ -128,7 +128,7 @@ class Test_Old_VID( Temp_File_Cleanup ):
         os.utime( 'test/vid.csv', (new, new) )
         self.name= None
     def runTest( self ):
-        self.name= caravel.LogCapture.acquire.get_report_files( self.ftp_class, target_dir='test' )
+        self.name= caravel.LogCapture.ftp_acquire.get_report_files( self.ftp_class, target_dir='test' )
         self.assertTrue( os.path.exists( 'test/vid.csv' ) )
         with open('test/vid.csv','rb') as new_file:
             new_data= new_file.read()
@@ -143,7 +143,7 @@ class Test_Reader( unittest.TestCase ):
         self.http_class= MockHTTP
         self.http_class.data= "Several\nLines\nOf\nData\n"
     def runTest( self ):
-        with closing( caravel.LogCapture.acquire.report_reader( self.http_class() ) ) as source:
+        with closing( caravel.LogCapture.ftp_acquire.report_reader( self.http_class() ) ) as source:
             src_iter= iter( source )
             self.assertEqual( "Several", next(src_iter) )
             self.assertEqual( "Lines", next(src_iter) )

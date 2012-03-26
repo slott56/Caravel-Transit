@@ -1,0 +1,303 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.LogCapture.monitor_capture &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.LogCapture.monitor_capture</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel Log Capture via Monitor for Filesystem Changes.</span>
+
+<span class="sd">This does a transform-push of an extract of a log.</span>
+
+<span class="sd">The idea is that some other program has done the tail and copied the</span>
+<span class="sd">file to a monitored directory.  This program is notified of the change</span>
+<span class="sd">and does the transform-push operation.</span>
+
+<span class="sd">See https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</span>
+
+<span class="sd">Synopsis</span>
+<span class="sd">===========</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    python2.7 -m caravel.LogCapture.monitor_capture [--verbose] path/to/directory</span>
+
+<span class="sd">Description</span>
+<span class="sd">===========</span>
+
+<span class="sd">    Monitor the directory for changes.  When changes are detected,</span>
+<span class="sd">    transform the raw log to CSV format to create a feed.</span>
+<span class="sd">    Push the feed file to the HRTransit CouchDB.</span>
+
+<span class="sd">Options</span>
+<span class="sd">===========</span>
+
+<span class="sd">    ..  program:: monitor_capture</span>
+
+<span class="sd">    ..  option:: --vebose, -v</span>
+
+<span class="sd">    The positional argument, :file:`path/to/directory`,</span>
+<span class="sd">    identifies the directory to be watched for changes.</span>
+
+<span class="sd">Configuration File</span>
+<span class="sd">====================</span>
+
+<span class="sd">This will read a configuration file, :file:`hrtail_conf.py`</span>
+
+<span class="sd">This file provides the CouchDB server name as well as temporary</span>
+<span class="sd">file names and other configuration options.</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    #hrtail_conf</span>
+
+<span class="sd">    #Couch Push</span>
+<span class="sd">    #Test Database</span>
+<span class="sd">    couchpush = { &quot;db_url&quot;: &quot;http://localhost:5984/couchdbkit_test&quot; }</span>
+<span class="sd">    #Production Database</span>
+<span class="sd">    #couchpush = { &quot;db_url&quot;: &quot;http://hrt.iriscouch.com:5984/feed&quot; }</span>
+
+<span class="sd">    # Reformat</span>
+
+<span class="sd">    # Capture</span>
+<span class="sd">    capture = { &quot;extract_filename&quot;: &quot;hrtrtf.txt&quot;,</span>
+<span class="sd">        &quot;csv_filename&quot;: &quot;hrtrtf.csv&quot; }</span>
+
+<span class="sd">Module API</span>
+<span class="sd">============</span>
+
+<span class="sd">This module can be invoked from a script as follows:</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    from caravel.LogCapture.monitor_capture import config, monitor</span>
+<span class="sd">    config( db_url=&quot;http://localhost:5984/database/&quot; )</span>
+<span class="sd">    settings = {</span>
+<span class="sd">        &quot;capture&quot; : { &quot;extract_filename&quot;: &quot;hrtrtf.txt&quot;,</span>
+<span class="sd">        &quot;csv_filename&quot;: &quot;hrtrtf.csv&quot; },</span>
+<span class="sd">    }</span>
+<span class="sd">    monitor( &quot;directory&quot;, settings )</span>
+
+<span class="sd">Directory Monitor</span>
+<span class="sd">====================</span>
+
+<span class="sd">The directory monitoring is best accomplished with the following project.</span>
+
+<span class="sd">    https://github.com/shaurz/fsmonitor</span>
+
+<span class="sd">An alternative is watchdog.  It does more and has a more complex installation</span>
+<span class="sd">and dependencies.</span>
+
+<span class="sd">    http://packages.python.org/watchdog/</span>
+
+<span class="sd">See http://blog.philippklaus.de/2011/08/watching-directories-for-changes-using-python_-_an-overview/</span>
+<span class="sd">for background.</span>
+
+<span class="sd">For Win32 **only**, there are some hacks that can be used.</span>
+
+<span class="sd">    http://timgolden.me.uk/python/win32_how_do_i/watch_directory_for_changes.html</span>
+
+<span class="sd">For Linux2 **only**, this can be used.</span>
+
+<span class="sd">    http://pyinotify.sourceforge.net/</span>
+
+<span class="sd">Components</span>
+<span class="sd">=============</span>
+
+<span class="sd">..  autofunction:: config</span>
+<span class="sd">..  autofunction:: monitor</span>
+<span class="sd">..  autofunction:: format_push</span>
+<span class="sd">..  autofunction:: get_args</span>
+<span class="sd">..  autofunction:: get_config</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">from</span> <span class="nn">caravel.LogCapture.log_capture</span> <span class="kn">import</span> <span class="n">reformat</span><span class="p">,</span> <span class="n">upload_feed</span><span class="p">,</span> <span class="n">config</span>
+<span class="kn">from</span> <span class="nn">fsmonitor</span> <span class="kn">import</span> <span class="n">FSMonitor</span>
+
+<span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="s">&quot;monitor_capture&quot;</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="monitor"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.monitor_capture.monitor">[docs]</a><span class="k">def</span> <span class="nf">monitor</span><span class="p">(</span> <span class="n">directory</span><span class="p">,</span> <span class="n">config</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Monitor the given directory for changes.  When a new feed file</span>
+<span class="sd">    arrives, perform the format and push operations.</span>
+
+<span class="sd">    The config identifies specific filenames to be watched in the given</span>
+<span class="sd">    directory.</span>
+
+<span class="sd">    The ``&#39;&quot;capture&quot; : { &quot;extract_filename&quot;: &quot;hrtrtf.txt&quot;, }&#39;`` file</span>
+<span class="sd">    is specifically targeted as the source for a feed.</span>
+
+<span class="sd">    :param source: The file name to monitor for changes.</span>
+<span class="sd">    :param config: A global configuration as read by :func:`get_config`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">FSMonitor</span><span class="p">()</span>
+    <span class="n">watch</span><span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">add_dir_watch</span><span class="p">(</span> <span class="n">directory</span> <span class="p">)</span>
+    <span class="n">filename</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;capture&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="s">&quot;extract_filename&quot;</span><span class="p">,</span> <span class="s">&quot;hrtrtf.txt&quot;</span> <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">evt</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">read_events</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">evt</span><span class="o">.</span><span class="n">action_name</span> <span class="ow">in</span> <span class="p">(</span> <span class="s">&quot;modify&quot;</span><span class="p">,</span> <span class="s">&quot;create&quot;</span><span class="p">,</span> <span class="s">&quot;move to&quot;</span> <span class="p">)</span> <span class="ow">and</span> <span class="n">evt</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">filename</span><span class="p">:</span>
+                    <span class="n">mtime</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getmtime</span><span class="p">(</span><span class="n">source</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">getsize</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
+                    <span class="n">dt</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">fromtimestamp</span><span class="p">(</span><span class="n">mtime</span><span class="p">)</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Event: {0.action_name} {0.name}: {1}, {2}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">evt</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span> <span class="p">)</span>
+                    <span class="n">format_push</span><span class="p">(</span> <span class="n">source</span><span class="p">,</span> <span class="n">config</span> <span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span> <span class="s">&quot;Ignoring&quot;</span><span class="p">,</span> <span class="n">evt</span> <span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">SystemExit</span><span class="p">,</span> <span class="ne">KeyboardInterrupt</span><span class="p">)</span> <span class="k">as</span> <span class="n">ex</span><span class="p">:</span>
+        <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="format_push"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.monitor_capture.format_push">[docs]</a><span class="k">def</span> <span class="nf">format_push</span><span class="p">(</span> <span class="n">source</span><span class="p">,</span> <span class="n">config</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tail the source file to an extract; reformat the extract</span>
+<span class="sd">    to CSV; push the CSV.</span>
+
+<span class="sd">    This relies on :func:`tail`, :func:`reformat` and :func:`upload_feed`.</span>
+
+<span class="sd">    :param source: The log file to tail.</span>
+<span class="sd">    :param config: A global configuration as read by :func:`get_config`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">extract_filename</span><span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;capture&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;extract_filename&#39;</span><span class="p">,</span><span class="s">&#39;hrtrtf.txt&#39;</span><span class="p">)</span>
+    <span class="n">csv_filename</span><span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;capture&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;csv_filename&#39;</span><span class="p">,</span><span class="s">&#39;hrtrtf.csv&#39;</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">extract_filename</span><span class="p">,</span> <span class="s">&quot;r&quot;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">csv_filename</span><span class="p">,</span> <span class="s">&quot;w&quot;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">reformat</span><span class="p">(</span> <span class="n">source</span><span class="p">,</span> <span class="n">target</span> <span class="p">)</span>
+    <span class="n">upload_feed</span><span class="p">(</span> <span class="n">csv_filename</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.monitor_capture.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Parse command-line arguments.</span>
+
+<span class="sd">    :returns: Arguments object.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span><span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;source&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">1</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--verbose&#39;</span><span class="p">,</span> <span class="s">&#39;-v&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span> <span class="p">)</span>
+    <span class="n">args</span><span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">args</span>
+</div>
+<div class="viewcode-block" id="get_config"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.monitor_capture.get_config">[docs]</a><span class="k">def</span> <span class="nf">get_config</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Read the config file, :file:`hrtail_conf.py`</span>
+<span class="sd">    to get the ``couchpush`` value.</span>
+
+<span class="sd">    Usually, the content is this.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        couchpush = { &quot;db_url&quot;: &quot;http://localhost:5984/couchdbkit_test&quot; }</span>
+<span class="sd">        capture = { &quot;extract_filename&quot;: &quot;hrtrtf.txt&quot;,</span>
+<span class="sd">            &quot;csv_filename&quot;: &quot;hrtrtf.csv&quot; }</span>
+
+<span class="sd">    In principle, we should check ./hrtail_conf.py and ~/hrtail_conf.py.</span>
+<span class="sd">    We only check the local directory, however.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">settings</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="nb">execfile</span><span class="p">(</span> <span class="s">&quot;hrtail_conf.py&quot;</span><span class="p">,</span> <span class="n">settings</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">settings</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span> <span class="n">stream</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span> <span class="p">)</span>
+    <span class="n">settings</span><span class="o">=</span> <span class="n">get_config</span><span class="p">()</span>
+    <span class="n">args</span><span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="p">)</span>
+    <span class="n">config</span><span class="p">(</span> <span class="o">**</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;couchpush&#39;</span><span class="p">]</span> <span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">monitor</span><span class="p">(</span> <span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">settings</span> <span class="p">)</span>
+    <span class="k">except</span> <span class="p">(</span><span class="ne">KeyboardInterrupt</span><span class="p">,</span><span class="ne">SystemExit</span><span class="p">)</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Stopped&quot;</span> <span class="p">)</span>
+    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span> <span class="n">e</span> <span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

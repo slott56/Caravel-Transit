@@ -1,0 +1,194 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Configuration &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
+    <link rel="up" title="User’s Guide" href="index.html" />
+    <link rel="next" title="Mappings Upload" href="mappings_upload.html" />
+    <link rel="prev" title="User’s Guide" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mappings_upload.html" title="Mappings Upload"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="User’s Guide"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="configuration">
+<h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+<p>The Python configuration is in a Python-syntax module.</p>
+<p>The default name is <tt class="docutils literal"><span class="pre">settings.py</span></tt>.  The name can be controlled with the
+<span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CARAVEL_SETTINGS</span></tt> environment variable.</p>
+<div class="highlight-python"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre> 1
+ 2
+ 3
+ 4
+ 5
+ 6
+ 7
+ 8
+ 9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23</pre></div></td><td class="code"><div class="highlight"><pre><span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel Couch DB settings.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c">#Couch Push</span>
+<span class="c">#Test Database</span>
+<span class="n">db_url</span><span class="o">=</span> <span class="s">&quot;http://localhost:5984/couchdbkit_test&quot;</span>
+<span class="c">#Production Database</span>
+<span class="c">#db_url= &quot;http://hrt.iriscouch.com:5984/feed&quot;</span>
+
+<span class="c">#Log Tail</span>
+<span class="n">logtail_status_filename</span><span class="o">=</span> <span class="s">&quot;logtail.history&quot;</span>
+<span class="n">logtail_size_limit</span><span class="o">=</span> <span class="mi">1</span><span class="o">*</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span>
+
+<span class="c"># Reformat</span>
+
+<span class="c"># Capture</span>
+<span class="n">capture_extract_filename</span><span class="o">=</span> <span class="s">&quot;hrtrtf.txt&quot;</span>
+<span class="n">capture_csv_filename</span><span class="o">=</span> <span class="s">&quot;hrtrtf.csv&quot;</span>
+
+<span class="c"># Change Notification</span>
+<span class="c"># (Hour, Minute, Second) of the day at which to do daily tasks</span>
+<span class="n">change_notification_daily_task_time</span> <span class="o">=</span> <span class="p">(</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span> <span class="p">)</span>
+</pre></div>
+</td></tr></table></div>
+<p>There an alternate version of Log Capture, written in Java.</p>
+<p>See <a class="reference external" href="https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture">https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</a></p>
+<p>The Java version uses a <tt class="file docutils literal"><span class="pre">hrtail.properties</span></tt>.</p>
+<div class="highlight-python"><pre>#hrtail Properties
+
+#Couch Push
+#Test Database
+couchpush.db_url=http://localhost:5984/couchdbkit_test
+#Production Database
+#couchpush.db_url=http://hrt.iriscouch.com:5984/feed
+
+#Log Tail
+logtail.tail_status_filename=logtail.history
+logtail.file_size_limit=1m
+
+# Reformat
+
+# Capture
+capture.extract_filename=hrtrtf.txt
+capture.csv_filename=hrtrtf.csv</pre>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">User&#8217;s Guide</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mappings_upload.html"
+                        title="next chapter">Mappings Upload</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/operations/configuration.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mappings_upload.html" title="Mappings Upload"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="User’s Guide"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

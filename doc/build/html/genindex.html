@@ -9,7 +9,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>Index &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -17,7 +17,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="index.html" /> 
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -38,7 +38,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li> 
+        <li><a href="caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,6 +57,7 @@
  | <a href="#B"><strong>B</strong></a>
  | <a href="#C"><strong>C</strong></a>
  | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
  | <a href="#F"><strong>F</strong></a>
  | <a href="#G"><strong>G</strong></a>
  | <a href="#H"><strong>H</strong></a>
@@ -80,12 +81,23 @@
   <td style="width: 33%" valign="top"><dl>
       
   <dt>
+    --cycle time, -c time
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="implementation/etl.html#cmdoption-log_capture--cycle">log_capture command line option</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt>
     --debug, -d
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-stop_discovery--debug">stop_discovery command line option</a>
+  <dt><a href="implementation/analysis.html#cmdoption-route_discovery--debug">route_discovery command line option</a>
   </dt>
 
       </dl></dd>
@@ -96,7 +108,7 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-couch_push--effective_date">couch_push command line option</a>
+  <dt><a href="implementation/etl.html#cmdoption-couch_push--effective_date">couch_push command line option</a>
   </dt>
 
       </dl></dd>
@@ -107,11 +119,11 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--format">arrival_at_stop command line option</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--format">arrival_at_stop command line option</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-stop_discovery--format">stop_discovery command line option</a>
+  <dt><a href="implementation/analysis.html#cmdoption-route_discovery--format">route_discovery command line option</a>
   </dt>
 
       </dl></dd>
@@ -122,7 +134,7 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-couch_push--mapping_type">couch_push command line option</a>
+  <dt><a href="implementation/etl.html#cmdoption-couch_push--mapping_type">couch_push command line option</a>
   </dt>
 
       </dl></dd>
@@ -133,7 +145,7 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--new">arrival_at_stop command line option</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--new">arrival_at_stop command line option</a>
   </dt>
 
       </dl></dd>
@@ -146,7 +158,7 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--reject">arrival_at_stop command line option</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--reject">arrival_at_stop command line option</a>
   </dt>
 
       </dl></dd>
@@ -157,7 +169,18 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--stop">arrival_at_stop command line option</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--stop">arrival_at_stop command line option</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt>
+    --task task_name, -t task_name
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="implementation/etl.html#cmdoption-log_capture--task">log_capture command line option</a>
   </dt>
 
       </dl></dd>
@@ -168,7 +191,7 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--transit">arrival_at_stop command line option</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--transit">arrival_at_stop command line option</a>
   </dt>
 
       </dl></dd>
@@ -179,11 +202,15 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-couch_push--vebose">couch_push command line option</a>
+  <dt><a href="implementation/etl.html#cmdoption-couch_push--vebose">couch_push command line option</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-log_capture--vebose">log_capture command line option</a>
+  <dt><a href="implementation/etl.html#cmdoption-log_capture--vebose">log_capture command line option</a>
+  </dt>
+
+        
+  <dt><a href="implementation/etl.html#cmdoption-monitor_capture--vebose">monitor_capture command line option</a>
   </dt>
 
       </dl></dd>
@@ -194,22 +221,22 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.WriteNoStop.__call__">__call__() (caravel.arrival_at_stop.WriteNoStop method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.WriteNoStop.__call__">__call__() (caravel.arrival_at_stop.WriteNoStop method)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.WriteStop.__call__">(caravel.arrival_at_stop.WriteStop method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.WriteStop.__call__">(caravel.arrival_at_stop.WriteStop method)</a>
   </dt>
 
       </dl></dd>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.WriteNoStop.__init__">__init__() (caravel.arrival_at_stop.WriteNoStop method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.WriteNoStop.__init__">__init__() (caravel.arrival_at_stop.WriteNoStop method)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.WriteStop.__init__">(caravel.arrival_at_stop.WriteStop method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.WriteStop.__init__">(caravel.arrival_at_stop.WriteStop method)</a>
   </dt>
 
         
@@ -254,32 +281,32 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--format">--format number</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--format">--format number</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--new">--new</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--new">--new</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--reject">--reject no_stop.csv, -r no_stop.csv</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--reject">--reject no_stop.csv, -r no_stop.csv</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--stop">--stop stop.csv, -s stop.csv</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--stop">--stop stop.csv, -s stop.csv</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-arrival_at_stop--transit">--transit transit_details, -t transit_details</a>
+  <dt><a href="implementation/analysis.html#cmdoption-arrival_at_stop--transit">--transit transit_details, -t transit_details</a>
   </dt>
 
       </dl></dd>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.arrival_at_stop">arrival_at_stop() (in module caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.arrival_at_stop">arrival_at_stop() (in module caravel.arrival_at_stop)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_stats.arrival_stats">arrival_stats() (in module caravel.arrival_stats)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_stats.arrival_stats">arrival_stats() (in module caravel.arrival_stats)</a>
   </dt>
 
       
@@ -294,6 +321,12 @@
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="design/route_details.html#test.spike_discovery.build_route">build_route() (in module test.spike_discovery)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="implementation/etl.html#caravel.StatusBuilder.bulk_transform.build_status">build_status() (in module caravel.StatusBuilder.bulk_transform)</a>
   </dt>
 
   </dl></td>
@@ -315,23 +348,23 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.LogCapture.log_capture.capture">capture() (in module caravel.LogCapture.log_capture)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.log_capture.capture">capture() (in module caravel.LogCapture.log_capture)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.admin">caravel.admin (module)</a>
+  <dt><a href="implementation/etl.html#module-caravel.admin">caravel.admin (module)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.arrival_at_stop">caravel.arrival_at_stop (module)</a>
+  <dt><a href="implementation/analysis.html#module-caravel.arrival_at_stop">caravel.arrival_at_stop (module)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.arrival_stats">caravel.arrival_stats (module)</a>
+  <dt><a href="implementation/analysis.html#module-caravel.arrival_stats">caravel.arrival_stats (module)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.conf">caravel.conf (module)</a>
+  <dt><a href="implementation/etl.html#module-caravel.conf">caravel.conf (module)</a>
   </dt>
 
       
@@ -347,11 +380,15 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.LogCapture.couch_push">caravel.LogCapture.couch_push (module)</a>
+  <dt><a href="implementation/etl.html#module-caravel.LogCapture.couch_push">caravel.LogCapture.couch_push (module)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.LogCapture.log_capture">caravel.LogCapture.log_capture (module)</a>
+  <dt><a href="implementation/etl.html#module-caravel.LogCapture.log_capture">caravel.LogCapture.log_capture (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/etl.html#module-caravel.LogCapture.monitor_capture">caravel.LogCapture.monitor_capture (module)</a>
   </dt>
 
       
@@ -361,7 +398,11 @@
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#module-caravel.statistics">caravel.statistics (module)</a>
+  <dt><a href="implementation/analysis.html#module-caravel.route_discovery">caravel.route_discovery (module)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/analysis.html#module-caravel.statistics">caravel.statistics (module)</a>
   </dt>
 
       
@@ -373,23 +414,27 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.StatusBuilder.bulk_transform">caravel.StatusBuilder.bulk_transform (module)</a>
+  <dt><a href="implementation/etl.html#module-caravel.StatusBuilder.bulk_transform">caravel.StatusBuilder.bulk_transform (module)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.StatusBuilder.change_notification">caravel.StatusBuilder.change_notification (module)</a>
+  <dt><a href="implementation/etl.html#module-caravel.StatusBuilder.change_notification">caravel.StatusBuilder.change_notification (module)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#module-caravel.stop_discovery">caravel.stop_discovery (module)</a>
-  </dt>
-
-      
-  <dt><a href="implementation/domain.html#module-caravel.transit_stats">caravel.transit_stats (module)</a>
+  <dt><a href="implementation/analysis.html#module-caravel.transit_stats">caravel.transit_stats (module)</a>
   </dt>
 
       
   <dt><a href="implementation/domain.html#module-caravel.transit_system">caravel.transit_system (module)</a>
+  </dt>
+
+      
+  <dt><a href="operations/configuration.html#index-0">CARAVEL_SETTINGS</a>, <a href="implementation/etl.html#index-0">[1]</a>
+  </dt>
+
+      
+  <dt><a href="implementation/etl.html#caravel.admin.check_views">check_views() (in module caravel.admin)</a>
   </dt>
 
       
@@ -401,16 +446,6 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.LogCapture.couch_push.config">config() (in module caravel.LogCapture.couch_push)</a>
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="implementation/domain.html#caravel.LogCapture.log_capture.config">(in module caravel.LogCapture.log_capture)</a>
-  </dt>
-
-      </dl></dd>
-      
   <dt><a href="implementation/domain.html#caravel.transit_system.Connection">Connection (class in caravel.transit_system)</a>
   </dt>
 
@@ -421,15 +456,15 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-couch_push--effective_date">--effective_date date, -e date</a>
+  <dt><a href="implementation/etl.html#cmdoption-couch_push--effective_date">--effective_date date, -e date</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-couch_push--mapping_type">--mapping_type name, -m name</a>
+  <dt><a href="implementation/etl.html#cmdoption-couch_push--mapping_type">--mapping_type name, -m name</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-couch_push--vebose">--vebose, -v</a>
+  <dt><a href="implementation/etl.html#cmdoption-couch_push--vebose">--vebose, -v</a>
   </dt>
 
       </dl></dd>
@@ -444,26 +479,30 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="implementation/etl.html#caravel.admin.define_views">define_views() (in module caravel.admin)</a>
+  </dt>
+
+      
   <dt><a href="implementation/domain.html#caravel.transit_system.degrees">degrees() (in module caravel.transit_system)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.stop_discovery.display">display() (in module caravel.stop_discovery)</a>
-  </dt>
-
-      
-  <dt><a href="implementation/domain.html#caravel.transit_system.dist_approx">dist_approx() (in module caravel.transit_system)</a>
+  <dt><a href="implementation/analysis.html#caravel.route_discovery.display">display() (in module caravel.route_discovery)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.distance">distance (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
+  <dt><a href="implementation/domain.html#caravel.transit_system.dist_approx">dist_approx() (in module caravel.transit_system)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.distance">distance (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.distance">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.distance">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
   </dt>
 
       </dl></dd>
@@ -471,6 +510,23 @@
   <dt><a href="implementation/domain.html#caravel.report.Dwell">Dwell (class in caravel.report)</a>
   </dt>
 
+  </dl></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt>
+    environment variable
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="operations/configuration.html#index-0">CARAVEL_SETTINGS</a>, <a href="implementation/etl.html#index-0">[1]</a>
+  </dt>
+
+      </dl></dd>
   </dl></td>
 </tr></table>
 
@@ -500,17 +556,21 @@
 
       </dl></dd>
       
-  <dt><a href="implementation/domain.html#caravel.StatusBuilder.change_notification.feed_notification">feed_notification() (in module caravel.StatusBuilder.change_notification)</a>
+  <dt><a href="implementation/etl.html#caravel.StatusBuilder.change_notification.feed_notification">feed_notification() (in module caravel.StatusBuilder.change_notification)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.fetch_current">fetch_current() (in module caravel.feed.mapping_load)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.feed.mapping_load.fetch_current">fetch_current() (in module caravel.feed.mapping_load)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.monitor_capture.format_push">format_push() (in module caravel.LogCapture.monitor_capture)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.statistics.FQTable">FQTable (class in caravel.statistics)</a>
+  <dt><a href="implementation/analysis.html#caravel.statistics.FQTable">FQTable (class in caravel.statistics)</a>
   </dt>
 
   </dl></td>
@@ -520,20 +580,24 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.get_args">get_args() (in module caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.get_args">get_args() (in module caravel.arrival_at_stop)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.LogCapture.couch_push.get_args">(in module caravel.LogCapture.couch_push)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.couch_push.get_args">(in module caravel.LogCapture.couch_push)</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#caravel.LogCapture.log_capture.get_args">(in module caravel.LogCapture.log_capture)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.log_capture.get_args">(in module caravel.LogCapture.log_capture)</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#caravel.stop_discovery.get_args">(in module caravel.stop_discovery)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.monitor_capture.get_args">(in module caravel.LogCapture.monitor_capture)</a>
+  </dt>
+
+        
+  <dt><a href="implementation/analysis.html#caravel.route_discovery.get_args">(in module caravel.route_discovery)</a>
   </dt>
 
       </dl></dd>
@@ -557,16 +621,6 @@
   <dt><a href="implementation/domain.html#caravel.transit_system.get_closest_times_in_service">get_closest_times_in_service() (in module caravel.transit_system)</a>
   </dt>
 
-      
-  <dt><a href="implementation/domain.html#caravel.LogCapture.couch_push.get_config">get_config() (in module caravel.LogCapture.couch_push)</a>
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="implementation/domain.html#caravel.LogCapture.log_capture.get_config">(in module caravel.LogCapture.log_capture)</a>
-  </dt>
-
-      </dl></dd>
       
   <dt><a href="implementation/domain.html#caravel.transit_system.get_next_stop_time">get_next_stop_time() (in module caravel.transit_system)</a>
   </dt>
@@ -606,7 +660,7 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.stop_discovery.group_by_rte_dir_stop">group_by_rte_dir_stop() (in module caravel.stop_discovery)</a>
+  <dt><a href="implementation/analysis.html#caravel.route_discovery.group_by_rte_dir_stop">group_by_rte_dir_stop() (in module caravel.route_discovery)</a>
   </dt>
 
       <dd><dl>
@@ -622,16 +676,16 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder.heading">heading() (caravel.arrival_at_stop.StopFinder static method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder.heading">heading() (caravel.arrival_at_stop.StopFinder static method)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.heading">(caravel.arrival_at_stop.StopFinder_Next_Stop static method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop.heading">(caravel.arrival_at_stop.StopFinder_Next_Stop static method)</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.heading">(caravel.arrival_at_stop.StopFinder_Route_Trip static method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip.heading">(caravel.arrival_at_stop.StopFinder_Route_Trip static method)</a>
   </dt>
 
       </dl></dd>
@@ -642,13 +696,17 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="implementation/etl.html#caravel.admin.integrity_check">integrity_check() (in module caravel.admin)</a>
+  </dt>
+
+      
   <dt><a href="implementation/domain.html#caravel.feed.mapping_load.Invalid_Mapping">Invalid_Mapping (class in caravel.feed.mapping_load)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.InvalidReport">InvalidReport (class in caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.InvalidReport">InvalidReport (class in caravel.arrival_at_stop)</a>
   </dt>
 
   </dl></td>
@@ -692,6 +750,10 @@
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="implementation/etl.html#caravel.StatusBuilder.change_notification.LimitedFIFO">LimitedFIFO (class in caravel.StatusBuilder.change_notification)</a>
+  </dt>
+
+      
   <dt><a href="implementation/domain.html#caravel.report.Location">Location (class in caravel.report)</a>
   </dt>
 
@@ -702,20 +764,20 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-log_capture--vebose">--vebose, -v</a>
+  <dt><a href="implementation/etl.html#cmdoption-log_capture--cycle">--cycle time, -c time</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#cmdoption-log_capture-to">path/to/some.log</a>
+  <dt><a href="implementation/etl.html#cmdoption-log_capture--task">--task task_name, -t task_name</a>
+  </dt>
+
+        
+  <dt><a href="implementation/etl.html#cmdoption-log_capture--vebose">--vebose, -v</a>
   </dt>
 
       </dl></dd>
       
-  <dt><a href="implementation/domain.html#caravel.StatusBuilder.change_notification.long_poll_callback">long_poll_callback() (in module caravel.StatusBuilder.change_notification)</a>
-  </dt>
-
-      
-  <dt><a href="implementation/domain.html#caravel.StatusBuilder.change_notification.lru_update">lru_update() (in module caravel.StatusBuilder.change_notification)</a>
+  <dt><a href="implementation/etl.html#caravel.StatusBuilder.change_notification.long_poll_callback">long_poll_callback() (in module caravel.StatusBuilder.change_notification)</a>
   </dt>
 
   </dl></td>
@@ -732,16 +794,31 @@
   <dt><a href="implementation/domain.html#caravel.feed.mapping_load.mapping_attachment">mapping_attachment() (in module caravel.feed.mapping_load)</a>
   </dt>
 
+      
+  <dt><a href="implementation/etl.html#caravel.StatusBuilder.change_notification.mapping_notification">mapping_notification() (in module caravel.StatusBuilder.change_notification)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.StatusBuilder.change_notification.mapping_notification">mapping_notification() (in module caravel.StatusBuilder.change_notification)</a>
+  <dt><a href="implementation/analysis.html#caravel.statistics.FQTable.mean">mean() (caravel.statistics.FQTable method)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.statistics.FQTable.mean">mean() (caravel.statistics.FQTable method)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.monitor_capture.monitor">monitor() (in module caravel.LogCapture.monitor_capture)</a>
   </dt>
 
+      
+  <dt>
+    monitor_capture command line option
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="implementation/etl.html#cmdoption-monitor_capture--vebose">--vebose, -v</a>
+  </dt>
+
+      </dl></dd>
   </dl></td>
 </tr></table>
 
@@ -753,17 +830,17 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.next">next (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.next">next (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.no_stop">no_stop() (in module caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.no_stop">no_stop() (in module caravel.arrival_at_stop)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.NoStopFound">NoStopFound (class in caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.NoStopFound">NoStopFound (class in caravel.arrival_at_stop)</a>
   </dt>
 
   </dl></td>
@@ -771,12 +848,6 @@
 
 <h2 id="O">O</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
-  <td style="width: 33%" valign="top"><dl>
-      
-  <dt><a href="implementation/domain.html#caravel.status.status_load.old_status_removal">old_status_removal() (in module caravel.status.status_load)</a>
-  </dt>
-
-  </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="implementation/domain.html#caravel.report.ReportReader.open">open() (caravel.report.ReportReader method)</a>
@@ -815,36 +886,25 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt>
-    path/to/some.log
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="implementation/domain.html#cmdoption-log_capture-to">log_capture command line option</a>
-  </dt>
-
-      </dl></dd>
-      
-  <dt><a href="implementation/domain.html#caravel.StatusBuilder.change_notification.periodic_tasks">periodic_tasks() (in module caravel.StatusBuilder.change_notification)</a>
+  <dt><a href="implementation/etl.html#caravel.StatusBuilder.change_notification.periodic_tasks">periodic_tasks() (in module caravel.StatusBuilder.change_notification)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.prefix_dict">prefix_dict() (in module caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.prefix_dict">prefix_dict() (in module caravel.arrival_at_stop)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.prefix_fields">prefix_fields() (in module caravel.arrival_at_stop)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.prefix_fields">prefix_fields() (in module caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder.process_report">process_report() (caravel.arrival_at_stop.StopFinder method)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder.process_report">process_report() (caravel.arrival_at_stop.StopFinder method)</a>
-  </dt>
-
-      
-  <dt><a href="implementation/domain.html#caravel.LogCapture.couch_push.push">push() (in module caravel.LogCapture.couch_push)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.couch_push.push">push() (in module caravel.LogCapture.couch_push)</a>
   </dt>
 
   </dl></td>
@@ -858,7 +918,7 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.LogCapture.log_capture.reformat">reformat() (in module caravel.LogCapture.log_capture)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.log_capture.reformat">reformat() (in module caravel.LogCapture.log_capture)</a>
   </dt>
 
       
@@ -873,6 +933,12 @@
   <dt><a href="implementation/domain.html#caravel.feed.feed_load.remove_old">remove_old() (in module caravel.feed.feed_load)</a>
   </dt>
 
+      <dd><dl>
+        
+  <dt><a href="implementation/domain.html#caravel.status.status_load.remove_old">(in module caravel.status.status_load)</a>
+  </dt>
+
+      </dl></dd>
       
   <dt><a href="implementation/domain.html#caravel.report.Report">Report (class in caravel.report)</a>
   </dt>
@@ -889,12 +955,12 @@
   <dt><a href="implementation/domain.html#caravel.report.ReportReader_v1">ReportReader_v1 (class in caravel.report)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="implementation/domain.html#caravel.report.ReportReader_v21">ReportReader_v21 (class in caravel.report)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="implementation/domain.html#caravel.report.ReportReader_v22">ReportReader_v22 (class in caravel.report)</a>
   </dt>
@@ -904,16 +970,16 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.statistics.FQTable.reset">reset() (caravel.statistics.FQTable method)</a>
+  <dt><a href="implementation/analysis.html#caravel.statistics.FQTable.reset">reset() (caravel.statistics.FQTable method)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.route">route (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.route">route (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.route">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.route">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
   </dt>
 
       </dl></dd>
@@ -926,11 +992,26 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.transit_stats.route_size">route_size() (in module caravel.transit_stats)</a>
+  <dt>
+    route_discovery command line option
+  </dt>
+
+      <dd><dl>
+        
+  <dt><a href="implementation/analysis.html#cmdoption-route_discovery--debug">--debug, -d</a>
+  </dt>
+
+        
+  <dt><a href="implementation/analysis.html#cmdoption-route_discovery--format">--format number</a>
+  </dt>
+
+      </dl></dd>
+      
+  <dt><a href="implementation/analysis.html#caravel.transit_stats.route_size">route_size() (in module caravel.transit_stats)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.transit_stats.route_stop_stats">route_stop_stats() (in module caravel.transit_stats)</a>
+  <dt><a href="implementation/analysis.html#caravel.transit_stats.route_stop_stats">route_stop_stats() (in module caravel.transit_stats)</a>
   </dt>
 
   </dl></td>
@@ -940,16 +1021,20 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.statistics.FQTable.sd">sd() (caravel.statistics.FQTable method)</a>
+  <dt><a href="implementation/analysis.html#caravel.statistics.FQTable.sd">sd() (caravel.statistics.FQTable method)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop">stop (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
+  <dt><a href="implementation/etl.html#caravel.conf.Settings">Settings (class in caravel.conf)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop">stop (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
   </dt>
 
       </dl></dd>
@@ -958,7 +1043,7 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.stop">stop() (in module caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.stop">stop() (in module caravel.arrival_at_stop)</a>
   </dt>
 
       
@@ -966,27 +1051,12 @@
   </dt>
 
       
-  <dt>
-    stop_discovery command line option
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop_time">stop_time (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#cmdoption-stop_discovery--debug">--debug, -d</a>
-  </dt>
-
-        
-  <dt><a href="implementation/domain.html#cmdoption-stop_discovery--format">--format number</a>
-  </dt>
-
-      </dl></dd>
-      
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop_time">stop_time (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
-  </dt>
-
-      <dd><dl>
-        
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop_time">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop_time">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
   </dt>
 
       </dl></dd>
@@ -997,36 +1067,36 @@
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder">StopFinder (class in caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder">StopFinder (class in caravel.arrival_at_stop)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop">StopFinder_Next_Stop (class in caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop">StopFinder_Next_Stop (class in caravel.arrival_at_stop)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit">StopFinder_Next_Stop.Best_Fit (class in caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit">StopFinder_Next_Stop.Best_Fit (class in caravel.arrival_at_stop)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip">StopFinder_Route_Trip (class in caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip">StopFinder_Route_Trip (class in caravel.arrival_at_stop)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit">StopFinder_Route_Trip.Best_Fit (class in caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit">StopFinder_Route_Trip.Best_Fit (class in caravel.arrival_at_stop)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder.supplement">supplement() (caravel.arrival_at_stop.StopFinder method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder.supplement">supplement() (caravel.arrival_at_stop.StopFinder method)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.supplement">(caravel.arrival_at_stop.StopFinder_Next_Stop method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop.supplement">(caravel.arrival_at_stop.StopFinder_Next_Stop method)</a>
   </dt>
 
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.supplement">(caravel.arrival_at_stop.StopFinder_Route_Trip method)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip.supplement">(caravel.arrival_at_stop.StopFinder_Route_Trip method)</a>
   </dt>
 
       </dl></dd>
@@ -1041,20 +1111,24 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.LogCapture.log_capture.tail">tail() (in module caravel.LogCapture.log_capture)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.log_capture.tail">tail() (in module caravel.LogCapture.log_capture)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.LogCapture.log_capture.tail_format_push">tail_format_push() (in module caravel.LogCapture.log_capture)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.log_capture.tail_format_push">tail_format_push() (in module caravel.LogCapture.log_capture)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.time">time (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.log_capture.tail_only">tail_only() (in module caravel.LogCapture.log_capture)</a>
+  </dt>
+
+      
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.time">time (caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit attribute)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.time">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.time">(caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
   </dt>
 
       </dl></dd>
@@ -1063,7 +1137,7 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.LogCapture.log_capture.Timer">Timer (class in caravel.LogCapture.log_capture)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.log_capture.Timer">Timer (class in caravel.LogCapture.log_capture)</a>
   </dt>
 
   </dl></td>
@@ -1077,11 +1151,15 @@
   </dt>
 
       
+  <dt><a href="implementation/etl.html#caravel.LogCapture.log_capture.transform">transform() (in module caravel.LogCapture.log_capture)</a>
+  </dt>
+
+      
   <dt><a href="implementation/domain.html#caravel.feed.feed_load.transform_new">transform_new() (in module caravel.feed.feed_load)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.trip">trip (caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.trip">trip (caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit attribute)</a>
   </dt>
 
       
@@ -1113,11 +1191,11 @@
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.LogCapture.log_capture.upload_feed">upload_feed() (in module caravel.LogCapture.log_capture)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.log_capture.upload_feed">upload_feed() (in module caravel.LogCapture.log_capture)</a>
   </dt>
 
       
-  <dt><a href="implementation/domain.html#caravel.LogCapture.couch_push.upload_mapping">upload_mapping() (in module caravel.LogCapture.couch_push)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.couch_push.upload_mapping">upload_mapping() (in module caravel.LogCapture.couch_push)</a>
   </dt>
 
   </dl></td>
@@ -1132,7 +1210,7 @@
 
       <dd><dl>
         
-  <dt><a href="implementation/domain.html#caravel.LogCapture.couch_push.validate">(in module caravel.LogCapture.couch_push)</a>
+  <dt><a href="implementation/etl.html#caravel.LogCapture.couch_push.validate">(in module caravel.LogCapture.couch_push)</a>
   </dt>
 
       </dl></dd>
@@ -1157,13 +1235,13 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.WriteNoStop">WriteNoStop (class in caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.WriteNoStop">WriteNoStop (class in caravel.arrival_at_stop)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="implementation/domain.html#caravel.arrival_at_stop.WriteStop">WriteStop (class in caravel.arrival_at_stop)</a>
+  <dt><a href="implementation/analysis.html#caravel.arrival_at_stop.WriteStop">WriteStop (class in caravel.arrival_at_stop)</a>
   </dt>
 
   </dl></td>
@@ -1208,7 +1286,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li> 
+        <li><a href="caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

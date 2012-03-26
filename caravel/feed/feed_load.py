@@ -49,35 +49,39 @@ def remove_damaged( db, feed_iter ):
     Once in a while, something can go horribly wrong and the
     query needs to be changed to "feed/all" to check all feeds
     instead of "feed/new".
+
+    :return: sequence of {id:..., rev:..., ok:true} status responses.
     """
-    counts= defaultdict(int)
+    docs= []
     for row in feed_iter:
         # Is this even a proper Feed?
+        print( row )
         try:
             feed= Feed.wrap( row['value'] )
-            counts['new'] += 1
             continue
         except ValueError as e:
             pass
         except AttributeError as e:
             pass
         print( "Unusable", row, e )
-        db.delete_doc( row['value'] )
-        counts['invalid'] += 1
-    return counts
+        resp= db.delete_doc( row['value'] )
+        docs.append( resp )
+    return docs
 
 def remove_old( db, today=None ):
+    """Remove old feed documents that we've processed.
+
+    :return: sequence of {id:..., rev:..., ok:true} status responses.
+    """
     if today is None:
         today = datetime.datetime.today().date()
-    counts= defaultdict(int)
+    docs= []
     for f in Feed.view('feed/old'):
         if (today-f.timestamp.date()).days >= 1:
             print( "Remove", f )
-            db.delete_doc( f )
-            counts[f.status] += 1
-        else:
-            counts['today'] += 1
-    return counts
+            resp= db.delete_doc( f )
+            docs.append( resp )
+    return docs
 
 feed_headings = [
     "Date", "Time", "Vehicle", "Lat", "Lon", "Location Valid/Invalid",

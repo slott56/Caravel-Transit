@@ -1,0 +1,170 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.admin &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.admin</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel CouchDB Admin Functions.</span>
+
+<span class="sd">Run this as a main program to create the views.</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    python2.7 -m caravel.admin</span>
+
+<span class="sd">This will use the settings to get the database connection and</span>
+<span class="sd">reset the view definitions.</span>
+
+<span class="sd">This will create databases, create applications and check database</span>
+<span class="sd">integrity.</span>
+
+<span class="sd">..  autodunction:: define_views</span>
+<span class="sd">..  autofunction:: check_views</span>
+<span class="sd">..  autofunction:: integrity_check</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">couchdbkit.designer</span> <span class="kn">import</span> <span class="n">push</span>
+<span class="kn">from</span> <span class="nn">caravel.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
+
+<div class="viewcode-block" id="define_views"><a class="viewcode-back" href="../../implementation/etl.html#caravel.admin.define_views">[docs]</a><span class="k">def</span> <span class="nf">define_views</span><span class="p">(</span> <span class="n">db</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Purely administrative.  Done once (or so) to set the views.</span>
+
+<span class="sd">    Similar to the way that couchapp works.</span>
+
+<span class="sd">    https://github.com/couchapp/couchapp/tree/</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">push</span><span class="p">(</span><span class="s">&#39;_design/feed&#39;</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+    <span class="n">push</span><span class="p">(</span><span class="s">&#39;_design/mapping&#39;</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+    <span class="n">push</span><span class="p">(</span><span class="s">&#39;_design/status&#39;</span><span class="p">,</span> <span class="n">db</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="check_views"><a class="viewcode-back" href="../../implementation/etl.html#caravel.admin.check_views">[docs]</a><span class="k">def</span> <span class="nf">check_views</span><span class="p">(</span> <span class="n">db</span> <span class="p">):</span>
+    <span class="n">expected</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;_design/feed&#39;</span><span class="p">,</span> <span class="s">&#39;_design/mapping&#39;</span><span class="p">,</span> <span class="s">&#39;_design/status&#39;</span> <span class="p">]</span>
+    <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">expected</span><span class="p">:</span>
+        <span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span> <span class="n">db</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span> <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">all_docs</span><span class="p">():</span>
+        <span class="nb">id</span><span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_design&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">expected</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Unexpected&quot;</span><span class="p">,</span> <span class="nb">id</span> <span class="p">)</span>
+
+    <span class="k">if</span> <span class="s">&#39;foo&#39;</span> <span class="ow">in</span> <span class="n">db</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span> <span class="n">db</span><span class="p">[</span><span class="s">&#39;foo&#39;</span><span class="p">]</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="integrity_check"><a class="viewcode-back" href="../../implementation/etl.html#caravel.admin.integrity_check">[docs]</a><span class="k">def</span> <span class="nf">integrity_check</span><span class="p">(</span> <span class="n">db</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Looking for objects with missing or unknown doc_type attributes.&quot;&quot;&quot;</span>
+    <span class="n">models</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;Mapping&#39;</span><span class="p">,</span> <span class="s">&#39;Feed&#39;</span><span class="p">,</span> <span class="s">&#39;Route&#39;</span><span class="p">,</span> <span class="s">&#39;RouteStop&#39;</span><span class="p">,</span> <span class="s">&#39;Stop&#39;</span><span class="p">,</span> <span class="s">&#39;Vehicle&#39;</span> <span class="p">]</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">all_docs</span><span class="p">():</span>
+        <span class="nb">id</span><span class="o">=</span> <span class="n">doc</span><span class="p">[</span><span class="s">&#39;id&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">id</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&quot;_&quot;</span><span class="p">):</span> <span class="k">continue</span>
+        <span class="n">counts</span><span class="p">[</span><span class="s">&#39;objects&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="n">obj</span><span class="o">=</span> <span class="n">db</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s">&#39;doc_type&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">obj</span><span class="p">:</span>
+            <span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span> <span class="n">obj</span> <span class="p">)</span>
+            <span class="n">counts</span><span class="p">[</span><span class="s">&#39;bad&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">obj</span><span class="p">[</span><span class="s">&#39;doc_type&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">models</span><span class="p">:</span>
+            <span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span> <span class="n">obj</span> <span class="p">)</span>
+            <span class="n">counts</span><span class="p">[</span><span class="s">&#39;bad&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span> <span class="c"># known model type.</span>
+            <span class="n">counts</span><span class="p">[</span><span class="s">&#39;good&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span> <span class="nb">dict</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="p">)</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">define_views</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="n">check_views</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="n">integrity_check</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">compact</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../caravel.html">
+              <img class="logo" src="../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

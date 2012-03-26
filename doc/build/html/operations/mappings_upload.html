@@ -1,0 +1,182 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Mappings Upload &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
+    <link rel="up" title="User’s Guide" href="index.html" />
+    <link rel="next" title="Real-Time Feed" href="log_capture.html" />
+    <link rel="prev" title="Configuration" href="configuration.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="log_capture.html" title="Real-Time Feed"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="configuration.html" title="Configuration"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="mappings-upload">
+<h1>Mappings Upload<a class="headerlink" href="#mappings-upload" title="Permalink to this headline">¶</a></h1>
+<p>There are three species of mappings:</p>
+<ul class="simple">
+<li>Vehicle</li>
+<li>Route</li>
+<li>Stop</li>
+</ul>
+<p>The mappings are prepared through a multi-step process.</p>
+<ol class="arabic">
+<li><p class="first">Query the data.</p>
+</li>
+<li><p class="first">Create a CSV-format file with the appropriate column titles.</p>
+<p>The file formats have mandatory column names as shown below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head"><p class="first last">Type</p>
+</th>
+<th class="head"><p class="first last">Column Names</p>
+</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td><p class="first last">vehicle</p>
+</td>
+<td><p class="first last">&#8220;vid&#8221;,&#8221;bus&#8221;</p>
+</td>
+</tr>
+<tr class="row-odd"><td><p class="first last">route</p>
+</td>
+<td><p class="first last">&#8220;rid&#8221;,&#8221;Route&#8221;</p>
+</td>
+</tr>
+<tr class="row-even"><td><p class="first last">stop</p>
+</td>
+<td><p class="first last">&#8220;sid&#8221;,&#8221;Stop&#8221;</p>
+</td>
+</tr>
+</tbody>
+</table>
+<p>Yes, the upper-case/lower-case rules are inconsistent.</p>
+</li>
+<li><p class="first">Push the file with an appropriate effective date.</p>
+</li>
+</ol>
+<p>The <a class="reference internal" href="../implementation/etl.html#module-caravel.LogCapture.couch_push" title="caravel.LogCapture.couch_push"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.LogCapture.couch_push</span></tt></a> program is used to push each
+mapping.</p>
+<div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.couch_push --mapping_type type --effective_date date [--verbose] source.csv</pre>
+</div>
+<p>There is a Java version of this, also.</p>
+<div class="highlight-python"><pre>java -cp LogCapture/dist/LogCapture.jar org.hrva.capture.CouchPush -m type -e date source.csv</pre>
+</div>
+<p>Examples</p>
+<div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.couch_push -m route -e 2012-03-12 route.csv
+python2.7 -m caravel.LogCapture.couch_push -m stop -e 2012-03-12 stop.csv
+python2.7 -m caravel.LogCapture.couch_push -m vehicle -e 2012-03-12 vehicle.csv</pre>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="configuration.html"
+                        title="previous chapter">Configuration</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="log_capture.html"
+                        title="next chapter">Real-Time Feed</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/operations/mappings_upload.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="log_capture.html" title="Real-Time Feed"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="configuration.html" title="Configuration"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.arrival_stats &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>caravel.arrival_stats &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -67,7 +67,7 @@
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">pprint</span>
 
-<div class="viewcode-block" id="arrival_stats"><a class="viewcode-back" href="../../implementation/domain.html#caravel.arrival_stats.arrival_stats">[docs]</a><span class="k">def</span> <span class="nf">arrival_stats</span><span class="p">(</span> <span class="n">conn</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="s">&#39;.&#39;</span> <span class="p">):</span>
+<div class="viewcode-block" id="arrival_stats"><a class="viewcode-back" href="../../implementation/analysis.html#caravel.arrival_stats.arrival_stats">[docs]</a><span class="k">def</span> <span class="nf">arrival_stats</span><span class="p">(</span> <span class="n">reader</span><span class="p">,</span> <span class="n">conn</span><span class="p">,</span> <span class="n">base</span><span class="o">=</span><span class="s">&#39;.&#39;</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Use the :meth:`transit_system.connection.get_candidate_stops` to locate</span>
 <span class="sd">    stops.  Compare the shortest distance stop with stops farther away to see</span>
 <span class="sd">    if the time match of a later stop is better than the time match of the</span>
@@ -75,8 +75,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">count</span><span class="o">=</span> <span class="mi">0</span>
     <span class="n">matches</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
-    <span class="n">factory</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportFactory</span><span class="p">()</span>
-    <span class="k">for</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_iter</span><span class="p">(</span> <span class="n">factory</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span><span class="s">&#39;*.rpt&#39;</span><span class="p">)</span> <span class="p">)</span> <span class="p">):</span>
+    <span class="k">for</span> <span class="n">report</span> <span class="ow">in</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_file_iter</span><span class="p">(</span> <span class="n">reader</span><span class="p">,</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">base</span><span class="p">,</span><span class="s">&#39;*.rpt&#39;</span><span class="p">)</span> <span class="p">)</span> <span class="p">):</span>
         <span class="k">if</span> <span class="n">report</span> <span class="ow">and</span> <span class="n">report</span><span class="o">.</span><span class="n">rte</span><span class="p">:</span> <span class="c"># Arrival or Dwell</span>
             <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
             <span class="n">services</span><span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span> <span class="n">transit_system</span><span class="o">.</span><span class="n">get_services_today</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">report</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">date</span><span class="p">()</span> <span class="p">)</span> <span class="p">)</span>
@@ -109,8 +108,11 @@
         <span class="k">print</span><span class="p">()</span>
         <span class="k">print</span><span class="p">(</span> <span class="n">s</span> <span class="p">)</span>
         <span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span> <span class="nb">dict</span><span class="p">(</span><span class="n">fq</span><span class="p">)</span> <span class="p">)</span>
-        <span class="k">print</span><span class="p">(</span> <span class="s">&quot;{0:d}, {1:5.0f}, {2:5.0f}, {3:3d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">s</span><span class="p">,</span> <span class="n">fq</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">fq</span><span class="o">.</span><span class="n">sd</span><span class="p">(),</span> <span class="n">fq</span><span class="o">.</span><span class="n">count</span> <span class="p">)</span> <span class="p">)</span>
-
+        <span class="n">mean</span><span class="p">,</span> <span class="n">std</span> <span class="o">=</span> <span class="n">fq</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">fq</span><span class="o">.</span><span class="n">sd</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">std</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span> <span class="s">&quot;{0:d}, {1:5.0f}, {2:5.0f}, {3:3d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">s</span><span class="p">,</span> <span class="n">fq</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">fq</span><span class="o">.</span><span class="n">sd</span><span class="p">(),</span> <span class="n">fq</span><span class="o">.</span><span class="n">count</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span> <span class="s">&quot;{0:d}, {1:5.0f}, {2:&gt;5s}, {3:3d}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">s</span><span class="p">,</span> <span class="n">fq</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="s">&quot;None&quot;</span><span class="p">,</span> <span class="n">fq</span><span class="o">.</span><span class="n">count</span> <span class="p">)</span> <span class="p">)</span>
 </div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
     <span class="n">data</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s">&#39;hampton-roads-transit-hrt_20120218_0425&#39;</span> <span class="p">)</span>
@@ -122,7 +124,9 @@
     <span class="k">print</span><span class="p">(</span> <span class="s">&#39;stops&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">conn</span><span class="o">.</span><span class="n">stops</span><span class="p">)</span> <span class="p">)</span>
     <span class="k">print</span><span class="p">(</span> <span class="s">&#39;trips&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">conn</span><span class="o">.</span><span class="n">trips</span><span class="p">)</span> <span class="p">)</span>
     <span class="k">print</span><span class="p">(</span> <span class="s">&#39;stop_times&#39;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">conn</span><span class="o">.</span><span class="n">stop_times</span><span class="p">)</span> <span class="p">)</span>
-    <span class="n">arrival_stats</span><span class="p">(</span> <span class="n">conn</span> <span class="p">)</span>
+    <span class="n">reader</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportReader_v2</span><span class="p">()</span>
+
+    <span class="n">arrival_stats</span><span class="p">(</span> <span class="n">reader</span><span class="p">,</span> <span class="n">conn</span> <span class="p">)</span>
 </pre></div>
 
           </div>
@@ -159,7 +163,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.stop_discovery &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>caravel.stop_discovery &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -49,7 +49,7 @@
             
   <h1>Source code for caravel.stop_discovery</h1><div class="highlight"><pre>
 <span class="c">#!/usr/bin/env python2.7</span>
-<span class="sd">&quot;&quot;&quot;Caravel route and stop discovery.</span>
+<span class="sd">&quot;&quot;&quot;Statistical route and stop discovery from location reports.</span>
 
 <span class="sd">Synopsis</span>
 
@@ -59,29 +59,35 @@
 
 <span class="sd">Description</span>
 
-<span class="sd">For each source file, filter the invalid Reports.  Summarize the</span>
-<span class="sd">Arrival and Dwell reports.</span>
+<span class="sd">    For each source file, filter the invalid Reports.  Summarize the</span>
+<span class="sd">    Arrival and Dwell reports.</span>
 
-<span class="sd">..  todo:: Finish route discovery algorithm.</span>
+<span class="sd">    ..  todo:: Finish route discovery algorithm.</span>
 
 
 <span class="sd">Options</span>
 
-<span class="sd">..  program:: stop_discovery</span>
+<span class="sd">    ..  program:: stop_discovery</span>
 
-<span class="sd">.. option:: --debug, -d</span>
+<span class="sd">    .. option:: --debug, -d</span>
 
-<span class="sd">    Set logging level.</span>
+<span class="sd">        Set logging level.</span>
 
-<span class="sd">.. option:: source...</span>
+<span class="sd">    ..  option:: --format number</span>
 
-<span class="sd">    List of source files to process.</span>
+<span class="sd">        Format number.  Generally maps to a subclass of :class:`caravel.report.ReportReader`.</span>
 
-<span class="sd">..  autofunction:: group_by_rte_dir_stop</span>
+<span class="sd">    .. option:: source...</span>
 
-<span class="sd">..  autofunction:: display</span>
+<span class="sd">        List of source files to process.</span>
 
-<span class="sd">..  autofunction:: get_args</span>
+<span class="sd">Components</span>
+
+<span class="sd">    ..  autofunction:: group_by_rte_dir_stop</span>
+
+<span class="sd">    ..  autofunction:: display</span>
+
+<span class="sd">    ..  autofunction:: get_args</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span><span class="p">,</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">OrderedDict</span>
@@ -99,12 +105,12 @@
 <div class="viewcode-block" id="group_by_rte_dir_stop"><a class="viewcode-back" href="../../implementation/domain.html#caravel.stop_discovery.group_by_rte_dir_stop">[docs]</a><span class="k">def</span> <span class="nf">group_by_rte_dir_stop</span><span class="p">(</span> <span class="n">report_iter</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Accumulate stops from a sequence of Arrivals.</span>
 
-<span class="sd">    Generally, the report_iter is an instance of :func:`caravel.report.report_iter`.</span>
+<span class="sd">    Generally, the report_iter is an instance of :func:`caravel.report.report_file_iter`.</span>
 
 <span class="sd">    It&#39;s usually built like this::</span>
 
-<span class="sd">        factory= caravel.report.ReportFactory()</span>
-<span class="sd">        rpt_iter= caravel.report.report_iter( factory, [list,of,files] )</span>
+<span class="sd">        reader= caravel.report.ReportReader_v1()</span>
+<span class="sd">        rpt_iter= caravel.report.report_file_iter( reader, [list,of,files] )</span>
 
 <span class="sd">    This iterator will examine all the files in the list, extracting</span>
 <span class="sd">    all Report objects.</span>
@@ -160,6 +166,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">parser</span><span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span> <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;files&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s">&#39;*&#39;</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--format&#39;</span><span class="p">,</span> <span class="s">&#39;-f&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s">&#39;2&#39;</span> <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--debug&#39;</span><span class="p">,</span> <span class="s">&#39;-d&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span> <span class="p">)</span>
     <span class="n">args</span><span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">args</span>
@@ -169,10 +176,14 @@
     <span class="n">args</span><span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="p">)</span>
+    <span class="n">rdr_class</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;1&#39;</span><span class="p">:</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportReader_v1</span><span class="p">,</span>
+        <span class="s">&#39;2&#39;</span><span class="p">:</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportReader_v2</span><span class="p">,</span>
+        <span class="p">}</span>
+    <span class="n">reader</span><span class="o">=</span> <span class="n">rdr_class</span><span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">format</span><span class="p">]()</span>
     <span class="n">started</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
-    <span class="n">factory</span><span class="o">=</span> <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">ReportFactory</span><span class="p">()</span>
     <span class="n">counts</span><span class="p">,</span> <span class="n">route</span> <span class="o">=</span> <span class="n">group_by_rte_dir_stop</span><span class="p">(</span>
-        <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_iter</span><span class="p">(</span> <span class="n">factory</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="n">caravel</span><span class="o">.</span><span class="n">report</span><span class="o">.</span><span class="n">report_iter</span><span class="p">(</span> <span class="n">reader</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">files</span> <span class="p">)</span> <span class="p">)</span>
     <span class="n">display</span><span class="p">(</span> <span class="n">route</span> <span class="p">)</span>
     <span class="n">finished</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;Time {0}; Counts {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">finished</span><span class="o">-</span><span class="n">started</span><span class="p">,</span> <span class="n">pprint</span><span class="o">.</span><span class="n">pformat</span><span class="p">(</span> <span class="n">counts</span> <span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
@@ -213,7 +224,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

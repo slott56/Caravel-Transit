@@ -96,7 +96,7 @@ import os
 import glob
 import caravel.report
 import caravel.transit_system
-import caravel.LogCapture.acquire
+import caravel.LogCapture.ftp_acquire
 import pprint
 import logging
 import sys
@@ -423,7 +423,7 @@ if __name__ == "__main__":
         logging.getLogger().setLevel( logging.DEBUG )
     if args.acquire:
         caravel.transit_system.get_source_data()
-        latest= caravel.LogCapture.acquire.get_report_files()
+        latest= caravel.LogCapture.ftp_acquire.get_report_files()
         files= [latest] + args.files
     else:
         files= args.files

@@ -1,0 +1,1065 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Extract Transform and Load &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
+    <link rel="up" title="Implementation" href="index.html" />
+    <link rel="next" title="Analysis and Profiling" href="analysis.html" />
+    <link rel="prev" title="Domain Model Implementation" href="domain.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="analysis.html" title="Analysis and Profiling"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="domain.html" title="Domain Model Implementation"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">Implementation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="extract-transform-and-load">
+<h1>Extract Transform and Load<a class="headerlink" href="#extract-transform-and-load" title="Permalink to this headline">¶</a></h1>
+<p>The ETL processing has several components.</p>
+<ul class="simple">
+<li><a class="reference internal" href="#administrative-functions">Administrative Functions</a> configure the Couch database.</li>
+<li><a class="reference internal" href="#configuration-and-settings">Configuration and Settings</a> slightly simplifies the
+various components by providing a consistent set of settings.</li>
+<li><a class="reference internal" href="#mapping-push">Mapping Push</a> is a manual mush of the various mappings
+required to interpret the real-time feed.</li>
+<li><a class="reference internal" href="#log-tailing">Log Tailing</a> contains two implementations of the basic log
+tailing application.<ul>
+<li>Tail_Only does extract and then moves the file to another
+server for the rest of the transform-load process.
+The <a class="reference internal" href="#monitor-capture">Monitor Capture</a> handles this.</li>
+<li>Tail_Format_Push does extract, transform and load.</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#monitor-capture">Monitor Capture</a> is used with &#8220;Tail_Only&#8221; Log tailing.</li>
+</ul>
+<div class="section" id="module-caravel.admin">
+<span id="administrative-functions"></span><h2>Administrative Functions<a class="headerlink" href="#module-caravel.admin" title="Permalink to this headline">¶</a></h2>
+<p>Caravel CouchDB Admin Functions.</p>
+<p>Run this as a main program to create the views.</p>
+<div class="highlight-python"><pre>python2.7 -m caravel.admin</pre>
+</div>
+<p>This will use the settings to get the database connection and
+reset the view definitions.</p>
+<p>This will create databases, create applications and check database
+integrity.</p>
+<dl class="function">
+<dt id="caravel.admin.define_views">
+<tt class="descclassname">caravel.admin.</tt><tt class="descname">define_views</tt><big>(</big><em>db</em><big>)</big><a class="reference internal" href="../_modules/caravel/admin.html#define_views"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.admin.define_views" title="Permalink to this definition">¶</a></dt>
+<dd><p>Purely administrative.  Done once (or so) to set the views.</p>
+<p>Similar to the way that couchapp works.</p>
+<p><a class="reference external" href="https://github.com/couchapp/couchapp/tree/">https://github.com/couchapp/couchapp/tree/</a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.admin.check_views">
+<tt class="descclassname">caravel.admin.</tt><tt class="descname">check_views</tt><big>(</big><em>db</em><big>)</big><a class="reference internal" href="../_modules/caravel/admin.html#check_views"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.admin.check_views" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="caravel.admin.integrity_check">
+<tt class="descclassname">caravel.admin.</tt><tt class="descname">integrity_check</tt><big>(</big><em>db</em><big>)</big><a class="reference internal" href="../_modules/caravel/admin.html#integrity_check"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.admin.integrity_check" title="Permalink to this definition">¶</a></dt>
+<dd><p>Looking for objects with missing or unknown doc_type attributes.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-caravel.conf">
+<span id="configuration-and-settings"></span><h2>Configuration and Settings<a class="headerlink" href="#module-caravel.conf" title="Permalink to this headline">¶</a></h2>
+<p>The Caravel Configuration Package.</p>
+<p>This echoes Django&#8217;s lazy configuration.  It will &#8211; when requested &#8211;
+create the database connection.</p>
+<dl class="class">
+<dt id="caravel.conf.Settings">
+<em class="property">class </em><tt class="descclassname">caravel.conf.</tt><tt class="descname">Settings</tt><big>(</big><em>path='settings.py'</em>, <em>**defaults</em><big>)</big><a class="reference internal" href="../_modules/caravel/conf.html#Settings"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.conf.Settings" title="Permalink to this definition">¶</a></dt>
+<dd><p>A lazy class to establish the database connection as well as other
+settings.</p>
+<p>This class offers two special attributes, <tt class="docutils literal"><span class="pre">db</span></tt> and <tt class="docutils literal"><span class="pre">connection</span></tt>
+which are only created only when specifically requested.</p>
+<p>All other settings are loaded the first time a setting is needed.</p>
+</dd></dl>
+
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">path:</th><td class="field-body">Location of the settings file.   The environment
+variable <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CARAVEL_SETTINGS</span></tt> is used to locate
+the appropriate module.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">settings:</th><td class="field-body">The <a class="reference internal" href="#caravel.conf.Settings" title="caravel.conf.Settings"><tt class="xref py py-class docutils literal"><span class="pre">Settings</span></tt></a> object, ready for use.</td>
+</tr>
+</tbody>
+</table>
+<div class="section" id="defaults">
+<h3>Defaults<a class="headerlink" href="#defaults" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div>db_url= &#8216;<a class="reference external" href="http://localhost:5984/hrtransit/">http://localhost:5984/hrtransit/</a>&#8216;
+capture_extract_filename= &#8216;hrtrtf.txt&#8217;
+capture_csv_filename= &#8216;hrtrtf.csv&#8217;
+logtail_status_filename= &#8216;logtail.history&#8217;
+logtail_size_limit= 1*1000*1000
+change_notification_daily_task_time = ( 3, 0, 0 ) # 3:00 AM</div></blockquote>
+</div>
+</div>
+<div class="section" id="module-caravel.LogCapture.couch_push">
+<span id="mapping-push"></span><h2>Mapping Push<a class="headerlink" href="#module-caravel.LogCapture.couch_push" title="Permalink to this headline">¶</a></h2>
+<p>Caravel Push a Mapping.</p>
+<p>Push Mapping data to HRT CouchDB.</p>
+<div class="section" id="synopsis">
+<h3>Synopsis<a class="headerlink" href="#synopsis" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.couch_push --mapping_type type --effective_date date [--verbose] source.csv</pre>
+</div>
+</div>
+<div class="section" id="description">
+<h3>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div>Push the given mapping file to the HRTransit CouchDB.</div></blockquote>
+</div>
+<div class="section" id="options">
+<h3>Options<a class="headerlink" href="#options" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><dl class="option">
+<dt id="cmdoption-couch_push--mapping_type">
+<tt class="descname">--mapping_type</tt><tt class="descclassname"> name</tt><tt class="descclassname">, </tt><tt class="descname">-m</tt><tt class="descclassname"> name</tt><a class="headerlink" href="#cmdoption-couch_push--mapping_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mapping type.  Must be one of &#8220;vehicle&#8221;, &#8220;route&#8221; or &#8220;stop&#8221;.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-couch_push--effective_date">
+<tt class="descname">--effective_date</tt><tt class="descclassname"> date</tt><tt class="descclassname">, </tt><tt class="descname">-e</tt><tt class="descclassname"> date</tt><a class="headerlink" href="#cmdoption-couch_push--effective_date" title="Permalink to this definition">¶</a></dt>
+<dd><p>Effective date for this mapping.  Must be in the form &#8220;YYYY-MM-DD&#8221;.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-couch_push--vebose">
+<tt class="descname">--vebose</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">-v</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-couch_push--vebose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="option">
+<dt>
+<tt class="descname">source.csv</tt></dt>
+<dd><p>The CSV file with the mapping.  The CSV file must have
+column names and the column names must match the mapping type.</p>
+</dd></dl>
+
+<p>The file formats have mandatory column names as shown below.</p>
+<table border="1" class="docutils">
+<colgroup>
+<col width="19%" />
+<col width="81%" />
+</colgroup>
+<thead valign="bottom">
+<tr class="row-odd"><th class="head">Type</th>
+<th class="head">Column Names</th>
+</tr>
+</thead>
+<tbody valign="top">
+<tr class="row-even"><td>vehicle</td>
+<td>&#8220;vid&#8221;,&#8221;bus&#8221;</td>
+</tr>
+<tr class="row-odd"><td>route</td>
+<td>&#8220;rid&#8221;,&#8221;Route&#8221;</td>
+</tr>
+<tr class="row-even"><td>stop</td>
+<td>&#8220;sid&#8221;,&#8221;Stop&#8221;</td>
+</tr>
+</tbody>
+</table>
+<p>Yes, the upper-case/lower-case rules are inconsistent.</p>
+</div></blockquote>
+</div>
+<div class="section" id="configuration-file">
+<h3>Configuration File<a class="headerlink" href="#configuration-file" title="Permalink to this headline">¶</a></h3>
+<p>This will read a configuration file, <tt class="file docutils literal"><span class="pre">settings.py</span></tt></p>
+<p>This file provides the CouchDB server name.</p>
+</div>
+<div class="section" id="module-api">
+<h3>Module API<a class="headerlink" href="#module-api" title="Permalink to this headline">¶</a></h3>
+<p>This module can be invoked from a script as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">caravel.LogCapture.couch_push</span> <span class="kn">import</span> <span class="n">push</span><span class="p">,</span> <span class="n">config</span>
+<span class="n">config</span><span class="p">(</span> <span class="n">db_url</span><span class="o">=</span><span class="s">&quot;http://localhost:5984/database&quot;</span> <span class="p">)</span>
+<span class="n">push</span><span class="p">(</span> <span class="s">&quot;vehicle&quot;</span><span class="p">,</span> <span class="s">&quot;2012-03-01&quot;</span><span class="p">,</span> <span class="s">&quot;vehicle.csv&quot;</span> <span class="p">)</span>
+<span class="n">push</span><span class="p">(</span> <span class="s">&quot;route&quot;</span><span class="p">,</span> <span class="s">&quot;2012-03-01&quot;</span><span class="p">,</span> <span class="s">&quot;route.csv&quot;</span> <span class="p">)</span>
+<span class="n">push</span><span class="p">(</span> <span class="s">&quot;stop&quot;</span><span class="p">,</span> <span class="s">&quot;2012-03-01&quot;</span><span class="p">,</span> <span class="s">&quot;stop.csv&quot;</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="database-schema">
+<h3>Database Schema<a class="headerlink" href="#database-schema" title="Permalink to this headline">¶</a></h3>
+<p>A mapping file must be CSV format (with well-defined headings.
+They are attached to a document with the following
+attributes</p>
+<div class="highlight-python"><pre>timestamp      : year-mm-ddThh:mm:ssZ
+effective_date : year-mm-dd
+mapping_type   : "vehicle", "route" or "stop"
+doc_type       : "Mapping" -- used by couchdbkit.
+content        : the file</pre>
+</div>
+<p>Example JSON document</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
+   <span class="s">&quot;doc_type&quot;</span> <span class="p">:</span> <span class="s">&quot;Mapping&quot;</span><span class="p">,</span>
+   <span class="s">&quot;timestamp&quot;</span> <span class="p">:</span> <span class="s">&quot;yyyy-mm-ddThh:mm:ssZ&quot;</span><span class="p">,</span>
+   <span class="s">&quot;effective_date&quot;</span> <span class="p">:</span> <span class="s">&quot;yyyy-mm-dd&quot;</span><span class="p">,</span>
+   <span class="s">&quot;mapping_type&quot;</span> <span class="p">:</span> <span class="s">&quot;vehicle&quot;</span><span class="p">,</span>
+   <span class="s">&quot;status&quot;</span> <span class="p">:</span> <span class="s">&quot;new&quot;</span><span class="p">,</span>
+   <span class="s">&quot;_attachments&quot;</span> <span class="p">:</span> <span class="p">{</span>
+      <span class="s">&quot;content&quot;</span> <span class="p">:</span> <span class="p">{</span>
+         <span class="s">&quot;content-type&quot;</span> <span class="p">:</span> <span class="s">&quot;text/csv&quot;</span><span class="p">,</span>
+         <span class="s">&quot;data&quot;</span> <span class="p">:</span> <span class="s">&quot;the,csv,data</span><span class="se">\n</span><span class="s">...&quot;</span><span class="p">,</span>
+         <span class="p">},</span>
+   <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>With curl, it&#8217;s a sequence like the following</p>
+<div class="highlight-python"><pre>curl -X POST http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/
+--user &lt;user:password&gt;
+-H "Content-Type: application/json"
+-d '{"timestamp":"2012-03-02T16:16:00Z", "mapping_type":"vehicle", "effective_date": "2012-03-03", "doc_type":"Mapping"}'</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;1-7750ef2dbce77303f957de17c754852a&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>curl -X PUT http://hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/content/?rev=1-7750ef2dbce77303f957de17c754852a
+--user &lt;user:password&gt;
+-H "Content-Type: text/csv" @new_vehicle_mapping.csv</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;2-748151ff136b0001671fb0fa14eb886d&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Checking for new feeds is this</p>
+<div class="highlight-python"><pre>curl http://hrt.iriscouch.com:5984/couchdbkit_test/_design/mapping/_view/new</pre>
+</div>
+<p>Response is a JSON document like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;total_rows&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s">&quot;offset&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&quot;rows&quot;</span><span class="p">:[</span>
+<span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;key&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;value&quot;</span><span class="p">:</span><span class="n">null</span><span class="p">},</span>
+<span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1d98&quot;</span><span class="p">,</span><span class="s">&quot;key&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1d98&quot;</span><span class="p">,</span><span class="s">&quot;value&quot;</span><span class="p">:</span><span class="n">null</span><span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Individual documents are available:</p>
+<div class="highlight-python"><pre>curl http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/content/</pre>
+</div>
+</div>
+<div class="section" id="components">
+<h3>Components<a class="headerlink" href="#components" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="caravel.LogCapture.couch_push.upload_mapping">
+<tt class="descclassname">caravel.LogCapture.couch_push.</tt><tt class="descname">upload_mapping</tt><big>(</big><em>mapping_type</em>, <em>effective_date</em>, <em>filename</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/couch_push.html#upload_mapping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.couch_push.upload_mapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload a specific mapping file with a given effective date.</p>
+<p>The effective date must be a datetime.date object.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>mapping_type</strong> &#8211; &#8220;vehicle&#8221;, &#8220;route&#8221; or &#8220;stop&#8221; mapping type</li>
+<li><strong>effective_date</strong> &#8211; datetime.date at which this mapping becomes effective.
+Mappings remain effective until a mapping with a later effective date
+is pushed and validated.</li>
+<li><strong>filename</strong> &#8211; a file to read and push.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.couch_push.validate">
+<tt class="descclassname">caravel.LogCapture.couch_push.</tt><tt class="descname">validate</tt><big>(</big><em>mapping_type</em>, <em>effective_date</em>, <em>filename</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/couch_push.html#validate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.couch_push.validate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Validate the arguments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>mapping_type</strong> &#8211; &#8220;vehicle&#8221;, &#8220;route&#8221; or &#8220;stop&#8221; mapping type</li>
+<li><strong>effective_date</strong> &#8211; datetime.date at which this mapping becomes effective.
+Mappings remain effective until a mapping with a later effective date
+is pushed and validated.</li>
+<li><strong>filename</strong> &#8211; a file to read and push.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a dict with cleansed argument values.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.couch_push.push">
+<tt class="descclassname">caravel.LogCapture.couch_push.</tt><tt class="descname">push</tt><big>(</big><em>mapping_type</em>, <em>date_str</em>, <em>filename</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/couch_push.html#push"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.couch_push.push" title="Permalink to this definition">¶</a></dt>
+<dd><p>Module API.   Validates the argument values and pushes the file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>mapping_type</strong> &#8211; &#8220;vehicle&#8221;, &#8220;route&#8221; or &#8220;stop&#8221; mapping type</li>
+<li><strong>effective_date</strong> &#8211; datetime.date at which this mapping becomes effective.
+Mappings remain effective until a mapping with a later effective date
+is pushed and validated.</li>
+<li><strong>filename</strong> &#8211; a file to read and push.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.couch_push.get_args">
+<tt class="descclassname">caravel.LogCapture.couch_push.</tt><tt class="descname">get_args</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/couch_push.html#get_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.couch_push.get_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse command-line arguments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Arguments object.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="log-tailing">
+<h2>Log Tailing<a class="headerlink" href="#log-tailing" title="Permalink to this headline">¶</a></h2>
+<p>There are several solutions to the feed capture problem.</p>
+<p>The HRT-Log-Capture
+project is another implementation of the log capture and couchDB push.</p>
+<blockquote>
+<div><a class="reference external" href="https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture">https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</a>.</div></blockquote>
+<p>This application has two operating modes.</p>
+<ul class="simple">
+<li>&#8220;Tail_Format_Push&#8221; capture handles everything.</li>
+<li>&#8220;Tail_Only&#8221; merely captures the file and does nothing more.
+This requires</li>
+</ul>
+<span class="target" id="module-caravel.LogCapture.log_capture"></span><p>Caravel Log Capture via Tail.</p>
+<p>This does a tail-transform-push of an active log.</p>
+<p>See <a class="reference external" href="https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture">https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</a></p>
+<div class="section" id="id1">
+<h3>Synopsis<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.log_capture [--verbose] [-t task] [-c 60] path/to/some.log</pre>
+</div>
+</div>
+<div class="section" id="id2">
+<h3>Description<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div>Tail the log file.  Transform the raw log to CSV format to create a feed.
+Push the feed file to the HRTransit CouchDB.</div></blockquote>
+</div>
+<div class="section" id="id3">
+<h3>Options<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><dl class="option">
+<dt id="cmdoption-log_capture--vebose">
+<tt class="descname">--vebose</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">-v</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-log_capture--vebose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-log_capture--task">
+<tt class="descname">--task</tt><tt class="descclassname"> task_name</tt><tt class="descclassname">, </tt><tt class="descname">-t</tt><tt class="descclassname"> task_name</tt><a class="headerlink" href="#cmdoption-log_capture--task" title="Permalink to this definition">¶</a></dt>
+<dd><p>The task is either <tt class="docutils literal"><span class="pre">Tail_Only</span></tt> or <tt class="docutils literal"><span class="pre">Tail_Format_Push</span></tt>.</p>
+</dd></dl>
+
+<dl class="option">
+<dt id="cmdoption-log_capture--cycle">
+<tt class="descname">--cycle</tt><tt class="descclassname"> time</tt><tt class="descclassname">, </tt><tt class="descname">-c</tt><tt class="descclassname"> time</tt><a class="headerlink" href="#cmdoption-log_capture--cycle" title="Permalink to this definition">¶</a></dt>
+<dd><p>The cycle interval.  Default is 60 seconds.</p>
+</dd></dl>
+
+<p>The positional argument, <tt class="file docutils literal"><span class="pre">path/to/some.log</span></tt>,
+identifies The log file to be tailed.</p>
+</div></blockquote>
+</div>
+<div class="section" id="id4">
+<h3>Configuration File<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>This will read a configuration file, <tt class="file docutils literal"><span class="pre">settings.py</span></tt></p>
+<p>This file provides the CouchDB server name as well as temporary
+file names and other configuration options.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#hrtail_conf</span>
+
+<span class="c">#Couch Push</span>
+<span class="c">#Test Database</span>
+<span class="n">db_url</span><span class="o">=</span> <span class="s">&quot;http://localhost:5984/couchdbkit_test&quot;</span>
+<span class="c">#Production Database</span>
+<span class="c">#db_url= &quot;http://hrt.iriscouch.com:5984/feed&quot;</span>
+
+<span class="c">#Log Tail</span>
+<span class="n">logtail_status_filename</span><span class="o">=</span> <span class="s">&quot;logtail.history&quot;</span>
+<span class="n">logtail_size_limit</span><span class="o">=</span> <span class="mi">1</span><span class="o">*</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span>
+
+<span class="c"># Reformat</span>
+
+<span class="c"># Capture</span>
+<span class="n">capture_extract_filename</span><span class="o">=</span> <span class="s">&quot;hrtrtf.txt&quot;</span>
+<span class="n">capture_csv_filename</span><span class="o">=</span> <span class="s">&quot;hrtrtf.csv&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id5">
+<h3>Module API<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h3>
+<p>This module can be invoked from a script as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">caravel.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">caravel.LogCapture.log_capture</span> <span class="kn">import</span> <span class="n">capture</span>
+<span class="n">capture</span><span class="p">(</span> <span class="s">&quot;Tail_Format_Push&quot;</span><span class="p">,</span> <span class="mf">60.0</span><span class="p">,</span> <span class="s">&quot;some.log&quot;</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id6">
+<h3>Database Schema<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h3>
+<p>A feed file must be CSV format (with well-defined headings.
+They are attached to a document with the following
+attributes</p>
+<div class="highlight-python"><pre>timestamp      : year-mm-ddThh:mm:ssZ
+status         : "new"
+feed           : the file</pre>
+</div>
+<p>Example JSON document</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span>
+   <span class="s">&quot;doc_type&quot;</span> <span class="p">:</span> <span class="s">&quot;Feed&quot;</span><span class="p">,</span>
+   <span class="s">&quot;timestamp&quot;</span> <span class="p">:</span> <span class="s">&quot;yyyy-mm-ddThh:mm:ssZ&quot;</span><span class="p">,</span>
+   <span class="s">&quot;status&quot;</span> <span class="p">:</span> <span class="s">&quot;new&quot;</span><span class="p">,</span>
+   <span class="s">&quot;_attachments&quot;</span> <span class="p">:</span> <span class="p">{</span>
+      <span class="s">&quot;feed&quot;</span> <span class="p">:</span> <span class="p">{</span>
+         <span class="s">&quot;content-type&quot;</span> <span class="p">:</span> <span class="s">&quot;text/csv&quot;</span><span class="p">,</span>
+         <span class="s">&quot;data&quot;</span> <span class="p">:</span> <span class="s">&quot;the,csv,data</span><span class="se">\n</span><span class="s">...&quot;</span><span class="p">,</span>
+         <span class="p">},</span>
+   <span class="p">},</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>With curl, it&#8217;s a sequence like the following</p>
+<div class="highlight-python"><pre>curl -X POST http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/
+--user &lt;user:password&gt;
+-H "Content-Type: application/json"
+-d '{"timestamp":"2012-03-02T16:16:00Z", "doc_type":"Feed", "status":"new"}'</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;1-7750ef2dbce77303f957de17c754852a&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-python"><pre>curl -X PUT http://hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/feed/?rev=1-7750ef2dbce77303f957de17c754852a
+--user &lt;user:password&gt;
+-H "Content-Type: text/csv" @hrtrtf.csv</pre>
+</div>
+<p>The response is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;ok&quot;</span><span class="p">:</span><span class="n">true</span><span class="p">,</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;rev&quot;</span><span class="p">:</span><span class="s">&quot;2-748151ff136b0001671fb0fa14eb886d&quot;</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>Checking for new feeds is this</p>
+<div class="highlight-python"><pre>curl http://hrt.iriscouch.com:5984/couchdbkit_test/_design/feed/_view/new</pre>
+</div>
+<p>Response is a JSON document like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">{</span><span class="s">&quot;total_rows&quot;</span><span class="p">:</span><span class="mi">2</span><span class="p">,</span><span class="s">&quot;offset&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span><span class="s">&quot;rows&quot;</span><span class="p">:[</span>
+<span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;key&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1af3&quot;</span><span class="p">,</span><span class="s">&quot;value&quot;</span><span class="p">:</span><span class="n">null</span><span class="p">},</span>
+<span class="p">{</span><span class="s">&quot;id&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1d98&quot;</span><span class="p">,</span><span class="s">&quot;key&quot;</span><span class="p">:</span><span class="s">&quot;09833a88a1cbb06f64c555d0245f1d98&quot;</span><span class="p">,</span><span class="s">&quot;value&quot;</span><span class="p">:</span><span class="n">null</span><span class="p">}</span>
+<span class="p">]}</span>
+</pre></div>
+</div>
+<p>Individual documents are available:</p>
+<div class="highlight-python"><pre>curl http://username:password@hrt.iriscouch.com:5984/couchdbkit_test/09833a88a1cbb06f64c555d0245f1af3/feed/</pre>
+</div>
+</div>
+<div class="section" id="id7">
+<h3>Components<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="caravel.LogCapture.log_capture.Timer">
+<em class="property">class </em><tt class="descclassname">caravel.LogCapture.log_capture.</tt><tt class="descname">Timer</tt><a class="reference internal" href="../_modules/caravel/LogCapture/log_capture.html#Timer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.log_capture.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>A cycling version of <tt class="xref py py-mod docutils literal"><span class="pre">sched</span></tt>.</p>
+<p>Once created, this will invoke a specific function on a given cycling
+interval.  It tries to be very accurate in doing the scheduling.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.log_capture.capture">
+<tt class="descclassname">caravel.LogCapture.log_capture.</tt><tt class="descname">capture</tt><big>(</big><em>task_name</em>, <em>seconds</em>, <em>source</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/log_capture.html#capture"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.log_capture.capture" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use <a class="reference internal" href="#caravel.LogCapture.log_capture.Timer" title="caravel.LogCapture.log_capture.Timer"><tt class="xref py py-class docutils literal"><span class="pre">Timer</span></tt></a> class to schedule a recurring tail-format-push worker.
+This uses <a class="reference internal" href="#caravel.LogCapture.log_capture.tail_format_push" title="caravel.LogCapture.log_capture.tail_format_push"><tt class="xref py py-func docutils literal"><span class="pre">tail_format_push()</span></tt></a> or <a class="reference internal" href="#caravel.LogCapture.log_capture.tail_only" title="caravel.LogCapture.log_capture.tail_only"><tt class="xref py py-func docutils literal"><span class="pre">tail_only()</span></tt></a> to do the real work.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>task_name</strong> &#8211; Name of the task to perform.</li>
+<li><strong>seconds</strong> &#8211; The cycling interval.  60 seconds makes a lot of sense.</li>
+<li><strong>source</strong> &#8211; The log file to tail.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.log_capture.tail_only">
+<tt class="descclassname">caravel.LogCapture.log_capture.</tt><tt class="descname">tail_only</tt><big>(</big><em>source</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/log_capture.html#tail_only"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.log_capture.tail_only" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tail the source file to an extract.</p>
+<p>This relies on <a class="reference internal" href="#caravel.LogCapture.log_capture.tail" title="caravel.LogCapture.log_capture.tail"><tt class="xref py py-func docutils literal"><span class="pre">tail()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>source</strong> &#8211; The log file to tail.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.log_capture.tail_format_push">
+<tt class="descclassname">caravel.LogCapture.log_capture.</tt><tt class="descname">tail_format_push</tt><big>(</big><em>source</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/log_capture.html#tail_format_push"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.log_capture.tail_format_push" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tail the source file to an extract; reformat the extract
+to CSV; push the CSV.</p>
+<p>This relies on <a class="reference internal" href="#caravel.LogCapture.log_capture.tail" title="caravel.LogCapture.log_capture.tail"><tt class="xref py py-func docutils literal"><span class="pre">tail()</span></tt></a>, <a class="reference internal" href="#caravel.LogCapture.log_capture.reformat" title="caravel.LogCapture.log_capture.reformat"><tt class="xref py py-func docutils literal"><span class="pre">reformat()</span></tt></a> and <a class="reference internal" href="#caravel.LogCapture.log_capture.upload_feed" title="caravel.LogCapture.log_capture.upload_feed"><tt class="xref py py-func docutils literal"><span class="pre">upload_feed()</span></tt></a>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>source</strong> &#8211; The log file to tail.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.log_capture.tail">
+<tt class="descclassname">caravel.LogCapture.log_capture.</tt><tt class="descname">tail</tt><big>(</big><em>source_filename</em>, <em>extract_filename</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/log_capture.html#tail"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.log_capture.tail" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tail a log, writing an extract file, and maintaining state
+in a history file.  This allows tailing via a seek to the end of the file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>source_filename</strong> &#8211; The log to tail.</li>
+<li><strong>extract_filename</strong> &#8211; A temporary file to be written with the tailings.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.log_capture.transform">
+<tt class="descclassname">caravel.LogCapture.log_capture.</tt><tt class="descname">transform</tt><big>(</big><em>report</em><big>)</big><a class="headerlink" href="#caravel.LogCapture.log_capture.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform a <tt class="xref py py-class docutils literal"><span class="pre">Report</span></tt> instance into a dictionary
+with column names that match HRT-Log-Capture.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.log_capture.reformat">
+<tt class="descclassname">caravel.LogCapture.log_capture.</tt><tt class="descname">reformat</tt><big>(</big><em>extract_file</em>, <em>target_file</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/log_capture.html#reformat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.log_capture.reformat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reformat an extract from a log file.</p>
+<p>The output file has headings defined by the report module.
+These are also used by the status package.</p>
+<p>These must be compatible with the HRT-Log-Capture headings.
+The <a class="reference internal" href="#caravel.LogCapture.log_capture.transform" title="caravel.LogCapture.log_capture.transform"><tt class="xref py py-func docutils literal"><span class="pre">transform()</span></tt></a> function reformats the source data
+into the result strcuture.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>extract_file</strong> &#8211; A file-like object suitable for reading.</li>
+<li><strong>target_file</strong> &#8211; A file-like object which can be used by <tt class="xref py py-mod docutils literal"><span class="pre">csv</span></tt>
+to create a CSV file.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.log_capture.upload_feed">
+<tt class="descclassname">caravel.LogCapture.log_capture.</tt><tt class="descname">upload_feed</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/log_capture.html#upload_feed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.log_capture.upload_feed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Upload a specific feed file.</p>
+<p>This depends on a previous invocation of <tt class="xref py py-func docutils literal"><span class="pre">config()</span></tt> to set
+the global database variable, <tt class="xref py py-data docutils literal"><span class="pre">settings.db</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>filename</strong> &#8211; a file to read and push.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.log_capture.get_args">
+<tt class="descclassname">caravel.LogCapture.log_capture.</tt><tt class="descname">get_args</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/log_capture.html#get_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.log_capture.get_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse command-line arguments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Arguments object.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="monitor-capture">
+<h2>Monitor Capture<a class="headerlink" href="#monitor-capture" title="Permalink to this headline">¶</a></h2>
+<p>When the all-in-one &#8220;Tail_Format_Push&#8221; capture mode (see <a class="reference internal" href="#log-tailing">Log Tailing</a>) can&#8217;t
+be used, then a multi-step alternative must be used.</p>
+<ul class="simple">
+<li>A Tail-Only log capture.  This simply &#8220;moves&#8221; the extract file to a
+drop-box directory on a separate server.</li>
+<li>An application which monitors the  drop-box directory and does
+the reformat-push.</li>
+</ul>
+<span class="target" id="module-caravel.LogCapture.monitor_capture"></span><p>Caravel Log Capture via Monitor for Filesystem Changes.</p>
+<p>This does a transform-push of an extract of a log.</p>
+<p>The idea is that some other program has done the tail and copied the
+file to a monitored directory.  This program is notified of the change
+and does the transform-push operation.</p>
+<p>See <a class="reference external" href="https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture">https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</a></p>
+<div class="section" id="id8">
+<h3>Synopsis<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.monitor_capture [--verbose] path/to/directory</pre>
+</div>
+</div>
+<div class="section" id="id9">
+<h3>Description<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div>Monitor the directory for changes.  When changes are detected,
+transform the raw log to CSV format to create a feed.
+Push the feed file to the HRTransit CouchDB.</div></blockquote>
+</div>
+<div class="section" id="id10">
+<h3>Options<a class="headerlink" href="#id10" title="Permalink to this headline">¶</a></h3>
+<blockquote>
+<div><dl class="option">
+<dt id="cmdoption-monitor_capture--vebose">
+<tt class="descname">--vebose</tt><tt class="descclassname"></tt><tt class="descclassname">, </tt><tt class="descname">-v</tt><tt class="descclassname"></tt><a class="headerlink" href="#cmdoption-monitor_capture--vebose" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<p>The positional argument, <tt class="file docutils literal"><span class="pre">path/to/directory</span></tt>,
+identifies the directory to be watched for changes.</p>
+</div></blockquote>
+</div>
+<div class="section" id="id11">
+<h3>Configuration File<a class="headerlink" href="#id11" title="Permalink to this headline">¶</a></h3>
+<p>This will read a configuration file, <tt class="file docutils literal"><span class="pre">settings.py</span></tt></p>
+<p>This file provides the CouchDB server name as well as temporary
+file names and other configuration options.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c">#hrtail_conf</span>
+
+<span class="c">#Couch Push</span>
+<span class="c">#Test Database</span>
+<span class="n">db_url</span><span class="o">=</span> <span class="s">&quot;http://localhost:5984/couchdbkit_test&quot;</span>
+<span class="c">#Production Database</span>
+<span class="c">#db_url= &quot;http://hrt.iriscouch.com:5984/feed&quot;</span>
+
+<span class="c">#Log Tail</span>
+<span class="n">logtail_status_filename</span><span class="o">=</span> <span class="s">&quot;logtail.history&quot;</span>
+<span class="n">logtail_size_limit</span><span class="o">=</span> <span class="mi">1</span><span class="o">*</span><span class="mi">1000</span><span class="o">*</span><span class="mi">1000</span>
+
+<span class="c"># Reformat</span>
+
+<span class="c"># Capture</span>
+<span class="n">capture_extract_filename</span><span class="o">=</span> <span class="s">&quot;hrtrtf.txt&quot;</span>
+<span class="n">capture_csv_filename</span><span class="o">=</span> <span class="s">&quot;hrtrtf.csv&quot;</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="id12">
+<h3>Module API<a class="headerlink" href="#id12" title="Permalink to this headline">¶</a></h3>
+<p>This module can be invoked from a script as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">caravel.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">caravel.LogCapture.monitor_capture</span> <span class="kn">import</span> <span class="n">monitor</span>
+<span class="n">monitor</span><span class="p">(</span> <span class="s">&quot;directory&quot;</span> <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="directory-monitor">
+<h3>Directory Monitor<a class="headerlink" href="#directory-monitor" title="Permalink to this headline">¶</a></h3>
+<p>The directory monitoring is best accomplished with the following projects.</p>
+<blockquote>
+<div><a class="reference external" href="https://github.com/shaurz/fsmonitor">https://github.com/shaurz/fsmonitor</a>
+<a class="reference external" href="http://sourceforge.net/projects/pywin32/">http://sourceforge.net/projects/pywin32/</a></div></blockquote>
+<p>Both are required.</p>
+<p>An alternative is watchdog.  It does more and has a more complex installation
+and dependencies.</p>
+<blockquote>
+<div><a class="reference external" href="http://packages.python.org/watchdog/">http://packages.python.org/watchdog/</a></div></blockquote>
+<p>For background and more details, see</p>
+<blockquote>
+<div><a class="reference external" href="http://blog.philippklaus.de/2011/08/watching-directories-for-changes-using-python_-_an-overview/">http://blog.philippklaus.de/2011/08/watching-directories-for-changes-using-python_-_an-overview/</a></div></blockquote>
+<p>For Win32 <strong>only</strong>, there are some hacks that can be used.</p>
+<blockquote>
+<div><a class="reference external" href="http://timgolden.me.uk/python/win32_how_do_i/watch_directory_for_changes.html">http://timgolden.me.uk/python/win32_how_do_i/watch_directory_for_changes.html</a></div></blockquote>
+<p>For Linux2 <strong>only</strong>, this can be used.</p>
+<blockquote>
+<div><a class="reference external" href="http://pyinotify.sourceforge.net/">http://pyinotify.sourceforge.net/</a></div></blockquote>
+</div>
+<div class="section" id="id13">
+<h3>Components<a class="headerlink" href="#id13" title="Permalink to this headline">¶</a></h3>
+<dl class="function">
+<dt id="caravel.LogCapture.monitor_capture.monitor">
+<tt class="descclassname">caravel.LogCapture.monitor_capture.</tt><tt class="descname">monitor</tt><big>(</big><em>directory</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/monitor_capture.html#monitor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.monitor_capture.monitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Monitor the given directory for changes.  When a new feed file
+arrives, perform the format and push operations.</p>
+<p>The config identifies specific filenames to be watched in the given
+directory.</p>
+<p>The <tt class="docutils literal"><span class="pre">'&quot;capture&quot;</span> <span class="pre">:</span> <span class="pre">{</span> <span class="pre">&quot;extract_filename&quot;:</span> <span class="pre">&quot;hrtrtf.txt&quot;,</span> <span class="pre">}'</span></tt> file
+is specifically targeted as the source for a feed.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>source</strong> &#8211; The file name to monitor for changes.</li>
+<li><strong>config</strong> &#8211; A global configuration as read by <tt class="xref py py-func docutils literal"><span class="pre">get_config()</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.monitor_capture.format_push">
+<tt class="descclassname">caravel.LogCapture.monitor_capture.</tt><tt class="descname">format_push</tt><big>(</big><em>source</em><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/monitor_capture.html#format_push"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.monitor_capture.format_push" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tail the source file to an extract; reformat the extract
+to CSV; push the CSV.</p>
+<p>This relies on <tt class="xref py py-func docutils literal"><span class="pre">tail()</span></tt>, <tt class="xref py py-func docutils literal"><span class="pre">reformat()</span></tt> and <tt class="xref py py-func docutils literal"><span class="pre">upload_feed()</span></tt>.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>source</strong> &#8211; The log file to tail.</li>
+<li><strong>config</strong> &#8211; A global configuration as read by <tt class="xref py py-func docutils literal"><span class="pre">get_config()</span></tt>.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.LogCapture.monitor_capture.get_args">
+<tt class="descclassname">caravel.LogCapture.monitor_capture.</tt><tt class="descname">get_args</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/LogCapture/monitor_capture.html#get_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.LogCapture.monitor_capture.get_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse command-line arguments.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Arguments object.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="status-building">
+<h2>Status Building<a class="headerlink" href="#status-building" title="Permalink to this headline">¶</a></h2>
+<p>There are two versions of the status update application.</p>
+<p>The standard implementation, <a class="reference internal" href="#status-builder">Status Builder</a> uses long polling to
+capture each feed as it arrives in the CouchDB.  It is immediately
+processed to create status updates.</p>
+<p>An alternate implementation, <a class="reference internal" href="#status-builder-manual">Status Builder Manual</a> can be run
+against a database periodically.  This suffers from race conditions.</p>
+<div class="section" id="status-builder">
+<h3>Status Builder<a class="headerlink" href="#status-builder" title="Permalink to this headline">¶</a></h3>
+<p>This is the status builder which relies on CouchDB change notification.
+It includes mapping validation, feed validation
+as well as feed transform and load to create transit system
+status.</p>
+<span class="target" id="module-caravel.StatusBuilder.change_notification"></span><p>Caravel processing of raw feed and mapping into route, stop and vehicle status
+reports.</p>
+<p>This relies on Couchdb Change Notification via long polling.</p>
+<ol class="arabic simple">
+<li>Handle new mappings.  Validate.  Update Cache.  Cleanup.
+See <a class="reference internal" href="domain.html#module-caravel.feed.mapping_load" title="caravel.feed.mapping_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.mapping_load</span></tt></a>.</li>
+<li>Handle new feeds.  Validate.  Apply Mappings.  Cleanup.
+See <a class="reference internal" href="domain.html#module-caravel.feed.feed_load" title="caravel.feed.feed_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.feed_load</span></tt></a>.</li>
+<li>Build status.  See <a class="reference internal" href="domain.html#module-caravel.status.status_load" title="caravel.status.status_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.status.status_load</span></tt></a>.</li>
+</ol>
+<div class="section" id="id14">
+<h4>Synopsis<a class="headerlink" href="#id14" title="Permalink to this headline">¶</a></h4>
+<div class="highlight-python"><pre>python -m caravel.StatusBuilder.change_notification</pre>
+</div>
+</div>
+<div class="section" id="id15">
+<h4>Description<a class="headerlink" href="#id15" title="Permalink to this headline">¶</a></h4>
+<p>This will start a long-polling request for changes in the given
+couchDB.  This yields  a sequence of change documents.</p>
+<p>For documents which are mappings, this triggers the mapping
+validation, and cache update.  This is defined by
+the <tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed</span></tt> package, specifically <a class="reference internal" href="domain.html#module-caravel.feed.mapping_load" title="caravel.feed.mapping_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.mapping_load</span></tt></a>.</p>
+<p>For documents which are feeds, this triggers feed validation, and status
+updates.  The initial steps of feed processing are defined by
+the <tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed</span></tt> package, specifically <a class="reference internal" href="domain.html#module-caravel.feed.feed_load" title="caravel.feed.feed_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.feed_load</span></tt></a>.</p>
+<p>The status updates are part of the <tt class="xref py py-mod docutils literal"><span class="pre">caravel.status</span></tt> package,
+specifically <a class="reference internal" href="domain.html#module-caravel.status.status_load" title="caravel.status.status_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.status.status_load</span></tt></a>.</p>
+<p>The cleanup cycles are triggered asynchronously based on
+watching the clock during ordinary processing cycles (i.e.,
+intermittently after feed processing is completed.)</p>
+<p>Alternatives include
+-   cron in a separate process,
+-   heartbeat from couchdb.</p>
+</div>
+<div class="section" id="recursion-detection">
+<h4>Recursion Detection<a class="headerlink" href="#recursion-detection" title="Permalink to this headline">¶</a></h4>
+<p>Once we start processing a feed or mapping, we&#8217;ll get renotified of the
+changes we&#8217;re making to that mapping.</p>
+<p>To prevent infinite recursion, we keep a small FIFO of documents that we
+ignore when the appear a second time.  After all, this process does
+numerous updates, so it gets notified of the updates it made.</p>
+</div>
+<div class="section" id="configuration">
+<h4>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h4>
+<p>This relies on <a class="reference internal" href="#module-caravel.conf" title="caravel.conf"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.conf</span></tt></a> to provide the settings
+with the database connection.</p>
+</div>
+<div class="section" id="id16">
+<h4>Components<a class="headerlink" href="#id16" title="Permalink to this headline">¶</a></h4>
+<dl class="class">
+<dt id="caravel.StatusBuilder.change_notification.LimitedFIFO">
+<em class="property">class </em><tt class="descclassname">caravel.StatusBuilder.change_notification.</tt><tt class="descname">LimitedFIFO</tt><big>(</big><em>limit=60</em><big>)</big><a class="headerlink" href="#caravel.StatusBuilder.change_notification.LimitedFIFO" title="Permalink to this definition">¶</a></dt>
+<dd><p>A list of a fixed size.  This creates a kind of first-in-first-out
+FIFO where new items are appended until the size is reached.  Then
+old items are removed.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.StatusBuilder.change_notification.mapping_notification">
+<tt class="descclassname">caravel.StatusBuilder.change_notification.</tt><tt class="descname">mapping_notification</tt><big>(</big><em>new_mapping</em><big>)</big><a class="reference internal" href="../_modules/caravel/StatusBuilder/change_notification.html#mapping_notification"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.StatusBuilder.change_notification.mapping_notification" title="Permalink to this definition">¶</a></dt>
+<dd><p>The change notification is a complete mapping with an attachment.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.StatusBuilder.change_notification.feed_notification">
+<tt class="descclassname">caravel.StatusBuilder.change_notification.</tt><tt class="descname">feed_notification</tt><big>(</big><em>new_feed</em><big>)</big><a class="reference internal" href="../_modules/caravel/StatusBuilder/change_notification.html#feed_notification"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.StatusBuilder.change_notification.feed_notification" title="Permalink to this definition">¶</a></dt>
+<dd><p>The change notification is a feed with an attachment.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.StatusBuilder.change_notification.periodic_tasks">
+<tt class="descclassname">caravel.StatusBuilder.change_notification.</tt><tt class="descname">periodic_tasks</tt><big>(</big><em>hour=False</em>, <em>day=False</em><big>)</big><a class="reference internal" href="../_modules/caravel/StatusBuilder/change_notification.html#periodic_tasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.StatusBuilder.change_notification.periodic_tasks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tasks done once in a great while.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>hour</strong> &#8211; If the monitor has run for an hour.</li>
+<li><strong>day</strong> &#8211; If the monitor has run for a day.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.StatusBuilder.change_notification.long_poll_callback">
+<tt class="descclassname">caravel.StatusBuilder.change_notification.</tt><tt class="descname">long_poll_callback</tt><big>(</big><em>changes</em><big>)</big><a class="reference internal" href="../_modules/caravel/StatusBuilder/change_notification.html#long_poll_callback"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.StatusBuilder.change_notification.long_poll_callback" title="Permalink to this definition">¶</a></dt>
+<dd><p>Callback function used by the long-poll Consumer.</p>
+<p>This will get the most recent changes.</p>
+<p>Since a new Feed (or Mapping) triggers a number of updates, those &#8220;echo&#8221;
+notifications will bounce right back here for a second visit.  The
+ID&#8217;s will be in the LRU cache and will be ignored.</p>
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="status-builder-manual">
+<h3>Status Builder Manual<a class="headerlink" href="#status-builder-manual" title="Permalink to this headline">¶</a></h3>
+<p>This is a one-time builk status builder that simply queries the database
+for all mappings and all feeds.</p>
+<span class="target" id="module-caravel.StatusBuilder.bulk_transform"></span><p>Caravel processing of raw feed and mapping into route, stop and vehicle status
+reports.</p>
+<p>This is a one-time manual operation that can be driven via cron.</p>
+<ol class="arabic simple">
+<li>Handle new mappings.  Validate.  Update Cache.  Cleanup.
+See <a class="reference internal" href="domain.html#module-caravel.feed.mapping_load" title="caravel.feed.mapping_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.mapping_load</span></tt></a>.</li>
+<li>Handle new feeds.  Validate.  Apply Mappings.  Cleanup.
+See <a class="reference internal" href="domain.html#module-caravel.feed.feed_load" title="caravel.feed.feed_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.feed.feed_load</span></tt></a>.</li>
+<li>Build status.  See <a class="reference internal" href="domain.html#module-caravel.status.status_load" title="caravel.status.status_load"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.status.status_load</span></tt></a>.</li>
+</ol>
+<dl class="function">
+<dt id="caravel.StatusBuilder.bulk_transform.build_status">
+<tt class="descclassname">caravel.StatusBuilder.bulk_transform.</tt><tt class="descname">build_status</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/StatusBuilder/bulk_transform.html#build_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.StatusBuilder.bulk_transform.build_status" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the mappings and refresh the mappings cache.
+Then process all new feeds using <tt class="xref py py-func docutils literal"><span class="pre">caravel.feed.new_feed_iter()</span></tt>
+instead of using the change notification.</p>
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h3><a href="../caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Extract Transform and Load</a><ul>
+<li><a class="reference internal" href="#module-caravel.admin">Administrative Functions</a></li>
+<li><a class="reference internal" href="#module-caravel.conf">Configuration and Settings</a><ul>
+<li><a class="reference internal" href="#defaults">Defaults</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#module-caravel.LogCapture.couch_push">Mapping Push</a><ul>
+<li><a class="reference internal" href="#synopsis">Synopsis</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+<li><a class="reference internal" href="#options">Options</a></li>
+<li><a class="reference internal" href="#configuration-file">Configuration File</a></li>
+<li><a class="reference internal" href="#module-api">Module API</a></li>
+<li><a class="reference internal" href="#database-schema">Database Schema</a></li>
+<li><a class="reference internal" href="#components">Components</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#log-tailing">Log Tailing</a><ul>
+<li><a class="reference internal" href="#id1">Synopsis</a></li>
+<li><a class="reference internal" href="#id2">Description</a></li>
+<li><a class="reference internal" href="#id3">Options</a></li>
+<li><a class="reference internal" href="#id4">Configuration File</a></li>
+<li><a class="reference internal" href="#id5">Module API</a></li>
+<li><a class="reference internal" href="#id6">Database Schema</a></li>
+<li><a class="reference internal" href="#id7">Components</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#monitor-capture">Monitor Capture</a><ul>
+<li><a class="reference internal" href="#id8">Synopsis</a></li>
+<li><a class="reference internal" href="#id9">Description</a></li>
+<li><a class="reference internal" href="#id10">Options</a></li>
+<li><a class="reference internal" href="#id11">Configuration File</a></li>
+<li><a class="reference internal" href="#id12">Module API</a></li>
+<li><a class="reference internal" href="#directory-monitor">Directory Monitor</a></li>
+<li><a class="reference internal" href="#id13">Components</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#status-building">Status Building</a><ul>
+<li><a class="reference internal" href="#status-builder">Status Builder</a><ul>
+<li><a class="reference internal" href="#id14">Synopsis</a></li>
+<li><a class="reference internal" href="#id15">Description</a></li>
+<li><a class="reference internal" href="#recursion-detection">Recursion Detection</a></li>
+<li><a class="reference internal" href="#configuration">Configuration</a></li>
+<li><a class="reference internal" href="#id16">Components</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#status-builder-manual">Status Builder Manual</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="domain.html"
+                        title="previous chapter">Domain Model Implementation</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="analysis.html"
+                        title="next chapter">Analysis and Profiling</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/implementation/etl.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="analysis.html" title="Analysis and Profiling"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="domain.html" title="Domain Model Implementation"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >Implementation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Database Implementation &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>Database Implementation &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
     <link rel="up" title="Implementation" href="index.html" />
     <link rel="next" title="Domain Model Implementation" href="domain.html" />
     <link rel="prev" title="Implementation" href="index.html" /> 
@@ -45,7 +45,7 @@
         <li class="right" >
           <a href="index.html" title="Implementation"
              accesskey="P">previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Implementation</a> &raquo;</li> 
       </ul>
     </div>  
@@ -60,14 +60,35 @@
 <p>See <a class="reference external" href="http://couchdb.apache.org/">http://couchdb.apache.org/</a></p>
 <p>See <a class="reference external" href="http://packages.python.org/CouchDB/index.html">http://packages.python.org/CouchDB/index.html</a></p>
 <p><a class="reference external" href="http://www.couchbase.com/couchbase-server/overview">http://www.couchbase.com/couchbase-server/overview</a></p>
-<p>See <a class="reference internal" href="../design/document_model.html#design-document"><em>CouchDB Document Model</em></a></p>
+<p>For some design notes, see <a class="reference internal" href="../design/document_model.html#design-document"><em>CouchDB Document Model</em></a>.</p>
 <p>The CouchDB Mapping to Python objects leads to a data model using
 the 11 field types defined here: <a class="reference external" href="http://packages.python.org/CouchDB/mapping.html#field-types">http://packages.python.org/CouchDB/mapping.html#field-types</a>.</p>
 <p>For testing purposes, there are two candidate strategies.</p>
 <ul class="simple">
-<li>Mock.</li>
-<li>Temporary Database built during <tt class="docutils literal"><span class="pre">setUp</span></tt> and deleted during <tt class="docutils literal"><span class="pre">tearDown</span></tt>.</li>
+<li>Mock.  This is more appropriate for a relational database with a complex,
+difficult to initialize schema.</li>
+<li>Temporary Database built during <tt class="docutils literal"><span class="pre">setUp</span></tt> and deleted during <tt class="docutils literal"><span class="pre">tearDown</span></tt>.
+This is preferred, since CouchDB is so simple to work with.</li>
 </ul>
+<div class="section" id="feed-and-mappings">
+<h2>Feed and Mappings<a class="headerlink" href="#feed-and-mappings" title="Permalink to this headline">¶</a></h2>
+<p>The acquisition side of the database is the real-time feed plus the mappings
+from source to GTF.</p>
+<p>Feed</p>
+<p>Mapping</p>
+</div>
+<div class="section" id="transit-system">
+<h2>Transit System<a class="headerlink" href="#transit-system" title="Permalink to this headline">¶</a></h2>
+<p>The Transit System is described by GTF data.</p>
+<p>TBD</p>
+</div>
+<div class="section" id="status">
+<h2>Status<a class="headerlink" href="#status" title="Permalink to this headline">¶</a></h2>
+<p>The status part of the system is built from analysis of the Feed and Mappings.</p>
+<p>Vehicle</p>
+<p>Route</p>
+<p>Report</p>
+</div>
 </div>
 
 
@@ -79,6 +100,16 @@ the 11 field types defined here: <a class="reference external" href="http://pack
             <p class="logo"><a href="../caravel.html">
               <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
             </a></p>
+  <h3><a href="../caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Database Implementation</a><ul>
+<li><a class="reference internal" href="#feed-and-mappings">Feed and Mappings</a></li>
+<li><a class="reference internal" href="#transit-system">Transit System</a></li>
+<li><a class="reference internal" href="#status">Status</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="index.html"
                         title="previous chapter">Implementation</a></p>
@@ -122,7 +153,7 @@ the 11 field types defined here: <a class="reference external" href="http://pack
         <li class="right" >
           <a href="index.html" title="Implementation"
              >previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" >Implementation</a> &raquo;</li> 
       </ul>
     </div>

@@ -1,5 +1,5 @@
 #!/usr/bin/env python2.7
-"""Caravel FTP-based Capture the Feed and Push into CouchDB.
+"""Caravel FTP-based Poll and Push into CouchDB.
 
 Real-time feed CSV files are attached to a document with the following
 attributes
@@ -82,7 +82,7 @@ import time
 
 from caravel.conf import settings
 from caravel.feed.models import Feed
-import caravel.LogCapture.acquire # want URL_Positions
+import caravel.LogCapture.ftp_acquire # want URL_Positions
 
 def upload_rtf( db, filename ):
     """Upload the Real-Time Feed from a given filename.
@@ -120,7 +120,7 @@ def ftp_get_and_upload(db, source_url=None):
     This expects to be polling the legacy FTP server.
     """
     if source_url is None:
-        source_url= caravel.LogCapture.acquire.URL_Positions
+        source_url= caravel.LogCapture.ftp_acquire.URL_Positions
     with closing( urllib2.build_opener().open( source_url ) ) as source:
         data= source.read()
     now= datetime.datetime.now()

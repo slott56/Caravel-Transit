@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>User’s Guide &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>User’s Guide &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,8 +24,8 @@
     <script type="text/javascript" src="../_static/jquery.js"></script>
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../index.html" />
-    <link rel="next" title="Log and Mapping Capture" href="log_capture.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
+    <link rel="next" title="Configuration" href="configuration.html" />
     <link rel="prev" title="Use Cases" href="../usecase/index.html" /> 
   </head>
   <body>
@@ -39,12 +39,12 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="log_capture.html" title="Log and Mapping Capture"
+          <a href="configuration.html" title="Configuration"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../usecase/index.html" title="Use Cases"
              accesskey="P">previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li> 
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -55,31 +55,20 @@
             
   <div class="section" id="user-s-guide">
 <h1>User&#8217;s Guide<a class="headerlink" href="#user-s-guide" title="Permalink to this headline">¶</a></h1>
-<p>There are three parts to gathering and processing transit
+<p>There are several operational parts to gathering and processing transit
 system data to create the current vehicle status.</p>
-<ol class="arabic simple">
-<li>Log Capture.  The Log Capture application has two key feature sets.
-Note that the log has internal codes for route, stop and vehicle.
-A set of mappings must <em>also</em> be captured to interpret these codes.<ul>
-<li>It gathers the real-time position reports
-once each minute and pushes them to the CouchDB.</li>
-<li>It is used to manually push mappings to the CouchDB.</li>
-</ul>
-</li>
-<li>Status Builder.  This watches the CouchDB for change notification
-and transforms the raw feed into Route, Stop and Vehicle information.</li>
-<li>Route Capture.  This captures GTF data from Google.</li>
-</ol>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="log_capture.html">Log and Mapping Capture</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="log_capture.html#log-capture-configuration">Log Capture Configuration</a></li>
-<li class="toctree-l2"><a class="reference internal" href="log_capture.html#mappings-push">Mappings Push</a></li>
-<li class="toctree-l2"><a class="reference internal" href="log_capture.html#log-capture">Log Capture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mappings_upload.html">Upload Stop, Route and Vehicle mappings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="log_capture.html">Capture the real-time position reports</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="log_capture.html#all-in-one-log-capture">All-In-One Log Capture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="log_capture.html#tail-only-log-extract">Tail Only Log Extract</a></li>
+<li class="toctree-l2"><a class="reference internal" href="log_capture.html#monitor-capture">Monitor Capture</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="status_build.html">Status Build</a></li>
-<li class="toctree-l1"><a class="reference internal" href="route_capture.html">Route Capture</a></li>
+<li class="toctree-l1"><a class="reference internal" href="route_capture.html">Capture the Google GTF definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="status_build.html">Build the current transit system status</a></li>
 </ul>
 </div>
 </div>
@@ -97,8 +86,8 @@ and transforms the raw feed into Route, Stop and Vehicle information.</li>
   <p class="topless"><a href="../usecase/index.html"
                         title="previous chapter">Use Cases</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="log_capture.html"
-                        title="next chapter">Log and Mapping Capture</a></p>
+  <p class="topless"><a href="configuration.html"
+                        title="next chapter">Configuration</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/operations/index.txt"
@@ -131,12 +120,12 @@ and transforms the raw feed into Route, Stop and Vehicle information.</li>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="log_capture.html" title="Log and Mapping Capture"
+          <a href="configuration.html" title="Configuration"
              >next</a> |</li>
         <li class="right" >
           <a href="../usecase/index.html" title="Use Cases"
              >previous</a> |</li>
-        <li><a href="../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li> 
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

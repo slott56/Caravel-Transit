@@ -1,9 +1,21 @@
 #!/usr/bin/env python2.7
 """Caravel CouchDB Admin Functions.
 
-This will create databases, create applications.
+Run this as a main program to create the views.
 
-It will also do things like clean the feed database.
+::
+
+    python2.7 -m caravel.admin
+
+This will use the settings to get the database connection and
+reset the view definitions.
+
+This will create databases, create applications and check database
+integrity.
+
+..  autofunction:: define_views
+..  autofunction:: check_views
+..  autofunction:: integrity_check
 """
 from __future__ import print_function
 from couchdbkit.designer import push

@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Caravel Transit – Analyze Transit GPS Data &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>Caravel Transit – Analyze Transit GPS Data &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="index.html" />
     <link rel="next" title="Use Cases" href="usecase/index.html" /> 
   </head>
   <body>
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="usecase/index.html" title="Use Cases"
              accesskey="N">next</a> |</li>
-        <li><a href="#">Caravel-Transit 1.1 documentation</a> &raquo;</li> 
+        <li><a href="#">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -51,8 +51,9 @@
             
   <div class="section" id="caravel-transit-analyze-transit-gps-data">
 <h1>Caravel Transit &#8211; Analyze Transit GPS Data<a class="headerlink" href="#caravel-transit-analyze-transit-gps-data" title="Permalink to this headline">¶</a></h1>
-<p>Caravel-Transit reads and analyses transit GPS coordinates to discover routes and
-predict next bus arrival times.</p>
+<p>Caravel-Transit reads and analyses transit GPS coordinates to
+predict next bus arrival times.  It can also discover routes, delays and
+other statistical measures of a transit system.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="usecase/index.html">Use Cases</a><ul>
@@ -61,9 +62,11 @@ predict next bus arrival times.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="operations/index.html">User&#8217;s Guide</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="operations/log_capture.html">Log and Mapping Capture</a></li>
-<li class="toctree-l2"><a class="reference internal" href="operations/status_build.html">Status Build</a></li>
-<li class="toctree-l2"><a class="reference internal" href="operations/route_capture.html">Route Capture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/configuration.html">Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/mappings_upload.html">Upload Stop, Route and Vehicle mappings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/log_capture.html">Capture the real-time position reports</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/route_capture.html">Capture the Google GTF definitions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="operations/status_build.html">Build the current transit system status</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="design/index.html">Design Notes</a><ul>
@@ -80,9 +83,9 @@ predict next bus arrival times.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="implementation/index.html">Implementation</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="implementation/database.html">Database Implementation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="implementation/domain.html">Domain Model Implementation</a></li>
-<li class="toctree-l2"><a class="reference internal" href="implementation/web.html">Web Implementation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="implementation/index.html#hosts">Hosts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="implementation/index.html#python-stack">Python Stack</a></li>
+<li class="toctree-l2"><a class="reference internal" href="implementation/index.html#application-structure">Application Structure</a></li>
 </ul>
 </li>
 </ul>
@@ -153,7 +156,7 @@ or Caravel Games (<a class="reference external" href="http://caravelgames.com/">
         <li class="right" >
           <a href="usecase/index.html" title="Use Cases"
              >next</a> |</li>
-        <li><a href="#">Caravel-Transit 1.1 documentation</a> &raquo;</li> 
+        <li><a href="#">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

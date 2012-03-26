@@ -1,0 +1,162 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.StatusBuilder.bulk_transform &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.StatusBuilder.bulk_transform</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel processing of raw feed and mapping into route, stop and vehicle status</span>
+<span class="sd">reports.</span>
+
+<span class="sd">This is a one-time manual operation that can be driven via cron.</span>
+
+<span class="sd">1.  Handle new mappings.  Validate.  Update Cache.  Cleanup.</span>
+<span class="sd">    See :mod:`caravel.feed.mapping_load`.</span>
+
+<span class="sd">2.  Handle new feeds.  Validate.  Apply Mappings.  Cleanup.</span>
+<span class="sd">    See :mod:`caravel.feed.feed_load`.</span>
+
+<span class="sd">3.  Build status.  See :mod:`caravel.status.status_load`.</span>
+
+<span class="sd">..  autofunction:: build_status</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">caravel.feed.models</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">caravel.status.models</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">caravel.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">caravel.feed.feed_load</span> <span class="kn">as</span> <span class="nn">feed</span>
+<span class="kn">import</span> <span class="nn">caravel.feed.mapping_load</span> <span class="kn">as</span> <span class="nn">mapping</span>
+<span class="kn">import</span> <span class="nn">caravel.status.status_load</span> <span class="kn">as</span> <span class="nn">status</span>
+
+
+<div class="viewcode-block" id="build_status"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.StatusBuilder.bulk_transform.build_status">[docs]</a><span class="k">def</span> <span class="nf">build_status</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Get the mappings and refresh the mappings cache.</span>
+<span class="sd">    Then process all new feeds using :func:`caravel.feed.new_feed_iter`</span>
+<span class="sd">    instead of using the change notification.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Mappings cache in the application server.</span>
+    <span class="n">mappings</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c"># Remove all damaged feed documents; these cannot be processed.</span>
+    <span class="n">counts</span> <span class="o">=</span> <span class="n">feed</span><span class="o">.</span><span class="n">remove_damaged</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="p">,</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&quot;feed/new&quot;</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Cleanup&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="c"># If the change notification is a mapping...</span>
+    <span class="c"># Or.  Do all new mappings.</span>
+    <span class="n">counts</span><span class="o">=</span> <span class="n">mapping</span><span class="o">.</span><span class="n">refresh_mapping_cache</span><span class="p">(</span><span class="n">mappings</span><span class="p">,</span> <span class="n">Mapping</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;mapping/new&#39;</span><span class="p">,</span> <span class="n">descending</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+    <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Mapping&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="c"># If the change notification is a feed...</span>
+    <span class="n">counts</span><span class="o">=</span> <span class="n">status</span><span class="o">.</span><span class="n">old_status_removal</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Status Removal&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="p">)</span>
+
+    <span class="n">start</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="n">counts</span><span class="o">=</span> <span class="n">feed</span><span class="o">.</span><span class="n">transform_new</span><span class="p">(</span> <span class="n">mappings</span><span class="p">,</span> <span class="n">feed</span><span class="o">.</span><span class="n">new_feed_iter</span><span class="p">(),</span> <span class="n">status</span><span class="o">.</span><span class="n">track_arrival</span><span class="p">,</span> <span class="n">status</span><span class="o">.</span><span class="n">track_location</span> <span class="p">)</span>
+    <span class="n">end</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Transform {0} reports in {1}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="nb">dict</span><span class="p">(</span><span class="n">counts</span><span class="p">),</span> <span class="n">end</span><span class="o">-</span><span class="n">start</span> <span class="p">)</span> <span class="p">)</span>
+
+    <span class="c"># Not every time we receive a feed; only once per day.</span>
+    <span class="n">counts</span><span class="o">=</span> <span class="n">feed</span><span class="o">.</span><span class="n">remove_old</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Feed Removal&quot;</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="p">)</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">Mapping</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+    <span class="n">Feed</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+    <span class="n">Route</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+    <span class="n">RouteStop</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+    <span class="n">Vehicle</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+    <span class="n">Stop</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+
+    <span class="n">build_status</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

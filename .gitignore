@@ -1,5 +1,26 @@
 /*.rpt
+
 /*.csv
+
 /*.zip
 
-caravel/__init__.pyc
+caravel/*.pyc
+
+hrtrtf.txt
+
+logtail.history
+
+caravel/LogCapture/*.pyc
+
+doc/build/doctrees/*.doctree
+
+doc/build/.doctrees/*.doctree
+
+
+caravel/LogCapture/*.pyc
+
+caravel/StatusBuilder/*.pyc
+
+caravel/conf/*.pyc
+
+caravel/status/*.pyc

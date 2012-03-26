@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.transit_stats &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>caravel.transit_stats &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -63,7 +63,7 @@
 <span class="kn">import</span> <span class="nn">transit_system</span>
 <span class="kn">import</span> <span class="nn">statistics</span>
 
-<div class="viewcode-block" id="route_size"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_stats.route_size">[docs]</a><span class="k">def</span> <span class="nf">route_size</span><span class="p">(</span> <span class="n">conn</span> <span class="p">):</span>
+<div class="viewcode-block" id="route_size"><a class="viewcode-back" href="../../implementation/analysis.html#caravel.transit_stats.route_size">[docs]</a><span class="k">def</span> <span class="nf">route_size</span><span class="p">(</span> <span class="n">conn</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Examine all stops to get the complete bounding rectangle</span>
 <span class="sd">    of lat/lon coordinates.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -79,7 +79,7 @@
     <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Lat: {0:.4f} {1:.4f}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">min_lat</span><span class="p">,</span> <span class="n">max_lat</span><span class="p">)</span> <span class="p">)</span>
     <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Lon: {0:.4f} {1:.4f}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">min_lon</span><span class="p">,</span> <span class="n">max_lon</span><span class="p">)</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="route_stop_stats"><a class="viewcode-back" href="../../implementation/domain.html#caravel.transit_stats.route_stop_stats">[docs]</a><span class="k">def</span> <span class="nf">route_stop_stats</span><span class="p">(</span> <span class="n">conn</span> <span class="p">):</span>
+<div class="viewcode-block" id="route_stop_stats"><a class="viewcode-back" href="../../implementation/analysis.html#caravel.transit_stats.route_stop_stats">[docs]</a><span class="k">def</span> <span class="nf">route_stop_stats</span><span class="p">(</span> <span class="n">conn</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;These are simple descriptive statistics of distances</span>
 <span class="sd">    between stops and distances between arrival times along</span>
 <span class="sd">    the defined routes.</span>
@@ -150,7 +150,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

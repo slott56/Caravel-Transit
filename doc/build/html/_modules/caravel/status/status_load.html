@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.status.status_load &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>caravel.status.status_load &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -77,13 +77,12 @@
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
 <span class="kn">from</span> <span class="nn">caravel.feed.models</span> <span class="kn">import</span> <span class="o">*</span>
 <span class="kn">from</span> <span class="nn">caravel.status.models</span> <span class="kn">import</span> <span class="o">*</span>
-<span class="kn">import</span> <span class="nn">caravel.settings</span> <span class="kn">as</span> <span class="nn">settings</span>
 <span class="kn">import</span> <span class="nn">datetime</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">defaultdict</span>
 
 <div class="viewcode-block" id="update_route"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.status.status_load.update_route">[docs]</a><span class="k">def</span> <span class="nf">update_route</span><span class="p">(</span> <span class="n">report</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Add to today&#39;s route/direction documents.&quot;&quot;&quot;</span>
-    <span class="n">docid</span><span class="o">=</span> <span class="s">&quot;{0.route}/{0.direction}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">report</span> <span class="p">)</span>
+    <span class="n">docid</span><span class="o">=</span> <span class="s">&quot;{0.route}-{0.direction}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">report</span> <span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">route_obj</span><span class="o">=</span> <span class="n">Route</span><span class="o">.</span><span class="n">get</span><span class="p">(</span> <span class="n">docid</span><span class="o">=</span><span class="n">docid</span> <span class="p">)</span>
     <span class="k">except</span> <span class="n">ResourceNotFound</span><span class="p">:</span>
@@ -98,12 +97,12 @@
         <span class="c"># Also, assure that it&#39;s sorted in order?</span>
         <span class="n">route_obj</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
             <span class="p">{</span><span class="s">&#39;vehicle&#39;</span><span class="p">:</span><span class="n">report</span><span class="o">.</span><span class="n">vehicle</span><span class="p">,</span> <span class="s">&#39;stop&#39;</span><span class="p">:</span> <span class="n">report</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="s">&#39;timestamp&#39;</span><span class="p">:</span><span class="n">report</span><span class="o">.</span><span class="n">timestamp</span><span class="p">}</span> <span class="p">)</span>
-    <span class="k">print</span><span class="p">(</span> <span class="n">route_obj</span> <span class="p">)</span>
     <span class="n">route_obj</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">route_obj</span>
 </div>
 <div class="viewcode-block" id="update_route_stop"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.status.status_load.update_route_stop">[docs]</a><span class="k">def</span> <span class="nf">update_route_stop</span><span class="p">(</span> <span class="n">report</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Add to today&#39;s route/direction/stop documents.&quot;&quot;&quot;</span>
-    <span class="n">docid</span><span class="o">=</span> <span class="s">&quot;{0.route}/{0.direction}/{0.stop}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">report</span> <span class="p">)</span>
+    <span class="n">docid</span><span class="o">=</span> <span class="s">&quot;{0.route}-{0.direction}-{0.stop}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="n">report</span> <span class="p">)</span>
     <span class="k">try</span><span class="p">:</span>
        <span class="n">routestop</span> <span class="o">=</span> <span class="n">RouteStop</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">docid</span><span class="o">=</span><span class="n">docid</span><span class="p">)</span>
     <span class="k">except</span> <span class="n">ResourceNotFound</span><span class="p">:</span>
@@ -116,8 +115,8 @@
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">report</span><span class="o">.</span><span class="n">timestamp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span> <span class="n">h</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">routestop</span><span class="o">.</span><span class="n">history</span> <span class="p">):</span>
         <span class="n">routestop</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">{</span><span class="s">&#39;vehicle&#39;</span><span class="p">:</span><span class="n">report</span><span class="o">.</span><span class="n">vehicle</span><span class="p">,</span> <span class="s">&#39;timestamp&#39;</span><span class="p">:</span><span class="n">report</span><span class="o">.</span><span class="n">timestamp</span><span class="p">})</span>
-    <span class="k">print</span><span class="p">(</span> <span class="n">routestop</span> <span class="p">)</span>
     <span class="n">routestop</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">routestop</span>
 </div>
 <div class="viewcode-block" id="update_stop"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.status.status_load.update_stop">[docs]</a><span class="k">def</span> <span class="nf">update_stop</span><span class="p">(</span> <span class="n">report</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Add to today&#39;s Stop documents.&quot;&quot;&quot;</span>
@@ -132,8 +131,8 @@
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">report</span><span class="o">.</span><span class="n">timestamp</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span> <span class="n">h</span><span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">stop_object</span><span class="o">.</span><span class="n">history</span> <span class="p">):</span>
         <span class="n">stop_object</span><span class="o">.</span><span class="n">history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">{</span><span class="s">&#39;vehicle&#39;</span><span class="p">:</span><span class="n">report</span><span class="o">.</span><span class="n">vehicle</span><span class="p">,</span> <span class="s">&#39;timestamp&#39;</span><span class="p">:</span><span class="n">report</span><span class="o">.</span><span class="n">timestamp</span><span class="p">})</span>
-    <span class="k">print</span><span class="p">(</span> <span class="n">stop_object</span> <span class="p">)</span>
     <span class="n">stop_object</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">stop_object</span>
 </div>
 <div class="viewcode-block" id="update_vehicle"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.status.status_load.update_vehicle">[docs]</a><span class="k">def</span> <span class="nf">update_vehicle</span><span class="p">(</span> <span class="n">report</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Add to today&#39;s vehicle documents at this stop.&quot;&quot;&quot;</span>
@@ -152,8 +151,8 @@
                                     <span class="s">&#39;direction&#39;</span><span class="p">:</span><span class="n">report</span><span class="o">.</span><span class="n">direction</span><span class="p">,</span>
                                     <span class="s">&#39;stop&#39;</span><span class="p">:</span><span class="n">report</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span>
                                     <span class="s">&#39;timestamp&#39;</span><span class="p">:</span><span class="n">report</span><span class="o">.</span><span class="n">timestamp</span><span class="p">})</span>
-    <span class="k">print</span><span class="p">(</span> <span class="n">vehicle_obj</span> <span class="p">)</span>
     <span class="n">vehicle_obj</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">vehicle_obj</span>
 </div>
 <div class="viewcode-block" id="track_arrival"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.status.status_load.track_arrival">[docs]</a><span class="k">def</span> <span class="nf">track_arrival</span><span class="p">(</span> <span class="n">mappings</span><span class="p">,</span> <span class="n">report</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Apply mappings.  Create or update status objects.</span>
@@ -184,7 +183,7 @@
     <span class="n">report</span><span class="o">.</span><span class="n">vehicle</span><span class="o">=</span> <span class="n">vehicle</span>
 
     <span class="k">if</span> <span class="n">route</span> <span class="ow">and</span> <span class="n">stop</span><span class="p">:</span>
-        <span class="k">print</span><span class="p">(</span> <span class="n">report</span><span class="p">,</span> <span class="s">&#39;route&#39;</span><span class="p">,</span> <span class="n">route</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">stop</span> <span class="p">)</span>
+        <span class="c">#print( report, &#39;route&#39;, route, direction, stop )</span>
 
         <span class="n">update_route</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
         <span class="n">update_route_stop</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
@@ -192,6 +191,7 @@
 
     <span class="k">if</span> <span class="n">vehicle</span><span class="p">:</span>
         <span class="n">update_vehicle</span><span class="p">(</span><span class="n">report</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">report</span>
 </div>
 <div class="viewcode-block" id="track_location"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.status.status_load.track_location">[docs]</a><span class="k">def</span> <span class="nf">track_location</span><span class="p">(</span> <span class="n">mappings</span><span class="p">,</span> <span class="n">report</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Track a simple location report.</span>
@@ -219,7 +219,7 @@
 
     <span class="k">print</span><span class="p">(</span> <span class="n">report</span><span class="p">,</span> <span class="s">&#39;bus&#39;</span><span class="p">,</span> <span class="n">vehicle</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="old_status_removal"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.status.status_load.old_status_removal">[docs]</a><span class="k">def</span> <span class="nf">old_status_removal</span><span class="p">(</span> <span class="n">today</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+<div class="viewcode-block" id="old_status_removal"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.status.status_load.old_status_removal">[docs]</a><span class="k">def</span> <span class="nf">old_status_removal</span><span class="p">(</span> <span class="n">db</span><span class="p">,</span> <span class="n">today</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Remove old Route, RouteStop and Vehicle reports.</span>
 
 <span class="sd">    This should only be run once in a great while.</span>
@@ -227,12 +227,12 @@
     <span class="k">if</span> <span class="n">today</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">today</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
     <span class="n">counts</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;status/all&#39;</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;status/all&#39;</span><span class="p">):</span>
         <span class="nb">object</span><span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="s">&#39;value&#39;</span><span class="p">]</span>
         <span class="n">published</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="nb">object</span><span class="p">[</span><span class="s">&#39;date&#39;</span><span class="p">],</span><span class="s">&#39;%Y-%m-</span><span class="si">%d</span><span class="s">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
         <span class="k">if</span> <span class="p">(</span><span class="n">today</span><span class="o">-</span><span class="n">published</span><span class="p">)</span><span class="o">.</span><span class="n">days</span> <span class="o">&gt;=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">print</span><span class="p">(</span> <span class="s">&quot;Delete &quot;</span><span class="p">,</span> <span class="nb">object</span> <span class="p">)</span>
-            <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">delete_doc</span><span class="p">(</span><span class="nb">object</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">])</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">delete_doc</span><span class="p">(</span><span class="nb">object</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">])</span>
             <span class="n">counts</span><span class="p">[</span><span class="s">&#39;old&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">counts</span><span class="p">[</span><span class="s">&#39;current&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
@@ -273,7 +273,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

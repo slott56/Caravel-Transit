@@ -7,13 +7,13 @@
   "name": "build html", 
   "operateOnSelection": 0, 
   "value": [
-    "/Library/Frameworks/Python.framework/Versions/2.7/bin/sphinx-build -b html -d doc/build/doctrees -D latex_paper_size=letter -D pngmath_latex=/usr/texbin/latex -D pngmath_dvipng=/usr/texbin/dvipng  -N doc/source doc/build/html"
+    "/Library/Frameworks/Python.framework/Versions/2.7/bin/sphinx-build -b html -d build/.doctrees -D latex_paper_size=letter -D pngmath_latex=/usr/texbin/latex -D pngmath_dvipng=/usr/texbin/dvipng  -N source build/html"
   ], 
   "parseOutput": 0, 
   "version": "1.0.7", 
   "env": "PYTHONPATH=[[%p]]", 
   "showParsedOutputList": 0, 
   "type": "command", 
-  "cwd": "%p", 
+  "cwd": "%p/doc", 
   "runIn": "command-output-window"
 }

@@ -1,11 +1,15 @@
 #!/usr/bin/env python2.7
-"""Caravel FTP-based Data Acquisition
+"""Caravel library module for FTP-based Data Acquisition.
 
-Gather raw position reports by polling an FTP server.
+This has two loosely-related functions.
 
-The position reports should be pushed into a queue for processing.
-This can be a conceptual queue in a single-threaded applicaiton, or an
-actual multi-processing queue to improve performance.
+-   :func:`report_reader` opens an FTP-based file for reading.
+
+-   :func:`get_report_files` downloads files from an FTP server for
+    later processing.
+
+This is used by :mod:`caravel.LogCapture.poll_and_push` application,
+which is deprecated.
 
 FTP Source
 
@@ -14,6 +18,7 @@ FTP Source
     host='216.54.15.3'
     user='anonymous'
     passwd='slott56@gmail.com'
+    path='/Anrd/hrtrtf.txt'
 
 ..  autofunction:: report_reader
 ..  autofunction:: get_report_files
@@ -36,7 +41,7 @@ URL_Vehicle_ID = "ftp://216.54.15.3/Anrd/vid.csv"
 logger= logging.getLogger( __name__ )
 
 def report_reader( connection=None, url=None ):
-    """Open the position report file for reading.
+    """Open a position report file for reading.
     This is a file-like object which must be closed properly.
 
     ::
@@ -56,7 +61,7 @@ def report_reader( connection=None, url=None ):
     return connection.open( url )
 
 def get_report_files( connection=None, target_dir='.', **access ):
-    """Get the lastest position report "file" and save it to the
+    """Get the lastest position report file and save it to the
     target directory.
 
     Check for latest versions of "Anrd/vid.csv" and download it only if it changed.

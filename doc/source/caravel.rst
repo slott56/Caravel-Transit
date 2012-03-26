@@ -6,8 +6,9 @@
 Caravel Transit -- Analyze Transit GPS Data
 ==============================================
 
-Caravel-Transit reads and analyses transit GPS coordinates to discover routes and
-predict next bus arrival times.
+Caravel-Transit reads and analyses transit GPS coordinates to
+predict next bus arrival times.  It can also discover routes, delays and
+other statistical measures of a transit system.
 
 ..  toctree::
     :maxdepth: 2

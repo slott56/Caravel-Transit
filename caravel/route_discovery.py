@@ -5,7 +5,7 @@ Synopsis
 
 ::
 
-    python2.7 -m caravel.stop_discovery source...
+    python2.7 -m caravel.route_discovery source...
 
 Description
 
@@ -17,7 +17,7 @@ Description
 
 Options
 
-    ..  program:: stop_discovery
+    ..  program:: route_discovery
 
     .. option:: --debug, -d
 

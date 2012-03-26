@@ -63,13 +63,16 @@ with the database connection.
 
 Components
 ===============
+..  autoclass:: LimitedFIFO
 ..  autofunction:: mapping_notification
 ..  autofunction:: feed_notification
 ..  autofunction:: periodic_tasks
-..  autofunction:: lru_update
 ..  autofunction:: long_poll_callback
 """
 from __future__ import print_function
+import logging
+import sys
+
 from caravel.feed.models import *
 from caravel.status.models import *
 from caravel.conf import settings
@@ -84,8 +87,33 @@ import json
 
 LRU = namedtuple( "LRU", ["id", "seq"] )
 
+class LimitedFIFO( list ):
+    """A list of a fixed size.  This creates a kind of first-in-first-out
+    FIFO where new items are appended until the size is reached.  Then
+    old items are removed.
+    """
+    def __init__( self, limit=60 ):
+        """Creates a LimitedFIFO with a defined size.
+
+        :param limit: the upper limit on the FIFO size, default=60.
+        """
+        self._limit= limit
+    def append( self, object ):
+        """Least-Recently-Used update.  This is a FIFO with the last 60 mapping
+        or feed files that were processed.
+
+        The idea is to prevent CoucbDB update notifications from echoing
+        through the system. If we've processed it once, we won't process it
+        again.
+        """
+        super( LimitedFIFO, self ).append( object )
+        if len(self) > self._limit:
+            self.pop( 0 )
+
+logger= logging.getLogger( "change_notification" )
+
 # Global Least-Recently-Used FIFO of documents in process
-lru_fifo = []
+lru_fifo = LimitedFIFO()
 
 # Global Mappings cache in the application server.
 mappings = {}
@@ -95,52 +123,44 @@ def mapping_notification( new_mapping ):
     global mappings
 
     mapping_cache= mapping.refresh_mapping_cache(mappings, [new_mapping] )
-    print( "Mapping", dict(mapping_cache) )
+    logger.info( "Mapping {0!r}".format( dict(mapping_cache) ) )
 
 def feed_notification( new_feed ):
     """The change notification is a feed with an attachment."""
     global mappings
 
-    # Remove damaged feed documents which cannot be processed.
-    # Before wasting time on them.
-    counts = feed.remove_damaged( settings.db, [new_feed] )
-    print( "Cleanup", dict(counts) )
-
-
     start= datetime.datetime.now()
     counts= feed.transform_new( mappings, [new_feed], status.track_arrival, status.track_location )
     end= datetime.datetime.now()
-    print( "Transform {0} reports in {1}".format( dict(counts), end-start ) )
+    logger.info( "Transform {0!r} reports in {1}".format( dict(counts), end-start ) )
 
 def periodic_tasks( hour=False, day=False ):
-    """Tasks done once in a great while."""
+    """Tasks done once in a great while.
+
+    ..  todo:: Must track these changes in our LRU to avoid echo issues.
+
+    :param hour: If the monitor has run for an hour.
+    :param day: If the monitor has run for a day.
+    """
+    global lru_fifo
 
     # Remove old status reports; not every time.  Once per day.
-    counts= status.old_status_removal(settings.db)
-    print( "Status Removal", dict(counts) )
+    docs= status.remove_old(settings.db)
+    seq= settings.db.info()['update_seq']
+    logger.info( "Status Removal {0!r}".format( docs ) )
+    for d in docs:
+        lru_fifo.append( LRU(d['id'], seq) )
 
     # Remove old feeds; not every time.  Once per day.
-    counts= feed.remove_old(settings.db)
-    print( "Feed Removal", dict(counts) )
+    docs= feed.remove_old(settings.db)
+    seq= settings.db.info()['update_seq']
+    logger.info( "Feed Removal {0!r}".format( docs ) )
+    for d in docs:
+        lru_fifo.append( LRU(d['id'], seq) )
 
     if day:
         # Compact database.
         settings.db.compact()
-
-def lru_update( resp, lru ):
-    """Least-Recently-Used update.  This is a fifo with the last 60 mapping
-    or feed files that were processed.
-
-    The idea is to prevent CoucbDB update notifications from echoing
-    through the system. If we've processed it once, we won't process it
-    again.
-
-    We don't want this to grow forever, so we only keep 60 ID's.
-    """
-    lru.append( LRU(resp['id'], resp['seq']) )
-    if len(lru) > 60:
-        lru.pop( 0 )
-    print( lru )
 
 def long_poll_callback( changes ):
     """Callback function used by the long-poll Consumer.
@@ -154,11 +174,10 @@ def long_poll_callback( changes ):
     global last_seq
     global lru_fifo
 
-    sys.stdout.flush()
     if 'last_seq' in changes:
         last_seq= changes['last_seq']
     for resp in changes['results']:
-        #print( resp )
+        logger.debug( resp )
 
         if resp['id'] in ( l.id for l in lru_fifo ):
             return # Recently processed; ignore it.
@@ -175,23 +194,37 @@ def long_poll_callback( changes ):
             # Higher than 2? Attached content?
             seq, _, hash = doc['_rev'].partition('-')
             if int(seq) >= 2 and 'content' in doc['_attachments']:
-                print( resp, "not in", lru_fifo )
-                lru_update( resp, lru_fifo )
+                logger.debug( "{0} not in {1}".format( resp, lru_fifo ) )
+                lru_fifo.append( LRU(resp['id'], resp['seq']) )
                 mapping_notification( Mapping.wrap(doc) )
         elif doc['doc_type'] == 'Feed':
             # Higher than 2?  Attached feed?
             seq, _, hash = doc['_rev'].partition('-')
             if int(seq) >= 2 and 'feed' in doc['_attachments']:
-                print( resp, "not in", lru_fifo )
-                lru_update( resp, lru_fifo )
+                logger.debug( "{0} not in {1}".format( resp, lru_fifo ) )
+                lru_fifo.append( LRU(resp['id'], resp['seq']) )
                 feed_notification( Feed.wrap(doc) )
         else:
             pass # Other activity that we must ignore
 
 # Global sequence number to persist in case we're stopped
-last_seq = 11810
+last_seq = 0
 
-if __name__ == "__main__":
+def main():
+    """Main CoucnDB consumer processing loop.
+
+    Use a long poll query for database changes.
+    Invoke the :func:`long_poll_callback` function for each change.
+
+    Once each hour of elapsed run-time do :func:`periodic_tasks` with hour true.
+    This does not happen at the the top of the hour, but instead happens
+    after an hour has passed.
+
+    Once each day do :func:`periodic_tasks` with day true.  This happens
+    right around midnight.
+    """
+    global last_seq
+
     Mapping.set_db(settings.db)
     Feed.set_db(settings.db)
     Route.set_db(settings.db)
@@ -199,7 +232,10 @@ if __name__ == "__main__":
     Vehicle.set_db(settings.db)
     Stop.set_db(settings.db)
 
-    start = datetime.datetime.now()
+    daily = hourly = datetime.datetime.now()
+
+    h, m, s = settings.change_notification_daily_task_time
+    daily_sched = h*60+m
 
     # Seed processing status with last known sequence number.
     try:
@@ -208,6 +244,9 @@ if __name__ == "__main__":
         last_seq= proc_state['last_seq']
     except (IOError, ValueError):
         proc_state= {}
+
+    # todo:: Check Database for current sequence number.
+    # If DB sequence number < last known, then DB was rebuilt.
 
     # Seed mappings with last known good mappings.
     mapping.refresh_mapping_cache(mappings)
@@ -218,22 +257,27 @@ if __name__ == "__main__":
             consumer.wait_once(cb=long_poll_callback, since=last_seq)
 
             now= datetime.datetime.now()
-            print( "State time={0} last_seq={1}".format( now, last_seq ) )
-            print( )
-            sys.stdout.flush()
+            logger.debug( "State time={0} last_seq={1}".format( now, last_seq ) )
             proc_state['last_seq']= last_seq
             proc_state['time']= now.strftime("%Y-%m-%dT%H:%M:%S%Z")
             with open("last_seq.json",'w') as status_file:
                 json.dump( proc_state, status_file )
 
-            if now.date() > start.date():
-                # Midnight passed, start a new day.
-                start= now
-                periodic_tasks( day=True )
-            elif (now-start).seconds > 3600:
-                start= now
+            if now.date() > daily.date():
+                # Midnight passed, in a new day.
+                now_minute = now.time().hour*60+now.time().minute
+                if now_minute >= daily_sched:
+                    daily= now
+                    periodic_tasks( day=True )
+            elif (now-hourly).seconds > 3600:
+                # An hour has gone by.
+                hourly= now
                 periodic_tasks( hour=True )
 
         except (KeyboardInterrupt, SystemExit):
-            print( "Interrupted" )
+            logger.info( "Interrupted" )
             break
+
+if __name__ == "__main__":
+    logging.basicConfig( stream=sys.stderr, level=logging.INFO )
+    main()

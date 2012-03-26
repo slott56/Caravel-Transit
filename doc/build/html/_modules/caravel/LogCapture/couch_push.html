@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>caravel.LogCapture.couch_push &mdash; Caravel-Transit 1.1 documentation</title>
+    <title>caravel.LogCapture.couch_push &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
@@ -15,7 +15,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../',
-        VERSION:     '1.1',
+        VERSION:     '1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -24,7 +24,7 @@
     <script type="text/javascript" src="../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../_static/doctools.js"></script>
-    <link rel="top" title="Caravel-Transit 1.1 documentation" href="../../../index.html" />
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../../index.html" />
     <link rel="up" title="Module code" href="../../index.html" /> 
   </head>
   <body>
@@ -37,7 +37,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -89,9 +89,9 @@
 
 <span class="sd">    ..  csv-table:: Column Names</span>
 
-<span class="sd">        &quot;vehicle&quot;,&quot;\&quot;vid\&quot;,\&quot;bus\&quot;&quot;</span>
-<span class="sd">        &quot;route&quot;,&quot;\&quot;rid\&quot;,\&quot;Route\&quot;&quot;</span>
-<span class="sd">        &quot;stop&quot;,&quot;\&quot;sid\&quot;,\&quot;Stop\&quot;&quot;</span>
+<span class="sd">        &quot;vehicle&quot;,&quot;\\&quot;vid\\&quot;,\\&quot;bus\\&quot;&quot;</span>
+<span class="sd">        &quot;route&quot;,&quot;\\&quot;rid\\&quot;,\\&quot;Route\\&quot;&quot;</span>
+<span class="sd">        &quot;stop&quot;,&quot;\\&quot;sid\\&quot;,\\&quot;Stop\\&quot;&quot;</span>
 
 <span class="sd">Configuration File</span>
 <span class="sd">====================</span>
@@ -124,7 +124,7 @@
 
 <span class="sd">    timestamp      : year-mm-ddThh:mm:ssZ</span>
 <span class="sd">    effective_date : year-mm-dd</span>
-<span class="sd">    mapping_type   : vehicle, route or stop</span>
+<span class="sd">    mapping_type   : &quot;vehicle&quot;, &quot;route&quot; or &quot;stop&quot;</span>
 <span class="sd">    doc_type       : &quot;Mapping&quot; -- used by couchdbkit.</span>
 <span class="sd">    content        : the file</span>
 
@@ -213,7 +213,7 @@
 
 <span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="s">&quot;couch_push&quot;</span> <span class="p">)</span>
 
-<div class="viewcode-block" id="config"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.couch_push.config">[docs]</a><span class="k">def</span> <span class="nf">config</span><span class="p">(</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
+<div class="viewcode-block" id="config"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.couch_push.config">[docs]</a><span class="k">def</span> <span class="nf">config</span><span class="p">(</span> <span class="o">**</span><span class="n">kwargs</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Configure this operation by opening the given</span>
 <span class="sd">    Couch Server and Database.</span>
 
@@ -229,7 +229,7 @@
     <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span> <span class="s">&quot;Connection {0!r} {1!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">server</span><span class="p">,</span> <span class="n">p</span><span class="o">.</span><span class="n">path</span><span class="p">)</span> <span class="p">)</span>
     <span class="k">return</span> <span class="n">db</span>
 </div>
-<div class="viewcode-block" id="upload_mapping"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.couch_push.upload_mapping">[docs]</a><span class="k">def</span> <span class="nf">upload_mapping</span><span class="p">(</span> <span class="n">mapping_type</span><span class="p">,</span> <span class="n">effective_date</span><span class="p">,</span> <span class="n">filename</span> <span class="p">):</span>
+<div class="viewcode-block" id="upload_mapping"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.couch_push.upload_mapping">[docs]</a><span class="k">def</span> <span class="nf">upload_mapping</span><span class="p">(</span> <span class="n">mapping_type</span><span class="p">,</span> <span class="n">effective_date</span><span class="p">,</span> <span class="n">filename</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Upload a specific mapping file with a given effective date.</span>
 
 <span class="sd">    The effective date must be a datetime.date object.</span>
@@ -252,7 +252,7 @@
         <span class="n">mapping</span><span class="o">.</span><span class="n">put_attachment</span><span class="p">(</span> <span class="n">source</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&quot;content&quot;</span><span class="p">,</span> <span class="n">content_type</span><span class="o">=</span><span class="s">&quot;text/csv&quot;</span> <span class="p">)</span>
     <span class="k">return</span> <span class="n">mapping</span>
 </div>
-<div class="viewcode-block" id="validate"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.couch_push.validate">[docs]</a><span class="k">def</span> <span class="nf">validate</span><span class="p">(</span> <span class="n">mapping_type</span><span class="p">,</span> <span class="n">effective_date</span><span class="p">,</span> <span class="n">filename</span> <span class="p">):</span>
+<div class="viewcode-block" id="validate"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.couch_push.validate">[docs]</a><span class="k">def</span> <span class="nf">validate</span><span class="p">(</span> <span class="n">mapping_type</span><span class="p">,</span> <span class="n">effective_date</span><span class="p">,</span> <span class="n">filename</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Validate the arguments.</span>
 
 <span class="sd">    :param mapping_type: &quot;vehicle&quot;, &quot;route&quot; or &quot;stop&quot; mapping type</span>
@@ -274,7 +274,7 @@
         <span class="n">filename</span><span class="o">=</span><span class="n">filename</span>
         <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="push"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.couch_push.push">[docs]</a><span class="k">def</span> <span class="nf">push</span><span class="p">(</span> <span class="n">mapping_type</span><span class="p">,</span> <span class="n">date_str</span><span class="p">,</span> <span class="n">filename</span> <span class="p">):</span>
+<div class="viewcode-block" id="push"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.couch_push.push">[docs]</a><span class="k">def</span> <span class="nf">push</span><span class="p">(</span> <span class="n">mapping_type</span><span class="p">,</span> <span class="n">date_str</span><span class="p">,</span> <span class="n">filename</span> <span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Module API.   Validates the argument values and pushes the file.</span>
 
 <span class="sd">    :param mapping_type: &quot;vehicle&quot;, &quot;route&quot; or &quot;stop&quot; mapping type</span>
@@ -291,7 +291,7 @@
     <span class="n">mapping</span><span class="o">=</span> <span class="n">upload_mapping</span><span class="p">(</span> <span class="o">**</span><span class="n">cleaned</span> <span class="p">)</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span> <span class="s">&quot;{0!s} {1!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">mapping</span><span class="p">,</span> <span class="n">mapping</span><span class="o">.</span><span class="n">_id</span><span class="p">)</span> <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.couch_push.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
+<div class="viewcode-block" id="get_args"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.couch_push.get_args">[docs]</a><span class="k">def</span> <span class="nf">get_args</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Parse command-line arguments.</span>
 
 <span class="sd">    :returns: Arguments object.</span>
@@ -300,11 +300,11 @@
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;source&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="mi">1</span> <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--mapping_type&#39;</span><span class="p">,</span> <span class="s">&#39;-m&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s">&quot;vehicle&quot;</span><span class="p">,</span><span class="s">&quot;route&quot;</span><span class="p">,</span><span class="s">&quot;stop&quot;</span><span class="p">]</span> <span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--effective_date&#39;</span><span class="p">,</span> <span class="s">&#39;-e&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store&#39;</span> <span class="p">)</span>
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--vebose&#39;</span><span class="p">,</span> <span class="s">&#39;-v&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span> <span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span> <span class="s">&#39;--verbose&#39;</span><span class="p">,</span> <span class="s">&#39;-v&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">False</span> <span class="p">)</span>
     <span class="n">args</span><span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
     <span class="k">return</span> <span class="n">args</span>
 </div>
-<div class="viewcode-block" id="get_config"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.LogCapture.couch_push.get_config">[docs]</a><span class="k">def</span> <span class="nf">get_config</span><span class="p">():</span>
+<div class="viewcode-block" id="get_config"><a class="viewcode-back" href="../../../implementation/etl.html#caravel.LogCapture.couch_push.get_config">[docs]</a><span class="k">def</span> <span class="nf">get_config</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Read the config file, :file:`hrtail_conf.py`</span>
 <span class="sd">    to get the ``couchpush`` value.</span>
 
@@ -325,7 +325,7 @@
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span> <span class="n">stream</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">,</span> <span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">INFO</span> <span class="p">)</span>
     <span class="n">settings</span><span class="o">=</span> <span class="n">get_config</span><span class="p">()</span>
     <span class="n">args</span><span class="o">=</span> <span class="n">get_args</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">vebose</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">verbose</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">()</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span> <span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span> <span class="p">)</span>
     <span class="n">push</span><span class="p">(</span> <span class="n">args</span><span class="o">.</span><span class="n">mapping_type</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">effective_date</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">source</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
     <span class="n">logging</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
@@ -365,7 +365,7 @@
         <li class="right" >
           <a href="../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../caravel.html">Caravel-Transit 1.1 documentation</a> &raquo;</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

@@ -22,7 +22,7 @@ Components
 ..  autofunction:: update_vehicle
 ..  autofunction:: track_arrival
 ..  autofunction:: track_location
-..  autofunction:: old_status_removal
+..  autofunction:: remove_old
 """
 from __future__ import print_function
 from caravel.feed.models import *
@@ -169,21 +169,21 @@ def track_location( mappings, report ):
 
     print( report, 'bus', vehicle )
 
-def old_status_removal( db, today=None ):
+def remove_old( db, today=None ):
     """Remove old Route, RouteStop and Vehicle reports.
 
     This should only be run once in a great while.
+
+    :return: sequence of {id:..., rev:..., ok:true} status responses.
     """
     if today is None:
         today= datetime.datetime.today().date()
-    counts= defaultdict(int)
+    docs= []
     for r in db.view('status/all'):
         object= r['value']
         published= datetime.datetime.strptime(object['date'],'%Y-%m-%d').date()
         if (today-published).days >= 1:
             print( "Delete ", object )
-            db.delete_doc(object['_id'])
-            counts['old'] += 1
-        else:
-            counts['current'] += 1
-    return counts
+            resp= db.delete_doc(object['_id'])
+            docs.append( resp )
+    return docs
