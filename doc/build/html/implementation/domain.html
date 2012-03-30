@@ -571,7 +571,7 @@ If the label is not as expected, raise an exception.</p>
 
 <dl class="attribute">
 <dt id="caravel.report.ReportReader_v1.vehicle_pat">
-<tt class="descname">vehicle_pat</tt><em class="property"> = &lt;_sre.SRE_Pattern object at 0x104677450&gt;</em><a class="headerlink" href="#caravel.report.ReportReader_v1.vehicle_pat" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">vehicle_pat</tt><em class="property"> = &lt;_sre.SRE_Pattern object at 0x103d3eea0&gt;</em><a class="headerlink" href="#caravel.report.ReportReader_v1.vehicle_pat" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -840,55 +840,6 @@ create an in-memory database.</p>
 </table>
 </dd></dl>
 
-</div>
-<div class="section" id="transit-objects">
-<h3>Transit Objects<a class="headerlink" href="#transit-objects" title="Permalink to this headline">¶</a></h3>
-<dl class="class">
-<dt id="caravel.transit_system.Calendar">
-<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Calendar</tt><a class="headerlink" href="#caravel.transit_system.Calendar" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calendar(service_id, monday, tuesday, wednesday, thursday, friday, saturday, sunday, start_date, end_date)</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="caravel.transit_system.Calendar_Date">
-<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Calendar_Date</tt><a class="headerlink" href="#caravel.transit_system.Calendar_Date" title="Permalink to this definition">¶</a></dt>
-<dd><p>Calendar_Date(service_id, date, exception_type)</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="caravel.transit_system.Route">
-<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Route</tt><a class="headerlink" href="#caravel.transit_system.Route" title="Permalink to this definition">¶</a></dt>
-<dd><p>Route(route_id, route_short_name, route_long_name, route_desc, route_type, route_url)</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="caravel.transit_system.Stop">
-<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Stop</tt><a class="headerlink" href="#caravel.transit_system.Stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stop(stop_id, stop_name, stop_lat, stop_lon)</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="caravel.transit_system.Trip">
-<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Trip</tt><a class="headerlink" href="#caravel.transit_system.Trip" title="Permalink to this definition">¶</a></dt>
-<dd><p>Trip(route_id, service_id, trip_id, direction_id, block_id)</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="caravel.transit_system.Stop_Time">
-<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Stop_Time</tt><a class="headerlink" href="#caravel.transit_system.Stop_Time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stop_Time(trip_id, arrival_time, departure_time, stop_id, stop_sequence, timepoint)</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="caravel.transit_system.Candidate">
-<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Candidate</tt><a class="headerlink" href="#caravel.transit_system.Candidate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Candidate(distance, time, stop, stop_time)</p>
-</dd></dl>
-
-</div>
-<div class="section" id="transit-connection">
-<h3>Transit &#8220;Connection&#8221;<a class="headerlink" href="#transit-connection" title="Permalink to this headline">¶</a></h3>
-<p>This is a database-like object.</p>
 <dl class="class">
 <dt id="caravel.transit_system.Accessor">
 <em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Accessor</tt><a class="reference internal" href="../_modules/caravel/transit_system.html#Accessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.Accessor" title="Permalink to this definition">¶</a></dt>
@@ -920,44 +871,23 @@ a ZIP archive.</p>
 
 </dd></dl>
 
+</div>
+<div class="section" id="transit-objects">
+<h3>Transit Objects<a class="headerlink" href="#transit-objects" title="Permalink to this headline">¶</a></h3>
 <dl class="class">
-<dt id="caravel.transit_system.Connection">
-<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Connection</tt><a class="reference internal" href="../_modules/caravel/transit_system.html#Connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.Connection" title="Permalink to this definition">¶</a></dt>
-<dd><p>Open a database-like connection to the transit data.
-This will eagerly load all the files, creating a large (but fast) in-memory database.</p>
-<dl class="method">
-<dt id="caravel.transit_system.Connection.open">
-<tt class="descname">open</tt><big>(</big><em>base</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#Connection.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.Connection.open" title="Permalink to this definition">¶</a></dt>
-<dd><p>Open the given .ZIP file or directory.  This will eagerly load
-the files.  It takes a second or two.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>base</strong> &#8211; Directory name or .ZIP file name.</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dt id="caravel.transit_system.Service">
+<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Service</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#caravel.transit_system.Service" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
-<dl class="staticmethod">
-<dt id="caravel.transit_system.Connection.time_parse">
-<em class="property">static </em><tt class="descname">time_parse</tt><big>(</big><em>string</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#Connection.time_parse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.Connection.time_parse" title="Permalink to this definition">¶</a></dt>
-<dd><p>Transform HH:MM:SS string into seconds past midnight.
-Unlike <tt class="xref py py-mod docutils literal"><span class="pre">datetime</span></tt>, this does not mind times &gt;= 24:00:00.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>string</strong> &#8211; String of the form HH:MM:SS</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">seconds past midnigth</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
+<dl class="class">
+<dt id="caravel.transit_system.Route_Definition">
+<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Route_Definition</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#caravel.transit_system.Route_Definition" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
-</dd></dl>
+<dl class="class">
+<dt id="caravel.transit_system.Stop_Definition">
+<em class="property">class </em><tt class="descclassname">caravel.transit_system.</tt><tt class="descname">Stop_Definition</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#caravel.transit_system.Stop_Definition" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </div>
 <div class="section" id="query-functions">
@@ -1019,22 +949,17 @@ Fast and reasonably accurate.</p>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_services_today">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_services_today</tt><big>(</big><em>conn</em>, <em>today=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_services_today"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_services_today" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_services_today</tt><big>(</big><em>today=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_services_today"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_services_today" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Service ID applicable today.
 Examines calendar and calendar dates.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
-<li><strong>today</strong> &#8211; A <tt class="xref py py-class docutils literal"><span class="pre">datetime.date</span></tt> object.
-If omitted, the current date is used.</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>today</strong> &#8211; A <tt class="xref py py-class docutils literal"><span class="pre">datetime.date</span></tt> object.
+If omitted, the current date is used.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">A sequence of service id strings that apply to this date.</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A sequence of service id strings that apply to this date.</td>
 </tr>
 </tbody>
 </table>
@@ -1042,7 +967,7 @@ If omitted, the current date is used.</li>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_closest_stops">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_closest_stops</tt><big>(</big><em>conn</em>, <em>lat_lon</em>, <em>max_dist=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_closest_stops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_closest_stops" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_closest_stops</tt><big>(</big><em>lat_lon</em>, <em>max_dist=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_closest_stops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_closest_stops" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a lat/lon pair, locate nearby stops.</p>
 <p>Handles the following REST requests.</p>
 <p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em></tt></p>
@@ -1053,7 +978,6 @@ If omitted, the current date is used.</li>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
 <li><strong>lat_lon</strong> &#8211; A (lat,lon) 2-tuple</li>
 <li><strong>max_dist</strong> &#8211; An upper limit on distances to examine</li>
 </ul>
@@ -1069,14 +993,13 @@ the specified max_dist value.</p>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_closest_times_in_service">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_closest_times_in_service</tt><big>(</big><em>conn</em>, <em>stop_id</em>, <em>time</em>, <em>services</em>, <em>min_time=None</em>, <em>max_time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_closest_times_in_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_closest_times_in_service" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_closest_times_in_service</tt><big>(</big><em>stop_id</em>, <em>time</em>, <em>services</em>, <em>min_time=None</em>, <em>max_time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_closest_times_in_service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_closest_times_in_service" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a stop and a time, locate the scheduled stop_time closest to this.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
 <li><strong>stop_id</strong> &#8211; The id for a stop</li>
 <li><strong>time</strong> &#8211; The seconds-after-midnight time</li>
 <li><strong>services</strong> &#8211; The iterable sequence of services applicable</li>
@@ -1098,7 +1021,7 @@ so early and late times will be intermixed.</p>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_candidate_stops">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_candidate_stops</tt><big>(</big><em>conn</em>, <em>lat_lon</em>, <em>time</em>, <em>services</em>, <em>max_dist=None</em>, <em>min_time=None</em>, <em>max_time=None</em>, <em>count=6</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_candidate_stops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_candidate_stops" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_candidate_stops</tt><big>(</big><em>lat_lon</em>, <em>time</em>, <em>services</em>, <em>max_dist=None</em>, <em>min_time=None</em>, <em>max_time=None</em>, <em>count=6</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_candidate_stops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_candidate_stops" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the most likely stops to match a report&#8217;s lat/lon and time.
 This will use <a class="reference internal" href="#caravel.transit_system.get_closest_stops" title="caravel.transit_system.get_closest_stops"><tt class="xref py py-meth docutils literal"><span class="pre">get_closest_stops()</span></tt></a> to locate a collection of likely stops.
 For each stop, <a class="reference internal" href="#caravel.transit_system.get_closest_times_in_service" title="caravel.transit_system.get_closest_times_in_service"><tt class="xref py py-meth docutils literal"><span class="pre">get_closest_times_in_service()</span></tt></a> is used to locate the
@@ -1110,7 +1033,6 @@ for time and distance matching.</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
 <li><strong>lat_lon</strong> &#8211; A (lat,lon) tuple from a <a class="reference internal" href="#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a> instance.</li>
 <li><strong>time</strong> &#8211; A time (seconds past midnight) from a <a class="reference internal" href="#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a> instance.</li>
 <li><strong>services</strong> &#8211; The iterable sequence of services applicable</li>
@@ -1128,43 +1050,18 @@ This is a positive number.  The default is about 360 seconds.</li>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_route_from_stop_time">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_route_from_stop_time</tt><big>(</big><em>conn</em>, <em>stop_time</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_route_from_stop_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_route_from_stop_time" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_route_from_stop_time</tt><big>(</big><em>stop_time</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_route_from_stop_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_route_from_stop_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Query the route that contains a given stop_time value.
 This does a stop_times JOIN trips JOIN routes query.</p>
+<p>This is ill-constrained, since it can provide lots of
+routes all over the transit system.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
-<li><strong>stop_time</strong> &#8211; a <a class="reference internal" href="#caravel.transit_system.Stop_Time" title="caravel.transit_system.Stop_Time"><tt class="xref py py-class docutils literal"><span class="pre">Stop_Time</span></tt></a> instance.</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>stop_time</strong> &#8211; a <tt class="xref py py-class docutils literal"><span class="pre">Stop_Time</span></tt> instance.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a <a class="reference internal" href="#caravel.transit_system.Route" title="caravel.transit_system.Route"><tt class="xref py py-class docutils literal"><span class="pre">Route</span></tt></a> instance.</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="caravel.transit_system.get_trip_from_stop_time">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_trip_from_stop_time</tt><big>(</big><em>conn</em>, <em>stop_time</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_trip_from_stop_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_trip_from_stop_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Query the trip that contains a given stop_time value.
-This does a stop_times JOIN trips JOIN routes query.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
-<li><strong>stop_time</strong> &#8211; a <a class="reference internal" href="#caravel.transit_system.Stop_Time" title="caravel.transit_system.Stop_Time"><tt class="xref py py-class docutils literal"><span class="pre">Stop_Time</span></tt></a> instance.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a <a class="reference internal" href="#caravel.transit_system.Trip" title="caravel.transit_system.Trip"><tt class="xref py py-class docutils literal"><span class="pre">Trip</span></tt></a> instance.</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a <tt class="xref py py-class docutils literal"><span class="pre">Route</span></tt> instance.</td>
 </tr>
 </tbody>
 </table>
@@ -1172,23 +1069,23 @@ This does a stop_times JOIN trips JOIN routes query.</p>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_next_stop_time">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_next_stop_time</tt><big>(</big><em>conn</em>, <em>stop_time</em>, <em>services</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_next_stop_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_next_stop_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a <a class="reference internal" href="#caravel.transit_system.Stop_Time" title="caravel.transit_system.Stop_Time"><tt class="xref py py-class docutils literal"><span class="pre">Stop_Time</span></tt></a> object, locate the remaining
-sequence of stops.</p>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_next_stop_time</tt><big>(</big><em>stop</em>, <em>time</em>, <em>services</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_next_stop_time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_next_stop_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a <a class="reference internal" href="#caravel.transit_system.Stop_Definition" title="caravel.transit_system.Stop_Definition"><tt class="xref py py-class docutils literal"><span class="pre">Stop_Definition</span></tt></a> object, a time after midnight,
+and specific classes of service,
+locate the remaining sequence of stops.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
-<li><strong>stop_time</strong> &#8211; A <a class="reference internal" href="#caravel.transit_system.Stop_Time" title="caravel.transit_system.Stop_Time"><tt class="xref py py-class docutils literal"><span class="pre">Stop_Time</span></tt></a> object</li>
+<li><strong>stop</strong> &#8211; A <a class="reference internal" href="#caravel.transit_system.Stop_Definition" title="caravel.transit_system.Stop_Definition"><tt class="xref py py-class docutils literal"><span class="pre">Stop_Definition</span></tt></a> object</li>
+<li><strong>time</strong> &#8211; A seconds-after-midnight arrival time to use as a filter</li>
 <li><strong>services</strong> &#8211; The iterable sequence of services applicable</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">iterator over (time,stop_time) pairs ordered from closest in time
-to the max_time value.  The absolute magnitude is used for sorting
-so early and late times will be intermixed.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">sequence of <a class="reference internal" href="#caravel.transit_system.Route_Definition" title="caravel.transit_system.Route_Definition"><tt class="xref py py-class docutils literal"><span class="pre">Route_Definition</span></tt></a> objects, each modified to have
+stops removed.</p>
 </td>
 </tr>
 </tbody>
@@ -1197,7 +1094,7 @@ so early and late times will be intermixed.</p>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_route">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_route</tt><big>(</big><em>conn</em>, <em>id=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_route" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_route</tt><big>(</big><em>id=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_route" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns route or list of routes.
 Handles the following REST requests.</p>
 <p><tt class="samp docutils literal"><span class="pre">/route/</span></tt></p>
@@ -1213,13 +1110,12 @@ with a specific stop.</div></blockquote>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
+<li><strong>conn</strong> &#8211; An open <tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt>.</li>
 <li><strong>id</strong> &#8211; Optional route id.  If no route id, all routes are returned.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">route or list of routes.  Each route is a 3-tuple of (route, trip_list)
-Each trip list is a sequence of stop_times.  Stop details are not included.</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">route definition or list of route definitions.</p>
 </td>
 </tr>
 </tbody>
@@ -1228,7 +1124,7 @@ Each trip list is a sequence of stop_times.  Stop details are not included.</p>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_stop">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_stop</tt><big>(</big><em>conn</em>, <em>id=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_stop" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_stop</tt><big>(</big><em>id=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns stop or list of stops.
 Handles the following REST requests.</p>
 <p><tt class="samp docutils literal"><span class="pre">/stop/</span></tt></p>
@@ -1237,11 +1133,21 @@ Handles the following REST requests.</p>
 <p><tt class="samp docutils literal"><span class="pre">/stop/</span><em><span class="pre">id</span></em><span class="pre">/</span></tt></p>
 <blockquote>
 <div>A specific stop.</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>id</strong> &#8211; Optional route id.  If no route id, all routes are returned.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">stop definition or list of stop definitions.</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_route_stops">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_route_stops</tt><big>(</big><em>conn</em>, <em>id</em>, <em>dir=None</em>, <em>date=None</em>, <em>time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_route_stops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_route_stops" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_route_stops</tt><big>(</big><em>id</em>, <em>dir=None</em>, <em>date=None</em>, <em>time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_route_stops"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_route_stops" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a route with a list of stops on that route.
 Handles the following REST requests.</p>
 <p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span><em><span class="pre">dir</span></em></tt></p>
@@ -1263,14 +1169,16 @@ direction) it should provide a tidy summary of the route.</div></blockquote>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>id</strong> &#8211; route id.</li>
 <li><strong>dir</strong> &#8211; optional direction, codes are &#8216;1&#8217; and &#8216;0&#8217;.</li>
 <li><strong>date</strong> &#8211; a datetime.date object; the services available on this date
 are used to filter the results.</li>
-<li><strong>time</strong> &#8211; a seconds-after-midnight time.</li>
+<li><strong>time</strong> &#8211; a seconds-after-midnight time; stops after this time.</li>
 </ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">a <a class="reference internal" href="#caravel.transit_system.Route_Definition" title="caravel.transit_system.Route_Definition"><tt class="xref py py-class docutils literal"><span class="pre">Route_Definition</span></tt></a> instance.</p>
 </td>
 </tr>
 </tbody>
@@ -1279,7 +1187,7 @@ are used to filter the results.</li>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_stop_times">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_stop_times</tt><big>(</big><em>conn</em>, <em>id</em>, <em>dir=None</em>, <em>date=None</em>, <em>time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_stop_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_stop_times" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_stop_times</tt><big>(</big><em>id</em>, <em>dir=None</em>, <em>date=None</em>, <em>time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_stop_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_stop_times" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a stop with a list of stop times.
 Handles the following REST requests.</p>
 <p><tt class="samp docutils literal"><span class="pre">/stop/</span><em><span class="pre">id</span></em><span class="pre">/?dir=</span><em><span class="pre">dir</span></em></tt></p>
@@ -1296,7 +1204,6 @@ on or after the given time</p>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
 <li><strong>id</strong> &#8211; stop id.</li>
 <li><strong>dir</strong> &#8211; optional route direction, codes are &#8216;1&#8217; and &#8216;0&#8217;.</li>
 <li><strong>date</strong> &#8211; a datetime.date object; the services available on this date
@@ -1311,7 +1218,7 @@ are used to filter the results.</li>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_closest_stops_filtered">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_closest_stops_filtered</tt><big>(</big><em>conn</em>, <em>lat_lon</em>, <em>max_dist=None</em>, <em>dir=None</em>, <em>date=None</em>, <em>time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_closest_stops_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_closest_stops_filtered" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_closest_stops_filtered</tt><big>(</big><em>lat_lon</em>, <em>max_dist=None</em>, <em>dir=None</em>, <em>date=None</em>, <em>time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_closest_stops_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_closest_stops_filtered" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a lat/lon pair, locate nearby stops.</p>
 <p>Handles the following REST requests.</p>
 <p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;dir=</span><em><span class="pre">dir</span></em></tt></p>
@@ -1329,7 +1236,6 @@ and on or after the given time.</div></blockquote>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
 <li><strong>lat_lon</strong> &#8211; A (lat,lon) 2-tuple</li>
 <li><strong>dir</strong> &#8211; A trip direction_id</li>
 <li><strong>max_dist</strong> &#8211; An upper limit on distances to examine</li>
@@ -1346,7 +1252,7 @@ the specified max_dist value.</p>
 
 <dl class="function">
 <dt id="caravel.transit_system.get_closest_routes_filtered">
-<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_closest_routes_filtered</tt><big>(</big><em>conn</em>, <em>lat_lon</em>, <em>id</em>, <em>dir=None</em>, <em>max_dist=None</em>, <em>date=None</em>, <em>time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_closest_routes_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_closest_routes_filtered" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">caravel.transit_system.</tt><tt class="descname">get_closest_routes_filtered</tt><big>(</big><em>lat_lon</em>, <em>id</em>, <em>dir=None</em>, <em>max_dist=None</em>, <em>date=None</em>, <em>time=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system.html#get_closest_routes_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.get_closest_routes_filtered" title="Permalink to this definition">¶</a></dt>
 <dd><p>Given a lat/lon pair, locate nearby stops on a given route.</p>
 <p>Handles the following REST requests.</p>
 <p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em></tt></p>
@@ -1368,7 +1274,6 @@ active on the given date and on or after the given time.</div></blockquote>
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>conn</strong> &#8211; An open <a class="reference internal" href="#caravel.transit_system.Connection" title="caravel.transit_system.Connection"><tt class="xref py py-class docutils literal"><span class="pre">Connection</span></tt></a>.</li>
 <li><strong>lat_lon</strong> &#8211; A (lat,lon) 2-tuple</li>
 <li><strong>dir</strong> &#8211; A trip direction_id</li>
 <li><strong>max_dist</strong> &#8211; An upper limit on distances to examine</li>
@@ -1509,7 +1414,6 @@ If (a) the mapping exists and (b) the value is in the mapping</p>
 <li><a class="reference internal" href="#transit-system">Transit System</a><ul>
 <li><a class="reference internal" href="#acquisition">Acquisition</a></li>
 <li><a class="reference internal" href="#transit-objects">Transit Objects</a></li>
-<li><a class="reference internal" href="#transit-connection">Transit &#8220;Connection&#8221;</a></li>
 <li><a class="reference internal" href="#query-functions">Query Functions</a></li>
 </ul>
 </li>

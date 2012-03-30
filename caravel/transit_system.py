@@ -26,22 +26,6 @@ Acquisition
 
 ..  autofunction:: get_source_data
 
-Transit Objects
-=================
-
-..  autoclass:: Calendar
-..  autoclass:: Calendar_Date
-..  autoclass:: Route
-..  autoclass:: Stop
-..  autoclass:: Trip
-..  autoclass:: Stop_Time
-..  autoclass:: Candidate
-
-Transit "Connection"
-======================
-
-This is a database-like object.
-
 ..  autoclass:: Accessor
     :members:
 
@@ -51,8 +35,12 @@ This is a database-like object.
 ..  autoclass:: AccessDir
     :members:
 
-..  autoclass:: Connection
-    :members:
+Transit Objects
+=================
+
+..  autoclass:: Service
+..  autoclass:: Route_Definition
+..  autoclass:: Stop_Definition
 
 Query Functions
 =================
@@ -88,7 +76,11 @@ import zipfile
 import caravel.report
 import urlparse
 import urllib2
+from caravel.conf import settings
 from contextlib import closing
+from couchdbkit import Document
+from couchdbkit import schema
+from couchdbkit.exceptions import *
 
 URL_Google_Transit = "http://googletf.gohrt.com/google_transit.zip"
 
@@ -112,12 +104,52 @@ def get_source_data( connection=None, target_dir='.', url=None ):
             target.write( source.read() )
     return name
 
-Calendar = namedtuple('Calendar', 'service_id,monday,tuesday,wednesday,thursday,friday,saturday,sunday,start_date,end_date')
-Calendar_Date = namedtuple('Calendar_Date', 'service_id,date,exception_type' )
-Route = namedtuple( 'Route', 'route_id,route_short_name,route_long_name,route_desc,route_type,route_url' )
-Stop = namedtuple( 'Stop', 'stop_id,stop_name,stop_lat,stop_lon')
-Trip = namedtuple( 'Trip', 'route_id,service_id,trip_id,direction_id,block_id' )
-Stop_Time= namedtuple('Stop_Time', 'trip_id,arrival_time,departure_time,stop_id,stop_sequence,timepoint' )
+class Service( Document ):
+    date= schema.DateProperty()
+    day_of_week= schema.StringProperty()
+    services= schema.ListProperty()
+    def __repr__( self ):
+        return "Service(date={0.date}, day_of_week={0.day_of_week}, services={0.services})".format( self )
+
+class Route_Definition( Document ):
+    route_id= schema.StringProperty()
+    route_short_name= schema.StringProperty()
+    route_long_name= schema.StringProperty()
+    route_desc= schema.StringProperty()
+    route_type= schema.StringProperty()
+    route_url= schema.StringProperty()
+    trips= schema.DictProperty() # Service is required to identify a given trip.
+    # Trip is { trip_id:..., direction_id:..., block_id:..., stops:{ ... } }
+    def __repr__( self ):
+        return ("Route_Definition( route_id={0.route_id}, "
+                "route_short_name= {0.route_short_name}, "
+                "route_long_name= {0.route_long_name}, "
+                "route_desc= {0.route_desc}, "
+                "route_type= {0.route_type}, "
+                "route_url= {0.route_url}, "
+                "trips= {0.trips!r} )").format( self )
+    def stops( self ):
+        """Flat list of stops on this route."""
+        for svc in self.trips:
+            for trip in self.trips[svc]:
+                for s in self.trips[svc][trip]['stops']:
+                    yield s
+
+class Stop_Definition( Document ):
+    stop_id= schema.StringProperty()
+    stop_name= schema.StringProperty()
+    stop_lat= schema.FloatProperty()
+    stop_lon= schema.FloatProperty()
+    trips= schema.DictProperty() # Service is required to identify a given trip.
+    def __repr__( self ):
+        return ("Stop_Definition( stop_id={0.stop_id}, "
+                "stop_name= {0.stop_name}, "
+                "stop_lat= {0.stop_lat}, "
+                "stop_lon= {0.stop_lon}, "
+                "trips= {0.trips!r} )").format( self )
+    def distance_from( self, lat, lon ):
+        """Distance from a given point, in miles."""
+        return dist_approx( (self.stop_lat, self.stop_lon), (lat,lon) )
 
 Candidate = namedtuple('Candidate', ['distance', 'time', 'stop', 'stop_time'] )
 
@@ -152,11 +184,11 @@ class AccessDir( Accessor ):
         """Returns an open file object for the named member."""
         return open( os.path.join(self.base,name), mode )
 
-class Connection( object ):
-    """Open a database-like connection to the transit data.
-    This will eagerly load all the files, creating a large (but fast) in-memory database.
+class Loader( object ):
+    """Load the transit data to the CouchDB.
     """
-    def open( self, base ):
+    weekday_name = 'monday,tuesday,wednesday,thursday,friday,saturday,sunday'.split(',')
+    def load( self, base ):
         """Open the given .ZIP file or directory.  This will eagerly load
         the files.  It takes a second or two.
 
@@ -169,94 +201,161 @@ class Connection( object ):
             # Unzipped directory
             self.accessor = AccessDir( base )
         else:
-            raise IOError( "Unopenable Archive" )
+            raise IOError( "Unopenable Archive: {0!r}".format(base) )
         with self.accessor.open( 'calendar.txt' ) as source:
-            self.calendar= list( self._load_calendar(source) )
+            rdr= csv.DictReader( source )
+            self._load_calendar(rdr)
         with self.accessor.open( 'calendar_dates.txt' ) as source:
-            self.calendar_dates= dict( (cd.date,cd) for cd in self._load_calendar_dates(source) )
+            rdr= csv.DictReader( source )
+            self._load_calendar_dates(rdr)
         with self.accessor.open( 'routes.txt' ) as source:
-            self.routes= dict( (r.route_id,r) for r in self._load_routes(source) )
-        with self.accessor.open( 'trips.txt' ) as source:
-            self.trips= dict( (t.trip_id,t) for t in self._load_trips(source) )
-        stop_times= defaultdict(list)
-        with self.accessor.open('stop_times.txt' ) as source:
-            for st in  self._load_stop_times(source):
-                 stop_times[st.stop_id].append( st )
-        # Force key errors
-        self.stop_times= dict(stop_times)
+            rdr= csv.DictReader( source )
+            self._load_routes(rdr)
         with self.accessor.open('stops.txt' ) as source:
-            self.stops= dict( (s.stop_id,s) for s in self._load_stops(source)
-                if s.stop_id in stop_times # reject spurious data
-                )
-        self.build_indices()
-    def build_indices( self ):
-        trip_times= defaultdict(list)
-        for stop_id in self.stop_times:
-            for st in self.stop_times[stop_id]:
-                trip_times[st.trip_id].append( st )
-        # Force key errors
-        self.trip_times= dict(trip_times)
+            rdr= csv.DictReader( source )
+            self._load_stops(rdr)
+        with self.accessor.open( 'trips.txt' ) as source:
+            rdr= csv.DictReader( source )
+            self._load_trips(rdr)
+        with self.accessor.open('stop_times.txt' ) as source:
+            rdr= csv.DictReader( source )
+            self._load_stop_times(rdr)
+    def _load_calendar(self, rdr):
+        """Fetch the calendar table, creating :class:`Service` objects.
 
-        trips_by_route= defaultdict(list)
-        for t in self.trips.values():
-            trips_by_route[t.route_id].append( t )
-        # Force key errors
-        self.trips_by_route= dict( trips_by_route )
-    def _load_calendar(self, source):
-        """Fetch the calendar table, creating :class:`Calendar` objects."""
-        rdr= csv.DictReader( source )
+        Give a given calendar row, create the details for each date."""
+        # Mapping from day number to day name.  Must be in this order.  No changes.
+        # Must match the dictionary keys in GTF data.
+        Service.set_db( settings.db )
+        services_by_date= defaultdict(set)
         for row in rdr:
-            row['start_date']= datetime.datetime.strptime( row['start_date'], '%Y%m%d' ).date()
-            row['end_date']= datetime.datetime.strptime( row['end_date'], '%Y%m%d' ).date()
-            yield Calendar( **row )
-    def _load_calendar_dates(self, source):
-        """Fetch the calendar_dates table, creating :class:`Calendar_Date` objects."""
-        rdr= csv.DictReader( source )
+            start_date= datetime.datetime.strptime( row['start_date'], '%Y%m%d' ).date()
+            end_date= datetime.datetime.strptime( row['end_date'], '%Y%m%d' ).date()
+            for d in xrange((end_date-start_date).days+1):
+                date= start_date + datetime.timedelta(days=d)
+                day_name= self.weekday_name[date.weekday()]
+                if row[day_name] == '1':
+                    services_by_date[date].add( row['service_id'])
+        for date in sorted(services_by_date):
+            settings.db.bulk_delete( list( Service.view( 'service/bydate', key=date.strftime("%Y-%m-%d") ) ) )
+            serv= Service(
+                date= date,
+                day_of_week= self.weekday_name[date.weekday()].title(),
+                services= list( sorted(services_by_date[date]) ),
+            )
+            serv.save()
+    def _load_calendar_dates(self, rdr):
+        """Fetch the calendar_dates table, updating the :class:`Service` objects.
+        Can only be done successfully **after** the core calendar has been loaded.
+        These are add/remove changes to the calendar.
+        """
+        Service.set_db( settings.db )
         for row in rdr:
-            row['date']= datetime.datetime.strptime( row['date'], '%Y%m%d' ).date()
-            yield Calendar_Date( **row )
-    def _load_routes(self, source):
-        """Fetch the routes table, creating :class:`Route` objects."""
-        rdr= csv.DictReader( source )
+            date= datetime.datetime.strptime( row['date'], '%Y%m%d' ).date()
+            docs= list( Service.view( 'service/bydate', key=date.strftime("%Y-%m-%d") ) )
+            if docs:
+                serv= docs[0]
+                if row['exception_type'] == '1': # Add
+                    serv.services.append( row['service_id'])
+                elif row['exception_type'] == '2' and row['service_id'] in serv.services: # Remove
+                    serv.services.remove( row['service_id'])
+                elif row['exception_type'] == '2' and row['service_id'] not in serv.services:
+                    # Wasn't there to begin with?  Weird.
+                    pass
+                else:
+                    raise GTFException( "Unknown Calendar Date {0!r}".format(row) )
+            else:
+                # Missing date?  Weird.
+                pass
+            serv.save()
+    def _load_routes(self, rdr):
+        """Fetch the routes table, creating :class:`Route_Definition` objects."""
+        Route_Definition.set_db( settings.db )
         for row in rdr:
-            yield Route(**row)
-    def _load_stops(self, source):
-        """Fetch the stops table, creating :class:`Stop` objects.
+            for r in Route_Definition.view( 'service/route', key=row['route_id'] ):
+                r.delete()
+            route= Route_Definition(**row)
+            route.save()
+    def _load_stops(self, rdr):
+        """Fetch the stops table, creating :class:`Stop_Definition` objects.
         Note that some stops don't have any stop times, and should be ignored.
         """
-        rdr= csv.DictReader( source )
+        Stop_Definition.set_db( settings.db )
         for row in rdr:
+            for s in Stop_Definition.view( 'service/stop', key=row['stop_id'] ):
+                s.delete()
             row['stop_lat']= float(row['stop_lat'])
             row['stop_lon']= float(row['stop_lon'])
-            yield Stop(**row)
-    def _load_trips(self, source):
-        """Fetch the trips table, creating :class:`Trip` objects."""
-        rdr= csv.DictReader( source )
+            stop= Stop_Definition(**row)
+            stop.save()
+
+    def _load_trips(self, rdr):
+        """Fetch the trips table, updating :class:`Route_Definition` objects with trips.
+        Must be loaded after stops and routes, but before stop times.
+
+        This is a mapping among route_id,service_id,trip_id,direction_id,block_id
+
+        -   [route/direction] -> [service class] -> [trip]<>-> [list of stops]
+
+        -   [stop] -> [service class] -> [list of trips] -> [route/direction]
+        """
+        self.trip= {}
+        self.trip_by_route= defaultdict(list)
         for row in rdr:
-            yield Trip(**row)
+            self.trip[ row['trip_id'] ]= row
+            self.trip_by_route[ row['route_id'] ].append( row )
+
     @staticmethod
     def time_parse( string ):
         """Transform HH:MM:SS string into seconds past midnight.
         Unlike :mod:`datetime`, this does not mind times >= 24:00:00.
 
         :param string: String of the form HH:MM:SS
-        :return: seconds past midnigth
+        :return: seconds past midnight
         """
         hh, mm, ss = map(int, string.split(':'))
         return (hh*60+mm)*60+ss
-    def _load_stop_times(self, source):
-        """Fetch the stop_times table, creating :class:`Stop_Time` objects."""
-        rdr= csv.DictReader( source )
+
+    def _load_stop_times(self, rdr):
+        """Fetch the stop_times table, :class:`Route_Definition` objects with times.
+
+        Must be done last.  Requires the self.trip and self.trip_by_route information.
+        """
         for row in rdr:
             try:
                 row['arrival_time']= self.time_parse(row['arrival_time'])
                 row['departure_time']= self.time_parse(row['departure_time'])
-                yield Stop_Time( **row )
             except ValueError:
-                print( row, "has bad time" )
-            except AssertionError:
-                print( row, "has no stop" )
+                raise GTFException( "Bad Time {0!r}".format(row) )
 
+            trip= self.trip[row['trip_id']]
+
+            docs= list( Route_Definition.view( 'service/route', key=trip['route_id'] ) )
+            route= docs[0]
+            if trip['service_id'] not in route.trips:
+                route.trips[ trip['service_id'] ]= {}
+            if trip['trip_id'] not in route.trips[trip['service_id']]:
+                route.trips[ trip['service_id'] ][trip['trip_id']] = dict(
+                        direction_id= trip['direction_id'],
+                        block_id= trip['block_id'],
+                        stops= [], )
+            route_trip= route.trips[ trip['service_id'] ][trip['trip_id']]
+            route_trip['stops'].append( row )
+            route.save()
+
+            docs = list( Stop_Definition.view( 'service/stop', key=row['stop_id']))
+            stop= docs[0]
+            if trip['service_id'] not in stop.trips:
+                stop.trips[ trip['service_id'] ]= {}
+            if trip['trip_id'] not in stop.trips[trip['service_id']]:
+                stop.trips[ trip['service_id'] ][trip['trip_id']] = dict(
+                        direction_id= trip['direction_id'],
+                        block_id= trip['block_id'],
+                        route= trip['route_id'],
+                        times= [], )
+            stop_trip= stop.trips[ trip['service_id'] ][trip['trip_id']]
+            stop_trip['times'].append( row )
+            stop.save()
 
 def radians( degrees ):
     """Convert Lat/Lon degrees to radians.
@@ -291,27 +390,22 @@ def dist_approx( p1, p2 ):
     c = math.hypot(x,y)
     return 3961.3*c # 3440.07 for nm, 3961.3 for statute miles, 6378.1 for km, 20915664.0 for feet
 
-def get_services_today( conn, today=None ):
+def get_services_today( today=None ):
     """Returns the Service ID applicable today.
     Examines calendar and calendar dates.
 
-    :param conn: An open :class:`Connection`.
     :param today: A :class:`datetime.date` object.
         If omitted, the current date is used.
     :returns: A sequence of service id strings that apply to this date.
     """
+    Service.set_db(settings.db)
     if not today:
         today= datetime.datetime.today().date()
-    if today in conn.calendar_dates:
-        yield conn.calendar_dates[today].service_id
-        return
-    for cal in conn.calendar:
-        if cal.start_date <= today <= cal.end_date:
-            column= ('monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday')[today.weekday()]
-            if int(getattr(cal, column)):
-                yield cal.service_id
+    svc= list( Service.view( 'service/bydate', key=today.strftime("%Y-%m-%d")) )
+    if not svc: return []
+    return svc[0].services
 
-def get_closest_stops( conn, lat_lon, max_dist=None ):
+def get_closest_stops( lat_lon, max_dist=None ):
     """Given a lat/lon pair, locate nearby stops.
 
     Handles the following REST requests.
@@ -320,22 +414,21 @@ def get_closest_stops( conn, lat_lon, max_dist=None ):
 
         This can find the nearest stops to this coordinate.
 
-    :param conn: An open :class:`Connection`.
     :param lat_lon: A (lat,lon) 2-tuple
     :param max_dist: An upper limit on distances to examine
     :return: iterator over (distance,stop) pairs ordered from nearest to
         the specified max_dist value.
     """
+    Stop_Definition.set_db( settings.db )
     distances= ( (dist_approx( lat_lon, (s.stop_lat,s.stop_lon) ), s)
-        for s in conn.stops.values() )
+        for s in Stop_Definition.view('service/stop') )
     if max_dist is not None:
         distances = ( (dist,stop) for dist,stop in distances if dist < max_dist )
     return sorted(distances)
 
-def get_closest_times_in_service( conn, stop_id, time, services, min_time=None, max_time=None ):
+def get_closest_times_in_service( stop_id, time, services, min_time=None, max_time=None ):
     """Given a stop and a time, locate the scheduled stop_time closest to this.
 
-    :param conn: An open :class:`Connection`.
     :param stop_id: The id for a stop
     :param time: The seconds-after-midnight time
     :param services: The iterable sequence of services applicable
@@ -347,9 +440,15 @@ def get_closest_times_in_service( conn, stop_id, time, services, min_time=None, 
         to the max_time value.  The absolute magnitude is used for sorting
         so early and late times will be intermixed.
     """
-    times = ( (st.arrival_time-time, st)
-        for st in conn.stop_times[stop_id]
-        if conn.trips[st.trip_id].service_id in services
+    # get StopTimes based on Stop.  Need a view of key=Stop, value=stop time
+    Stop_Definition.set_db( settings.db )
+    stop= list( Stop_Definition.view('service/stop') )[0]
+    trips = []
+    for svc in services:
+        trips.extend( stop.trips[svc].values() )
+    times = ( (st['arrival_time']-time, st)
+        for t in trips
+        for st in t['times']
         )
     if min_time is not None:
         times = ( (time,stop) for time,stop in times if time >= min_time )
@@ -357,7 +456,7 @@ def get_closest_times_in_service( conn, stop_id, time, services, min_time=None, 
         times = ( (time,stop) for time,stop in times if time < max_time )
     return sorted(times, key=lambda x: abs(x[0]) )
 
-def get_candidate_stops( conn, lat_lon, time, services, max_dist=None, min_time=None, max_time=None, count=6 ):
+def get_candidate_stops( lat_lon, time, services, max_dist=None, min_time=None, max_time=None, count=6 ):
     """Compute the most likely stops to match a report's lat/lon and time.
     This will use :meth:`get_closest_stops` to locate a collection of likely stops.
     For each stop, :meth:`get_closest_times_in_service` is used to locate the
@@ -366,7 +465,6 @@ def get_candidate_stops( conn, lat_lon, time, services, max_dist=None, min_time=
     Initial surveys of the data provided guidance on the upper bounds
     for time and distance matching.
 
-    :param conn: An open :class:`Connection`.
     :param lat_lon: A (lat,lon) tuple from a :class:`caravel.report.Report` instance.
     :param time: A time (seconds past midnight) from a :class:`caravel.report.Report` instance.
     :param services: The iterable sequence of services applicable
@@ -379,54 +477,49 @@ def get_candidate_stops( conn, lat_lon, time, services, max_dist=None, min_time=
     if max_dist is None: max_dist = 0.1 # subjective break between continuous and sparse
     if min_time is None: min_time = -(96.2+92.4*1)
     if max_time is None: max_time = 96.2+92.4*3
-    distances= get_closest_stops( conn, lat_lon, max_dist=max_dist )
+    distances= get_closest_stops( lat_lon, max_dist=max_dist )
     for distance, stop in distances:
         h= 0
-        for delta, stop_time in get_closest_times_in_service( conn, stop.stop_id, time, services, min_time=min_time, max_time=max_time ):
+        for delta, stop_time in get_closest_times_in_service( stop.stop_id, time, services, min_time=min_time, max_time=max_time ):
             h= 1
             yield Candidate(int(distance*5280), delta, stop, stop_time)
         count -= h
         if count == 0: break
 
-def get_route_from_stop_time( conn, stop_time ):
+def get_route_from_stop_time( stop_time ):
     """Query the route that contains a given stop_time value.
     This does a stop_times JOIN trips JOIN routes query.
 
-    :param conn: An open :class:`Connection`.
+    This is ill-constrained, since it can provide lots of
+    routes all over the transit system.
+
     :param stop_time: a :class:`Stop_Time` instance.
     :return: a :class:`Route` instance.
     """
-    return conn.routes[conn.trips[stop_time.trip_id].route_id]
+    Route_Definition.set_db( settings.db )
+    return list( Route_Definition.view( 'service/stop_time', key_start= stop_time ) )
 
-def get_trip_from_stop_time( conn, stop_time ):
-    """Query the trip that contains a given stop_time value.
-    This does a stop_times JOIN trips JOIN routes query.
+def get_next_stop_time( stop, time, services ):
+    """Given a :class:`Stop_Definition` object, a time after midnight,
+    and specific classes of service,
+    locate the remaining sequence of stops.
 
-    :param conn: An open :class:`Connection`.
-    :param stop_time: a :class:`Stop_Time` instance.
-    :return: a :class:`Trip` instance.
-    """
-    return conn.trips[stop_time.trip_id]
-
-def get_next_stop_time( conn, stop_time, services ):
-    """Given a :class:`Stop_Time` object, locate the remaining
-    sequence of stops.
-
-    :param conn: An open :class:`Connection`.
-    :param stop_time: A :class:`Stop_Time` object
+    :param stop: A :class:`Stop_Definition` object
+    :param time: A seconds-after-midnight arrival time to use as a filter
     :param services: The iterable sequence of services applicable
-    :returns: iterator over (time,stop_time) pairs ordered from closest in time
-        to the max_time value.  The absolute magnitude is used for sorting
-        so early and late times will be intermixed.
+    :returns: sequence of dictionaries with stop time information.
     """
-    next_iter = ( st for st in conn.trip_times[stop_time.trip_id]
-                 if st.stop_id != stop_time.stop_id
-                 and st.arrival_time >= stop_time.departure_time
-                 and conn.trips[st.trip_id].service_id in services
-                 )
-    return next_iter
+    for s in services:
+        if s in stop.trips:
+            for trip in stop.trips[s]:
+                route_view= Route_Definition.view('service/route',key=stop.trips[s][trip]['route'])
+                for route in route_view:
+                    for trip in route.trips[s]:
+                        for t in route.trips[s][trip]['stops']:
+                            if t['arrival_time'] >= time:
+                                yield t
 
-def get_route( conn, id=None ):
+def get_route( id=None ):
     """Returns route or list of routes.
     Handles the following REST requests.
 
@@ -442,17 +535,15 @@ def get_route( conn, id=None ):
 
     :param conn: An open :class:`Connection`.
     :param id: Optional route id.  If no route id, all routes are returned.
-    :return: route or list of routes.  Each route is a 3-tuple of (route, trip_list)
-        Each trip list is a sequence of stop_times.  Stop details are not included.
+    :return: route definition or list of route definitions.
     """
-    def elaborate( r ):
-        return ( r, ( (t, conn.trip_times[t.trip_id]) for t in conn.trips_by_route[r.route_id] ) )
+    Route_Definition.set_db( settings.db )
     if id:
-        return elaborate( conn.routes[id] )
+        return list( Route_Definition.view( 'service/route', key=id ) )
     else:
-        return ( elaborate(r) for r in conn.routes.values() )
+        return list(Route_Definition.view( 'service/route' ))
 
-def get_stop( conn, id=None ):
+def get_stop( id=None ):
     """Returns stop or list of stops.
     Handles the following REST requests.
 
@@ -463,15 +554,17 @@ def get_stop( conn, id=None ):
     :samp:`/stop/{id}/`
 
         A specific stop.
-    """
-    def elaborate( s ):
-        return s, conn.stop_times[s.stop_id]
-    if id:
-        return elaborate( conn.stops[id] )
-    else:
-        return ( elaborate(s) for s in conn.stops.values() )
 
-def get_route_stops( conn, id, dir=None, date=None, time=None ):
+    :param id: Optional route id.  If no route id, all routes are returned.
+    :return: stop definition or list of stop definitions.
+    """
+    Stop_Definition.set_db( settings.db )
+    if id:
+        return list( Stop_Definition.view( 'service/stop', key=id ) )
+    else:
+        return list( Stop_Definition.view( 'service/stop' ) )
+
+def get_route_stops( id, dir=None, date=None ):
     """Returns a route with a list of stops on that route.
     Handles the following REST requests.
 
@@ -487,33 +580,28 @@ def get_route_stops( conn, id, dir=None, date=None, time=None ):
         Day of week is generally sufficient, but there are calendar overrides,
         so full date is required.
 
-    :samp:`/route/{id}/?date={date}&time={time}`
-
-        All stops along the route, filtered by services available on the given date
-        on or after the given time.  If these are ordered by distance (along the route's
-        direction) it should provide a tidy summary of the route.
-
-    :param conn: An open :class:`Connection`.
     :param id: route id.
     :param dir: optional direction, codes are '1' and '0'.
     :param date: a datetime.date object; the services available on this date
         are used to filter the results.
-    :param time: a seconds-after-midnight time.
-    """
-    if dir:
-        trips = ( t for t in conn.trips.values() if t.route_id==id and t.direction_id == dir)
-    elif date:
-        services= set(get_services_today( conn, date ))
-        trips = ( t for t in conn.trips.values() if t.route_id==id and t.service_id in services)
-    else:
-        trips = ( t for t in conn.trips.values() if t.route_id==id)
-    if time:
-        stop_ids = set( st.stop_id for t in trips for st in conn.trip_times[t.trip_id] if st.arrival_time >= time )
-    else:
-        stop_ids = set( st.stop_id for t in trips for st in conn.trip_times[t.trip_id]  )
-    return conn.routes[id], (conn.stops[stop_id] for stop_id in stop_ids)
 
-def get_stop_times( conn, id, dir=None, date=None, time=None ):
+    :returns: a :class:`Route_Definition` instance.
+    """
+    Route_Definition.set_db( settings.db )
+    route= list( Route_Definition.view('service/route',key=id) )[0]
+    if date:
+        services= set(get_services_today( date ))
+        for s in route.trips:
+            if s not in services:
+                del route.trips[s]
+    if dir:
+        for svc in route.trips:
+            for trip in route.trips[svc]:
+                if route.trips[svc][trip]['direction_id'] != dir:
+                    del route.trips[svc][trip]
+    return route
+
+def get_stop_times( id, dir=None, date=None ):
     """Returns a stop with a list of stop times.
     Handles the following REST requests.
 
@@ -525,38 +613,53 @@ def get_stop_times( conn, id, dir=None, date=None, time=None ):
 
         All stop times for this stop constrained by services on the specific date.
 
-    :samp:`/stop/{id}/?dir={dir}&date={date}&time={time}`
-
-    All stop times at this stop, filtered by services available on the given date
-    on or after the given time
-
-    :param conn: An open :class:`Connection`.
     :param id: stop id.
     :param dir: optional route direction, codes are '1' and '0'.
     :param date: a datetime.date object; the services available on this date
         are used to filter the results.
-    :param time: a seconds-after-midnight time.
+    :returns: a :class:`Stop_Definition` instance.
     """
+    Stop_Definition.set_db( settings.db )
+    stop= list( Stop_Definition.view('service/stop',key=id) )[0]
+
+    if date:
+        services= set(get_services_today( date ))
+        for s in stop.trips:
+            if s not in services:
+                del stop.trips[s]
     if dir:
-        times= list( (st,conn.trips[st.trip_id]) for st in conn.stop_times[id] if conn.trips[st.trip_id].direction_id == dir )
-    elif date:
-        services= set(get_services_today( conn, date ))
-        times= list( (st,conn.trips[st.trip_id]) for st in conn.stop_times[id] if conn.trips[st.trip_id].service_id in services )
-    else:
-        times= list( (st,conn.trips[st.trip_id]) for st in conn.stop_times[id] )
-    return  conn.stops[id], times
+        for svc in stop.trips:
+            for trip in stop.trips[svc]:
+                if stop.trips[svc][trip]['direction_id'] != dir:
+                    del stop.trips[svc][trip]
+    return  stop
 
-def filter_stops_by_dir( conn, stops, dir ):
-    return ( s for s in stops if s.stop_id in set( st.stop_id for st in conn.stop_times[s.stop_id] if conn.trips[st.trip_id].direction_id == dir ) )
+def filter_stops_by_dir( stops, dir ):
+    """Pick only stops where the trip direction is the given direction."""
+    for stop in stops:
+        any_dir= any( stop.trips[svc][trip]['direction_id'] == dir
+            for svc in stop.trips
+            for trip in stop.trips[svc] )
+        if any_dir:
+            yield stop
 
-def filter_stops_by_date( conn, stops, date ):
-    services= set(get_services_today( conn, date ))
-    return ( s for s in stops if s.stop_id in set( st.stop_id for st in conn.stop_times[s.stop_id] if conn.trips[st.trip_id].service_id in services ) )
+def filter_stops_by_date( stops, date ):
+    services= set(get_services_today( date ))
+    for stop in stops:
+        any_svc = any( s in stop.trips for s in services )
+        if any_svc:
+            yield stop
 
-def filter_stops_by_time( conn, stops, time ):
-    return ( s for s in stops if s.stop_id in set( st.stop_id for st in conn.stop_times[s.stop_id] if st.arrival_time >= time ) )
+def filter_stops_by_time( stops, time ):
+    for stop in stops:
+        any_time= any( stop_time['arrival_time'] >= time
+            for svc in stop.trips
+            for trip in stop.trips[svc]
+            for stop_time in stop.trips[svc][trip]['times'] )
+        if any_time:
+            yield stop
 
-def get_closest_stops_filtered( conn, lat_lon, max_dist=None, dir=None, date=None, time=None ):
+def get_closest_stops_filtered( lat_lon, max_dist=None, dir=None, date=None, time=None ):
     """Given a lat/lon pair, locate nearby stops.
 
     Handles the following REST requests.
@@ -575,24 +678,24 @@ def get_closest_stops_filtered( conn, lat_lon, max_dist=None, dir=None, date=Non
         and on or after the given time.
 
 
-    :param conn: An open :class:`Connection`.
     :param lat_lon: A (lat,lon) 2-tuple
     :param dir: A trip direction_id
     :param max_dist: An upper limit on distances to examine
     :return: iterator over (distance,stop) pairs ordered from nearest to
         the specified max_dist value.
     """
-    stops= ( s for d,s in get_closest_stops( conn, lat_lon, max_dist ) )
+    stops= list( s for d,s in get_closest_stops( lat_lon, max_dist ) )
+    #print( "get_closest_stops_filtered", stops, dir, date, time )
     if dir:
-        stops= filter_stops_by_dir( conn, stops, dir )
-    elif date:
-        stops= filter_stops_by_date( conn, stops, date )
+        stops= list( filter_stops_by_dir( stops, dir ) )
+    if date:
+        stops= list( filter_stops_by_date( stops, date ) )
     if time:
-        return filter_stops_by_time( conn, stops, time )
-    else:
-        return stops
+        stops= list( filter_stops_by_time( stops, time ) )
+    #print( "get_closest_stops_filtered", stops )
+    return stops
 
-def get_closest_routes_filtered( conn, lat_lon, id, dir=None, max_dist=None, date=None, time=None ):
+def get_closest_routes_filtered( lat_lon, id, dir=None, max_dist=None, date=None, time=None ):
     """Given a lat/lon pair, locate nearby stops on a given route.
 
     Handles the following REST requests.
@@ -615,7 +718,6 @@ def get_closest_routes_filtered( conn, lat_lon, id, dir=None, max_dist=None, dat
         This can find the nearest stops on the given route and direction to this coordinate
         active on the given date and on or after the given time.
 
-    :param conn: An open :class:`Connection`.
     :param lat_lon: A (lat,lon) 2-tuple
     :paran id: route id
     :param dir: A trip direction_id
@@ -623,6 +725,10 @@ def get_closest_routes_filtered( conn, lat_lon, id, dir=None, max_dist=None, dat
     :return: iterator over (distance,stop) pairs ordered from nearest to
         the specified max_dist value.
     """
-    r, stops1_iter= get_route_stops( conn, id, dir, date, time )
-    stops2= get_closest_stops_filtered( conn, lat_lon, max_dist, dir, date, time )
-    return ( s for s in stops2 if s in set(stops1_iter) )
+    route= get_route_stops( id, dir, date )
+    route_stops = set( s['stop_id'] for s in route.stops() )
+    #print( "get_closest_routes_filtered", route, route_stops )
+    closest_stops= get_closest_stops_filtered( lat_lon, max_dist, dir, date, time )
+    #print( "get_closest_routes_filtered", closest_stops )
+
+    return ( s for s in closest_stops if s.stop_id in route_stops )

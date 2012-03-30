@@ -241,15 +241,21 @@ def main():
     try:
         with open("last_seq.json") as status_file:
             proc_state= json.load( status_file )
-        last_seq= proc_state['last_seq']
     except (IOError, ValueError):
-        proc_state= {}
+        proc_state= {'last_seq': 0}
+    last_seq= proc_state['last_seq']
 
-    # todo:: Check Database for current sequence number.
-    # If DB sequence number < last known, then DB was rebuilt.
+    # Was the database reset?  If so, reset the sequence number.
+    db_seq= settings.db.info()['update_seq']
+    if db_seq < last_seq:
+        last_seq= 0
 
     # Seed mappings with last known good mappings.
-    mapping.refresh_mapping_cache(mappings)
+    try:
+        mapping.refresh_mapping_cache(mappings)
+    except couchdbkit.exceptions.ResourceNotFound:
+        log.error( "Database does not have proper view definitions" )
+        sys.exit(2)
 
     consumer= SyncConsumer(settings.db)
     while True:

@@ -22,6 +22,9 @@ from couchdbkit.designer import push
 from caravel.conf import settings
 import pprint
 from collections import defaultdict
+import glob
+
+apps = glob.glob("_design/*")
 
 def define_views( db ):
     """Purely administrative.  Done once (or so) to set the views.
@@ -30,18 +33,16 @@ def define_views( db ):
 
     https://github.com/couchapp/couchapp/tree/
     """
-    push('_design/feed', db)
-    push('_design/mapping', db)
-    push('_design/status', db)
+    for app in apps:
+        push( app, db )
 
 def check_views( db ):
-    expected = [ '_design/feed', '_design/mapping', '_design/status' ]
-    for id in expected:
+    for id in apps:
         pprint.pprint( db[id] )
 
     for doc in db.all_docs():
         id= doc['id']
-        if id.startswith('_design') and id not in expected:
+        if id.startswith('_design') and id not in apps:
             print( "Unexpected", id )
 
     if 'foo' in db:
@@ -49,7 +50,9 @@ def check_views( db ):
 
 def integrity_check( db ):
     """Looking for objects with missing or unknown doc_type attributes."""
-    models = [ 'Mapping', 'Feed', 'Route', 'RouteStop', 'Stop', 'Vehicle' ]
+    models = [ 'Mapping', 'Feed', 'Route', 'RouteStop', 'Stop', 'Vehicle',
+              'Service', 'Route_Definition', 'Stop_Definition',
+              ]
     counts = defaultdict(int)
     for doc in db.all_docs():
         id= doc['id']
