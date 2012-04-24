@@ -16,6 +16,7 @@ other statistical measures of a transit system.
     usecase/index
     operations/index
     design/index
+    architecture
     implementation/index
 
 Not to be confused with Caravel CMS (http://www.caravelcms.org/)

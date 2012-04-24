@@ -28,24 +28,18 @@ Feed and Mappings
 The acquisition side of the database is the real-time feed plus the mappings
 from source to GTF.
 
-Feed
-
-Mapping
+..  automodule:: caravel.feed.models
 
 Transit System
 ----------------
 
 The Transit System is described by GTF data.
 
-TBD
+..  automodule:: caravel.transit_system.models
 
 Status
 -------
 
 The status part of the system is built from analysis of the Feed and Mappings.
 
-Vehicle
-
-Route
-
-Report
+..  automodule:: caravel.status.models

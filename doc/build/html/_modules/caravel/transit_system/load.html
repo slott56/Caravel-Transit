@@ -1,0 +1,396 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.transit_system.load &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../../index.html" />
+    <link rel="up" title="caravel.transit_system" href="../transit_system.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../transit_system.html" accesskey="U">caravel.transit_system</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.transit_system.load</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel Transit System Database Load.</span>
+
+<span class="sd">This reads the various files that define the transit system to</span>
+<span class="sd">create a CouchDB database.</span>
+
+<span class="sd">-   calendar.txt</span>
+<span class="sd">-   calendar_dates.txt</span>
+
+<span class="sd">-   routes.txt</span>
+<span class="sd">-   stops.txt</span>
+
+<span class="sd">-   trips.txt</span>
+<span class="sd">-   stop_times.txt</span>
+
+<span class="sd">..  todo:: Use Stingray Reader to simplify the load.</span>
+
+<span class="sd">Transit System Source</span>
+
+<span class="sd">::</span>
+
+<span class="sd">    http://googletf.gohrt.com/google_transit.zip</span>
+
+<span class="sd">Load</span>
+<span class="sd">==============</span>
+
+<span class="sd">..  autofunction:: get_source_data</span>
+
+<span class="sd">..  autoclass:: Accessor</span>
+<span class="sd">    :members:</span>
+
+<span class="sd">..  autoclass:: AccessZip</span>
+<span class="sd">    :members:</span>
+
+<span class="sd">..  autoclass:: AccessDir</span>
+<span class="sd">    :members:</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">tee</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">csv</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
+<span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">zipfile</span>
+<span class="kn">import</span> <span class="nn">caravel.report</span>
+<span class="kn">import</span> <span class="nn">urlparse</span>
+<span class="kn">import</span> <span class="nn">urllib2</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">caravel.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+<span class="kn">from</span> <span class="nn">caravel.transit_system.models</span> <span class="kn">import</span> <span class="n">Route_Definition</span><span class="p">,</span> <span class="n">Service</span><span class="p">,</span> <span class="n">Stop_Definition</span>
+<span class="kn">from</span> <span class="nn">contextlib</span> <span class="kn">import</span> <span class="n">closing</span>
+<span class="kn">from</span> <span class="nn">couchdbkit.exceptions</span> <span class="kn">import</span> <span class="o">*</span>
+
+<span class="n">URL_Google_Transit</span> <span class="o">=</span> <span class="s">&quot;http://googletf.gohrt.com/google_transit.zip&quot;</span>
+
+<div class="viewcode-block" id="get_source_data"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.load.get_source_data">[docs]</a><span class="k">def</span> <span class="nf">get_source_data</span><span class="p">(</span> <span class="n">connection</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">target_dir</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">,</span> <span class="n">url</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Get the lastest Route Definition ZIP Archive.</span>
+
+<span class="sd">    :param connection: Override to the default of urllib2.OpenerDirector.</span>
+<span class="sd">    :param target_dir: Working directory for result file</span>
+<span class="sd">    :param url: URL for the file (http://googletf.gohrt.com/google_transit.zip)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">connection</span><span class="p">:</span>
+        <span class="n">connection</span><span class="o">=</span> <span class="n">urllib2</span><span class="o">.</span><span class="n">build_opener</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">url</span><span class="p">:</span>
+        <span class="n">url</span><span class="o">=</span> <span class="n">URL_Google_Transit</span>
+
+    <span class="n">download</span><span class="o">=</span>  <span class="n">urlparse</span><span class="o">.</span><span class="n">urlparse</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="nb">dir</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span> <span class="n">download</span><span class="o">.</span><span class="n">path</span> <span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">closing</span><span class="p">(</span> <span class="n">connection</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="n">url</span> <span class="p">)</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span><span class="n">name</span><span class="p">),</span><span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">target</span><span class="p">:</span>
+            <span class="n">target</span><span class="o">.</span><span class="n">write</span><span class="p">(</span> <span class="n">source</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">name</span>
+</div>
+<div class="viewcode-block" id="Accessor"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.load.Accessor">[docs]</a><span class="k">class</span> <span class="nc">Accessor</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Abstract superclass to unify access to a directory and access to</span>
+<span class="sd">    a ZIP archive.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="AccessZip"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.load.AccessZip">[docs]</a><span class="k">class</span> <span class="nc">AccessZip</span><span class="p">(</span> <span class="n">Accessor</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Access a ZIP archive.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">archive</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prepare the archive for access.</span>
+
+<span class="sd">        :param archive: a ZIP archive.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">archive</span><span class="o">=</span> <span class="n">archive</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">zip</span><span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">archive</span><span class="p">,</span> <span class="s">&#39;r&#39;</span> <span class="p">)</span>
+<div class="viewcode-block" id="AccessZip.open"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.load.AccessZip.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an open file object for the named member.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">zip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span> <span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="AccessDir"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.load.AccessDir">[docs]</a><span class="k">class</span> <span class="nc">AccessDir</span><span class="p">(</span> <span class="n">Accessor</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Access a Directory (an archive that&#39;s been expanded.)&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">base</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prepare the directory for access.</span>
+
+<span class="sd">        :param base: the directory name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="o">=</span> <span class="n">base</span>
+<div class="viewcode-block" id="AccessDir.open"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.load.AccessDir.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rb&#39;</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an open file object for the named member.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">open</span><span class="p">(</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">base</span><span class="p">,</span><span class="n">name</span><span class="p">),</span> <span class="n">mode</span> <span class="p">)</span>
+</div></div>
+<span class="k">class</span> <span class="nc">Loader</span><span class="p">(</span> <span class="nb">object</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load the transit data to the CouchDB.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weekday_name</span> <span class="o">=</span> <span class="s">&#39;monday,tuesday,wednesday,thursday,friday,saturday,sunday&#39;</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">load</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">base</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Open the given .ZIP file or directory.  This will eagerly load</span>
+<span class="sd">        the files.  It takes a second or two.</span>
+
+<span class="sd">        :param base: Directory name or .ZIP file name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span> <span class="n">base</span> <span class="p">)</span> <span class="ow">and</span> <span class="n">base</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.zip&#39;</span><span class="p">):</span>
+            <span class="c"># A google_transit.zip file</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accessor</span><span class="o">=</span> <span class="n">AccessZip</span><span class="p">(</span> <span class="n">base</span> <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span> <span class="n">base</span> <span class="p">):</span>
+            <span class="c"># Unzipped directory</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">accessor</span> <span class="o">=</span> <span class="n">AccessDir</span><span class="p">(</span> <span class="n">base</span> <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">IOError</span><span class="p">(</span> <span class="s">&quot;Unopenable Archive: {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">base</span><span class="p">)</span> <span class="p">)</span>
+
+        <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">compact</span><span class="p">()</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="c"># Wait for compaction.</span>
+
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="s">&#39;calendar.txt&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+            <span class="n">rdr</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span> <span class="n">source</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_calendar</span><span class="p">(</span><span class="n">rdr</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="s">&#39;calendar_dates.txt&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+            <span class="n">rdr</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span> <span class="n">source</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_calendar_dates</span><span class="p">(</span><span class="n">rdr</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="s">&#39;routes.txt&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+            <span class="n">rdr</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span> <span class="n">source</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_routes</span><span class="p">(</span><span class="n">rdr</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;stops.txt&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+            <span class="n">rdr</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span> <span class="n">source</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_stops</span><span class="p">(</span><span class="n">rdr</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span> <span class="s">&#39;trips.txt&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+            <span class="n">rdr</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span> <span class="n">source</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_trips</span><span class="p">(</span><span class="n">rdr</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">accessor</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s">&#39;stop_times.txt&#39;</span> <span class="p">)</span> <span class="k">as</span> <span class="n">source</span><span class="p">:</span>
+            <span class="n">rdr</span><span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span> <span class="n">source</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_load_stop_times</span><span class="p">(</span><span class="n">rdr</span><span class="p">)</span>
+
+        <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">compact</span><span class="p">()</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="c"># Wait for compaction.</span>
+
+    <span class="k">def</span> <span class="nf">_load_calendar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the calendar table, creating :class:`Service` objects.</span>
+
+<span class="sd">        Given a calendar row, create the details for each date.</span>
+
+<span class="sd">        Mapping from day number to day &quot;name&quot;.</span>
+<span class="sd">        Must match the keys in GTF data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Service</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+        <span class="n">services_by_date</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rdr</span><span class="p">:</span>
+            <span class="n">start_date</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;start_date&#39;</span><span class="p">],</span> <span class="s">&#39;%Y%m</span><span class="si">%d</span><span class="s">&#39;</span> <span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+            <span class="n">end_date</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;end_date&#39;</span><span class="p">],</span> <span class="s">&#39;%Y%m</span><span class="si">%d</span><span class="s">&#39;</span> <span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">((</span><span class="n">end_date</span><span class="o">-</span><span class="n">start_date</span><span class="p">)</span><span class="o">.</span><span class="n">days</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+                <span class="n">date</span><span class="o">=</span> <span class="n">start_date</span> <span class="o">+</span> <span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">days</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+                <span class="n">day_name</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weekday_name</span><span class="p">[</span><span class="n">date</span><span class="o">.</span><span class="n">weekday</span><span class="p">()]</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="n">day_name</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;1&#39;</span><span class="p">:</span>
+                    <span class="n">services_by_date</span><span class="p">[</span><span class="n">date</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">date</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">services_by_date</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">date</span><span class="o">.</span><span class="n">day</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.25</span><span class="p">)</span>
+            <span class="n">previous</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Service</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/bydate&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">&quot;</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="n">previous</span><span class="p">:</span>
+                <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">delete_docs</span><span class="p">(</span> <span class="n">previous</span> <span class="p">)</span>
+            <span class="n">serv</span><span class="o">=</span> <span class="n">Service</span><span class="p">(</span>
+                <span class="n">date</span><span class="o">=</span> <span class="n">date</span><span class="p">,</span>
+                <span class="n">day_of_week</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weekday_name</span><span class="p">[</span><span class="n">date</span><span class="o">.</span><span class="n">weekday</span><span class="p">()]</span><span class="o">.</span><span class="n">title</span><span class="p">(),</span>
+                <span class="n">services</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">services_by_date</span><span class="p">[</span><span class="n">date</span><span class="p">])</span> <span class="p">),</span>
+            <span class="p">)</span>
+            <span class="c">#print( serv, settings.db, Service.get_db() )</span>
+            <span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">save_doc</span><span class="p">(</span><span class="n">serv</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_load_calendar_dates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the calendar_dates table, updating the :class:`Service` objects.</span>
+<span class="sd">        Can only be done successfully **after** the core calendar has been loaded.</span>
+<span class="sd">        These are add/remove changes to the calendar.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Service</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rdr</span><span class="p">:</span>
+            <span class="n">date</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;date&#39;</span><span class="p">],</span> <span class="s">&#39;%Y%m</span><span class="si">%d</span><span class="s">&#39;</span> <span class="p">)</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+            <span class="n">docs</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Service</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/bydate&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">date</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">&quot;</span><span class="p">)</span> <span class="p">)</span> <span class="p">)</span>
+            <span class="k">if</span> <span class="n">docs</span><span class="p">:</span>
+                <span class="n">serv</span><span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;exception_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;1&#39;</span><span class="p">:</span> <span class="c"># Add</span>
+                    <span class="n">serv</span><span class="o">.</span><span class="n">services</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;exception_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;2&#39;</span> <span class="ow">and</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">serv</span><span class="o">.</span><span class="n">services</span><span class="p">:</span> <span class="c"># Remove</span>
+                    <span class="n">serv</span><span class="o">.</span><span class="n">services</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">])</span>
+                <span class="k">elif</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;exception_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;2&#39;</span> <span class="ow">and</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">serv</span><span class="o">.</span><span class="n">services</span><span class="p">:</span>
+                    <span class="c"># Wasn&#39;t there to begin with?  Weird.</span>
+                    <span class="k">pass</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">GTFException</span><span class="p">(</span> <span class="s">&quot;Unknown Calendar Date {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Missing date?  Weird.</span>
+                <span class="k">pass</span>
+            <span class="n">serv</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_load_routes</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the routes table, creating :class:`Route_Definition` objects.&quot;&quot;&quot;</span>
+        <span class="n">Route_Definition</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rdr</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">Route_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/route&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;route_id&#39;</span><span class="p">]</span> <span class="p">):</span>
+                <span class="n">r</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="n">route</span><span class="o">=</span> <span class="n">Route_Definition</span><span class="p">(</span><span class="o">**</span><span class="n">row</span><span class="p">)</span>
+            <span class="n">route</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">_load_stops</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the stops table, creating :class:`Stop_Definition` objects.</span>
+<span class="sd">        Note that some stops don&#39;t have any stop times, and should be ignored.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rdr</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/stop&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;stop_id&#39;</span><span class="p">]</span> <span class="p">):</span>
+                <span class="n">s</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="n">row</span><span class="p">[</span><span class="s">&#39;stop_lat&#39;</span><span class="p">]</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;stop_lat&#39;</span><span class="p">])</span>
+            <span class="n">row</span><span class="p">[</span><span class="s">&#39;stop_lon&#39;</span><span class="p">]</span><span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;stop_lon&#39;</span><span class="p">])</span>
+            <span class="n">stop</span><span class="o">=</span> <span class="n">Stop_Definition</span><span class="p">(</span><span class="o">**</span><span class="n">row</span><span class="p">)</span>
+            <span class="n">stop</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">_load_trips</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the trips table, updating :class:`Route_Definition` objects with trips.</span>
+<span class="sd">        Must be loaded after stops and routes, but before stop times.</span>
+
+<span class="sd">        This is a mapping among route_id,service_id,trip_id,direction_id,block_id</span>
+
+<span class="sd">        -   [route/direction] -&gt; [service class] -&gt; [trip]&lt;&gt;-&gt; [list of stops]</span>
+
+<span class="sd">        -   [stop] -&gt; [service class] -&gt; [list of trips] -&gt; [route/direction]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trip</span><span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trip_by_route</span><span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rdr</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trip</span><span class="p">[</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]</span> <span class="p">]</span><span class="o">=</span> <span class="n">row</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">trip_by_route</span><span class="p">[</span> <span class="n">row</span><span class="p">[</span><span class="s">&#39;route_id&#39;</span><span class="p">]</span> <span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">row</span> <span class="p">)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">time_parse</span><span class="p">(</span> <span class="n">string</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Transform HH:MM:SS string into seconds past midnight.</span>
+<span class="sd">        Unlike :mod:`datetime`, this does not mind times &gt;= 24:00:00.</span>
+
+<span class="sd">        :param string: String of the form HH:MM:SS</span>
+<span class="sd">        :return: seconds past midnight</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">hh</span><span class="p">,</span> <span class="n">mm</span><span class="p">,</span> <span class="n">ss</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;:&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">hh</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">mm</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span><span class="o">+</span><span class="n">ss</span>
+
+    <span class="k">def</span> <span class="nf">_load_stop_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rdr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fetch the stop_times table, :class:`Route_Definition` objects with times.</span>
+
+<span class="sd">        Must be done last.  Requires the self.trip and self.trip_by_route information.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rdr</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">row</span><span class="p">[</span><span class="s">&#39;arrival_time&#39;</span><span class="p">]</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_parse</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;arrival_time&#39;</span><span class="p">])</span>
+                <span class="n">row</span><span class="p">[</span><span class="s">&#39;departure_time&#39;</span><span class="p">]</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_parse</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;departure_time&#39;</span><span class="p">])</span>
+            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">GTFException</span><span class="p">(</span> <span class="s">&quot;Bad Time {0!r}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="p">)</span>
+
+            <span class="n">trip</span><span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trip</span><span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]]</span>
+
+            <span class="n">docs</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Route_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/route&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">trip</span><span class="p">[</span><span class="s">&#39;route_id&#39;</span><span class="p">]</span> <span class="p">)</span> <span class="p">)</span>
+            <span class="n">route</span><span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">:</span>
+                <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="p">]</span><span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]]:</span>
+                <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="p">][</span><span class="n">trip</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                        <span class="n">direction_id</span><span class="o">=</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;direction_id&#39;</span><span class="p">],</span>
+                        <span class="n">block_id</span><span class="o">=</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;block_id&#39;</span><span class="p">],</span>
+                        <span class="n">stops</span><span class="o">=</span> <span class="p">[],</span> <span class="p">)</span>
+            <span class="n">route_trip</span><span class="o">=</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="p">][</span><span class="n">trip</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]]</span>
+            <span class="n">route_trip</span><span class="p">[</span><span class="s">&#39;stops&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">row</span> <span class="p">)</span>
+            <span class="n">route</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+
+            <span class="n">docs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/stop&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">row</span><span class="p">[</span><span class="s">&#39;stop_id&#39;</span><span class="p">]))</span>
+            <span class="n">stop</span><span class="o">=</span> <span class="n">docs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">:</span>
+                <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="p">]</span><span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]]:</span>
+                <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="p">][</span><span class="n">trip</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+                        <span class="n">direction_id</span><span class="o">=</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;direction_id&#39;</span><span class="p">],</span>
+                        <span class="n">block_id</span><span class="o">=</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;block_id&#39;</span><span class="p">],</span>
+                        <span class="n">route</span><span class="o">=</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;route_id&#39;</span><span class="p">],</span>
+                        <span class="n">times</span><span class="o">=</span> <span class="p">[],</span> <span class="p">)</span>
+            <span class="n">stop_trip</span><span class="o">=</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span> <span class="n">trip</span><span class="p">[</span><span class="s">&#39;service_id&#39;</span><span class="p">]</span> <span class="p">][</span><span class="n">trip</span><span class="p">[</span><span class="s">&#39;trip_id&#39;</span><span class="p">]]</span>
+            <span class="n">stop_trip</span><span class="p">[</span><span class="s">&#39;times&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">row</span> <span class="p">)</span>
+            <span class="n">stop</span><span class="o">.</span><span class="n">save</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../transit_system.html" >caravel.transit_system</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

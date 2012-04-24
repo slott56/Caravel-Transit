@@ -394,21 +394,21 @@ Spike Solution
 
 Here's a named tuple that's used to simulate Arrival-like reports.
 
-..  literalinclude:: ../../../test/spike_discovery.py
+..  literalinclude:: ../../../spike/spike_discovery.py
     :lines: 68
 
 Here's a method to generate a set of data that reasonably matches the
 raw data.
 
-..  autofunction:: test.spike_discovery.synth_data_iter
+..  autofunction:: spike.spike_discovery.synth_data_iter
 
-..  autofunction:: test.spike_discovery.group_by_rte_dir_stop
+..  autofunction:: spike.spike_discovery.group_by_rte_dir_stop
 
-..  autofunction:: test.spike_discovery.cluster_times
+..  autofunction:: spike.spike_discovery.cluster_times
 
-..  autofunction:: test.spike_discovery.build_route
+..  autofunction:: spike.spike_discovery.build_route
 
-..  autofunction:: test.spike_discovery.main
+..  autofunction:: spike.spike_discovery.main
 
 Optimizations
 --------------

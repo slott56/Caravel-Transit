@@ -1,7 +1,7 @@
 ..  _design.transit_resource:
 
-RESTful API for Transit Resources
-======================================
+RESTful API for Transit Service Definitions
+=============================================
 
 The central use case expands into a few closely-related scenarios.
 
@@ -12,16 +12,18 @@ The central use case expands into a few closely-related scenarios.
     for a bus.
 
 2.  User is relying on smartphone GPS to pick nearest route and stop.
+    This is a bit more complex, since it requires a geospatial query.
 
 3.  User has a destination in mind and needs to know closest stop
     relevant to a route that gets to the desired destination.  This means
     that alterantive stops, routes, transfers and run times all need
-    to be calculated.  This is rather complex.
+    to be calculated.  This is quite complex.  This is best
+    handed off to Google.
 
 Data Model
 -------------
 
-Stops are identified by a name and GPS coordinates.
+Stops are identified by an ID as well as GPS coordinates.
 
 A stop is associated with a route via two intermediate relationships:
 stop-time and trip.
@@ -38,103 +40,21 @@ the data structure, but not interesting to a person trying to catch
 the bus.
 
 
-Route Access
+Services
 -----------------------
+Here are some couch db view and list definitions.
 
-Some candidate RESTful requests for route information.
+..  literalinclude:: ../../../_design/service/views/bydate/map.js
+    :language: javascript
 
-Given a date, the subset of allowed trips can be located.
-From the subset of allowed trips in the future only, the distinct routes
-can be determined as well as the distinct stops.
+..  literalinclude:: ../../../_design/service/views/route/map.js
+    :language: javascript
 
-:samp:`/route/`
+..  literalinclude:: ../../../_design/service/views/stop/map.js
+    :language: javascript
 
-    The route list.  All 70.
+..  literalinclude:: ../../../_design/service/views/stop_time/map.js
+    :language: javascript
 
-:samp:`/route/{id}/`
-
-    All stops along the route, each stop decorated with direction and service.
-    The time-of-day details for a given trip are not provided; they are associated
-    with a specific stop.
-
-:samp:`/route/{id}/{dir}/`
-
-    All stops in a particular direction along the route.  The direction is
-    more-or-less inoound or outbound, and is actually a foreign key to a direction
-    table.
-
-:samp:`/route/{id}/?date={date}`
-
-    All stops along the route filtered by services available on the given date.
-    Day of week is generally sufficient, but there are calendar overrides,
-    so full date is required.
-
-:samp:`/route/{id}/?date={date}&time={time}`
-
-    All stops along the route, filtered by services available on the given date
-    on or after the given time.  If these are ordered by distance (along the route's
-    direction) it should provide a tidy summary of the route.
-
-Stop Access
-------------
-
-Some candidate RESTful requests for stop information.
-
-:samp:`/stop/`
-
-    All stops.  3210 of 'em.
-
-:samp:`/stop/{id}/`
-
-    A specific stop.
-
-:samp:`/stop/{id}/?date={date}`
-
-    All stop times for this stop constrained by services on the specific date.
-
-:samp:`/stop/{id}/?date={date}&time={time}`
-
-    All stop times at this stop, filtered by services available on the given date
-    on or after the given time
-
-Position Search
----------------
-
-Given a GPS coordinates (and an optional date), the closest stop can be located irrespective
-of bus schedule.
-
-:samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}`
-
-    This can find the nearest stops to this coordinate.
-
-:samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&dir={dir}`
-
-    This can find the nearest stops for all routes heading in this direction.
-
-:samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}`
-
-    This finds the nearest stops with a service that is active on the given date.
-
-:samp:`/stop/?latlng={nn.nnnnnn,mm.mmmmmm}&time={time}`
-
-    This finds the nearest stops with a service that is active on the given date
-    and on or after the given time.
-
-
-:samp:`/route/{id}/?latlng={nn.nnnnnn,mm.mmmmmm}`
-
-    This can find the nearest stops on the given route to this coordinate.
-
-:samp:`/route/{id}/{dir}/?latlng={nn.nnnnnn,mm.mmmmmm}`
-
-    This can find the nearest stops on the given route and direction to this coordinate.
-
-:samp:`/route/{id}/{dir}/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}`
-
-    This can find the nearest stops on the given route and direction to this coordinate
-    active on the given date.
-
-:samp:`/route/{id}/{dir}/?latlng={nn.nnnnnn,mm.mmmmmm}&date={date}&time={time}`
-
-    This can find the nearest stops on the given route and direction to this coordinate
-    active on the given date and on or after the given time.
+..  literalinclude:: ../../../_design/service/views/trip/map.js
+    :language: javascript

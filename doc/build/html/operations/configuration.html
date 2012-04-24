@@ -26,8 +26,8 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
     <link rel="up" title="User’s Guide" href="index.html" />
-    <link rel="next" title="Mappings Upload" href="mappings_upload.html" />
-    <link rel="prev" title="User’s Guide" href="index.html" /> 
+    <link rel="next" title="Real-Time Capture" href="log_capture.html" />
+    <link rel="prev" title="Operational Overview" href="overview.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,10 +40,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="mappings_upload.html" title="Mappings Upload"
+          <a href="log_capture.html" title="Real-Time Capture"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="User’s Guide"
+          <a href="overview.html" title="Operational Overview"
              accesskey="P">previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
@@ -56,7 +56,21 @@
           <div class="body">
             
   <div class="section" id="configuration">
-<h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+<span id="ops-config"></span><h1>Configuration<a class="headerlink" href="#configuration" title="Permalink to this headline">¶</a></h1>
+<p>There are two log capture implementations.  They&#8217;re functionally identical.
+Each will monitor the spyspocket.log, capture the activity in the previous
+minute and push the data to a database.</p>
+<ul>
+<li><p class="first"><a class="reference internal" href="#python-log-capture">Python Log Capture</a>.  The <tt class="xref py py-mod docutils literal"><span class="pre">caravel.LogCapture</span></tt> application is configured with a
+<tt class="file docutils literal"><span class="pre">settings.py</span></tt> file, described below.</p>
+</li>
+<li><p class="first"><a class="reference internal" href="#java-log-capture">Java Log Capture</a>.  There an alternate version of Log Capture, written in Java.
+This uses a <tt class="file docutils literal"><span class="pre">hrtail.properties</span></tt>, described below.</p>
+<p>See <a class="reference external" href="https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture">https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</a></p>
+</li>
+</ul>
+<div class="section" id="python-log-capture">
+<h2>Python Log Capture<a class="headerlink" href="#python-log-capture" title="Permalink to this headline">¶</a></h2>
 <p>The Python configuration is in a Python-syntax module.</p>
 <p>The default name is <tt class="docutils literal"><span class="pre">settings.py</span></tt>.  The name can be controlled with the
 <span class="target" id="index-0"></span><tt class="xref std std-envvar docutils literal"><span class="pre">CARAVEL_SETTINGS</span></tt> environment variable.</p>
@@ -88,7 +102,7 @@
 
 <span class="c">#Couch Push</span>
 <span class="c">#Test Database</span>
-<span class="n">db_url</span><span class="o">=</span> <span class="s">&quot;http://localhost:5984/couchdbkit_test&quot;</span>
+<span class="n">db_url</span><span class="o">=</span> <span class="s">&quot;http://127.0.0.1:5984/couchdbkit_test&quot;</span>
 <span class="c">#Production Database</span>
 <span class="c">#db_url= &quot;http://hrt.iriscouch.com:5984/feed&quot;</span>
 
@@ -107,8 +121,47 @@
 <span class="n">change_notification_daily_task_time</span> <span class="o">=</span> <span class="p">(</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span> <span class="p">)</span>
 </pre></div>
 </td></tr></table></div>
-<p>There an alternate version of Log Capture, written in Java.</p>
-<p>See <a class="reference external" href="https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture">https://github.com/CfABrigadeHamptonRoads/HRT-Log-Capture</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">db_url:</th><td class="field-body"><p class="first">The URL for the database.  For testing, you can run a server
+and use <a class="reference external" href="http://localhost:5984/couchdbkit_test">http://localhost:5984/couchdbkit_test</a>.</p>
+<p>For production, use <a class="reference external" href="http://hrt.iriscouch.com:5984/feed">http://hrt.iriscouch.com:5984/feed</a>&#8220;</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">logtail_status_filename:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">The filename used to record status.  This persistent status
+file makes it trivial to stop and restart log capture
+without missing or duplicating any data.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">logtail_size_limit:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">The largest tail that will be produced.  This is based on the
+rate of log growth.  The default will limit the log to
+one hour of data.  As a practical matter, vehicle position reports
+that are an hour old are probably irrelevant.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">capture_extract_filename:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">The name for the raw capture file.</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name" colspan="2">capture_csv_filename:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first">The name for the CSV format capture file.</p>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name" colspan="2">change_notification_daily_task_time:</th></tr>
+<tr><td>&nbsp;</td><td class="field-body"><p class="first last">A tuple with hour, minute and second on which to perform
+daily cleanup tasks like database compression.  The default
+is <tt class="samp docutils literal"><span class="pre">(3,</span> <span class="pre">0,</span> <span class="pre">0)</span></tt>, which does compression at 3:00 AM.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="java-log-capture">
+<h2>Java Log Capture<a class="headerlink" href="#java-log-capture" title="Permalink to this headline">¶</a></h2>
 <p>The Java version uses a <tt class="file docutils literal"><span class="pre">hrtail.properties</span></tt>.</p>
 <div class="highlight-python"><pre>#hrtail Properties
 
@@ -129,6 +182,7 @@ capture.extract_filename=hrtrtf.txt
 capture.csv_filename=hrtrtf.csv</pre>
 </div>
 </div>
+</div>
 
 
           </div>
@@ -139,12 +193,21 @@ capture.csv_filename=hrtrtf.csv</pre>
             <p class="logo"><a href="../caravel.html">
               <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
             </a></p>
+  <h3><a href="../caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Configuration</a><ul>
+<li><a class="reference internal" href="#python-log-capture">Python Log Capture</a></li>
+<li><a class="reference internal" href="#java-log-capture">Java Log Capture</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
-  <p class="topless"><a href="index.html"
-                        title="previous chapter">User&#8217;s Guide</a></p>
+  <p class="topless"><a href="overview.html"
+                        title="previous chapter">Operational Overview</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="mappings_upload.html"
-                        title="next chapter">Mappings Upload</a></p>
+  <p class="topless"><a href="log_capture.html"
+                        title="next chapter">Real-Time Capture</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/operations/configuration.txt"
@@ -177,10 +240,10 @@ capture.csv_filename=hrtrtf.csv</pre>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="mappings_upload.html" title="Mappings Upload"
+          <a href="log_capture.html" title="Real-Time Capture"
              >next</a> |</li>
         <li class="right" >
-          <a href="index.html" title="User’s Guide"
+          <a href="overview.html" title="Operational Overview"
              >previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User&#8217;s Guide</a> &raquo;</li> 

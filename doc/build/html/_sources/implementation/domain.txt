@@ -18,11 +18,6 @@ Feed
 
 The raw data includes mappings and position feeds.
 
-Feed Models
-------------
-
-..  automodule:: caravel.feed.models
-
 Mapping Load
 --------------
 
@@ -47,20 +42,20 @@ Transit System
 
 The current transit system description.
 
-..  automodule:: caravel.transit_system
+Transit System Load
+--------------------
+
+..  automodule:: caravel.transit_system.load
+
+Transit System Query
+--------------------
+
+..  automodule:: caravel.transit_system.query
+
 
 Status
 ======
 
 The final, useful status reports.
 
-Status Models
-----------------
-
-..  automodule:: caravel.status.models
-
-Status Load
---------------
-
 ..  automodule:: caravel.status.status_load
-

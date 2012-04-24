@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
     <link rel="next" title="Database Implementation" href="database.html" />
-    <link rel="prev" title="Route Discovery" href="../design/route_details.html" /> 
+    <link rel="prev" title="Architecture" href="../architecture.html" /> 
   </head>
   <body>
     <div class="related">
@@ -42,7 +42,7 @@
           <a href="database.html" title="Database Implementation"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="../design/route_details.html" title="Route Discovery"
+          <a href="../architecture.html" title="Architecture"
              accesskey="P">previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
       </ul>
@@ -55,59 +55,6 @@
             
   <div class="section" id="implementation">
 <h1>Implementation<a class="headerlink" href="#implementation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="hosts">
-<h2>Hosts<a class="headerlink" href="#hosts" title="Permalink to this headline">¶</a></h2>
-<p>There two hosts.</p>
-<div class="section" id="source">
-<h3>Source<a class="headerlink" href="#source" title="Permalink to this headline">¶</a></h3>
-<p>The source host runs the HRT-Log-Tail application (or similar) to tail the SpySocket.log.
-This is Java because the source host expects this.</p>
-</div>
-<div class="section" id="analyzer">
-<h3>Analyzer<a class="headerlink" href="#analyzer" title="Permalink to this headline">¶</a></h3>
-<p>The Analyzer host runs the Caravel application to analyze the mappings, feeds,
-and transit data and compute the required status.</p>
-</div>
-</div>
-<div class="section" id="python-stack">
-<h2>Python Stack<a class="headerlink" href="#python-stack" title="Permalink to this headline">¶</a></h2>
-<p>The essential features of the implementation include the following:</p>
-<ul>
-<li><p class="first">CouchDB.  <a class="reference external" href="http://couchdb.apache.org">http://couchdb.apache.org</a>.</p>
-<p>For hosting, see <a class="reference external" href="http://www.iriscouch.com/">http://www.iriscouch.com/</a> and <a class="reference external" href="https://cloudant.com/">https://cloudant.com/</a></p>
-</li>
-<li><p class="first">Python 2.7.  <a class="reference external" href="http://www.python.org">http://www.python.org</a></p>
-<ul class="simple">
-<li>couchdbkit.  <a class="reference external" href="http://couchdbkit.org/">http://couchdbkit.org/</a>.  This has Django compatibility.</li>
-<li>fsmonitor.  <a class="reference external" href="https://github.com/shaurz/fsmonitor">https://github.com/shaurz/fsmonitor</a></li>
-<li>pywin32.  <a class="reference external" href="http://sourceforge.net/projects/pywin32/">http://sourceforge.net/projects/pywin32/</a></li>
-</ul>
-</li>
-</ul>
-<p>There are several alternative couch implementations.</p>
-<ul class="simple">
-<li>couchdb-Python 0.8.  <a class="reference external" href="http://packages.python.org/CouchDB/index.html">http://packages.python.org/CouchDB/index.html</a>
-Small and simple.</li>
-</ul>
-<p>There are several alternative FSMonitor implementations.</p>
-<ul class="simple">
-<li>watchdog.
-<a class="reference external" href="http://packages.python.org/watchdog/">http://packages.python.org/watchdog/</a>
-It does more and has a more complex installation
-and dependencies.</li>
-<li>For Win32 <strong>only</strong>.
-<a class="reference external" href="http://timgolden.me.uk/python/win32_how_do_i/watch_directory_for_changes.html">http://timgolden.me.uk/python/win32_how_do_i/watch_directory_for_changes.html</a></li>
-<li>For Linux2 <strong>only</strong>.
-<a class="reference external" href="http://pyinotify.sourceforge.net/">http://pyinotify.sourceforge.net/</a></li>
-</ul>
-<p>For background and more details, see</p>
-<blockquote>
-<div><p><a class="reference external" href="http://wiki.apache.org/couchdb/Getting_started_with_Python">http://wiki.apache.org/couchdb/Getting_started_with_Python</a></p>
-<p><a class="reference external" href="http://blog.philippklaus.de/2011/08/watching-directories-for-changes-using-python_-_an-overview/">http://blog.philippklaus.de/2011/08/watching-directories-for-changes-using-python_-_an-overview/</a></p>
-</div></blockquote>
-</div>
-<div class="section" id="application-structure">
-<h2>Application Structure<a class="headerlink" href="#application-structure" title="Permalink to this headline">¶</a></h2>
 <p>This section contains Sphinx &#8220;automodule&#8221; documentation from the various
 components.</p>
 <p>There is a multi-stage data flow of three separate pieces of
@@ -161,14 +108,13 @@ analysis can be done.</li>
 <li class="toctree-l1"><a class="reference internal" href="analysis.html">Analysis and Profiling</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html#module-caravel.statistics">Statistics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html#module-caravel.arrival_stats">Arrival Statistics</a></li>
-<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-caravel.transit_stats">Transit System Statistics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="analysis.html#module-caravel.transit_system.transit_stats">Transit System Statistics</a></li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html#geospatial-stop-finder">Geospatial Stop Finder</a></li>
 <li class="toctree-l2"><a class="reference internal" href="analysis.html#module-caravel.route_discovery">Route Discovery</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="web.html">Web Implementation and REST API</a></li>
 </ul>
-</div>
 </div>
 </div>
 
@@ -181,25 +127,9 @@ analysis can be done.</li>
             <p class="logo"><a href="../caravel.html">
               <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
             </a></p>
-  <h3><a href="../caravel.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Implementation</a><ul>
-<li><a class="reference internal" href="#hosts">Hosts</a><ul>
-<li><a class="reference internal" href="#source">Source</a></li>
-<li><a class="reference internal" href="#analyzer">Analyzer</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#python-stack">Python Stack</a></li>
-<li><a class="reference internal" href="#application-structure">Application Structure</a><ul>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
-  <p class="topless"><a href="../design/route_details.html"
-                        title="previous chapter">Route Discovery</a></p>
+  <p class="topless"><a href="../architecture.html"
+                        title="previous chapter">Architecture</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="database.html"
                         title="next chapter">Database Implementation</a></p>
@@ -238,7 +168,7 @@ analysis can be done.</li>
           <a href="database.html" title="Database Implementation"
              >next</a> |</li>
         <li class="right" >
-          <a href="../design/route_details.html" title="Route Discovery"
+          <a href="../architecture.html" title="Architecture"
              >previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
       </ul>

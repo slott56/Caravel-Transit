@@ -1,0 +1,136 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.feed.models &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.feed.models</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;HRT Couch DB LogCapture Feed Models.</span>
+
+<span class="sd">This describes the data pushed by LogCapture.</span>
+
+<span class="sd">..  autoclass:: Feed</span>
+
+<span class="sd">..  autoclass:: Mapping</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">Server</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">Document</span><span class="p">,</span> <span class="n">ResourceNotFound</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">schema</span>
+
+<div class="viewcode-block" id="Feed"><a class="viewcode-back" href="../../../implementation/database.html#caravel.feed.models.Feed">[docs]</a><span class="k">class</span> <span class="nc">Feed</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A Feed file; the &quot;feed&quot; attachment is the raw CSV feed data.&quot;&quot;&quot;</span>
+    <span class="n">timestamp</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateTimeProperty</span><span class="p">()</span>
+    <span class="n">status</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span> <span class="c"># initially &quot;new&quot;</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Feed( timestamp={0:s}, status={1:s} )&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">timestamp</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%x</span><span class="s"> </span><span class="si">%X</span><span class="s">&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Mapping"><a class="viewcode-back" href="../../../implementation/database.html#caravel.feed.models.Mapping">[docs]</a><span class="k">class</span> <span class="nc">Mapping</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A Mapping file; the &quot;content&quot; attachment is the raw CSV mapping data.</span>
+
+<span class="sd">    :var timestamp: The file&#39;s modified time; used to locate newest version.</span>
+<span class="sd">    :var effective_date: The first date on which to use this mapping.</span>
+<span class="sd">    :var ending_date: The first date to **not** use this mapping.</span>
+<span class="sd">        This should match the effective date of the next mapping to use.</span>
+<span class="sd">    :var mapping_type: One of &quot;vehicle&quot;, &quot;route&quot;, &quot;stop&quot;.</span>
+<span class="sd">    :var status: ``None`` for new mappings.</span>
+<span class="sd">        After validation is can be an error message</span>
+<span class="sd">        Or &quot;valid&quot; for a valid mapping.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">timestamp</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateTimeProperty</span><span class="p">()</span>
+    <span class="n">effective_date</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateProperty</span><span class="p">()</span>
+    <span class="n">ending_date</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateProperty</span><span class="p">()</span>
+    <span class="n">mapping_type</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">status</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Mapping( timestamp={0.timestamp}, effective_date={0.effective_date}, ending_date={0.ending_date}, mapping_type={0.mapping_type}, status={0.status})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

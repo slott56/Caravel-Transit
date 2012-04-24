@@ -1,0 +1,226 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Architecture &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="index.html" />
+    <link rel="next" title="Implementation" href="implementation/index.html" />
+    <link rel="prev" title="Route Discovery" href="design/route_details.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="implementation/index.html" title="Implementation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="design/route_details.html" title="Route Discovery"
+             accesskey="P">previous</a> |</li>
+        <li><a href="caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="architecture">
+<h1>Architecture<a class="headerlink" href="#architecture" title="Permalink to this headline">¶</a></h1>
+<p>See <a class="reference external" href="http://www.zachman.com/about-the-zachman-framework">http://www.zachman.com/about-the-zachman-framework</a></p>
+<ul class="simple">
+<li>What (data)</li>
+<li>How (processing)</li>
+<li>Where (network hosts)</li>
+<li>When (schedule and operations)</li>
+<li>Who and Why (Use Cases)</li>
+</ul>
+<p>See <a class="reference external" href="http://en.wikipedia.org/wiki/4%2B1_Architectural_View_Model">http://en.wikipedia.org/wiki/4%2B1_Architectural_View_Model</a></p>
+<ul class="simple">
+<li>Logical (data)</li>
+<li>Process</li>
+<li>Development (components)</li>
+<li>Physical (schedule and operations)</li>
+<li>Scenarios (Use Cases)</li>
+</ul>
+<div class="section" id="data-and-processing">
+<h2>Data and Processing<a class="headerlink" href="#data-and-processing" title="Permalink to this headline">¶</a></h2>
+<p>See <a class="reference internal" href="design/index.html#design"><em>Design Notes</em></a> for background.</p>
+</div>
+<div class="section" id="schedule-and-operations">
+<h2>Schedule and Operations<a class="headerlink" href="#schedule-and-operations" title="Permalink to this headline">¶</a></h2>
+<p>See <a class="reference internal" href="operations/index.html#ops"><em>User&#8217;s Guide</em></a> for details.</p>
+</div>
+<div class="section" id="network-hosts">
+<h2>Network Hosts<a class="headerlink" href="#network-hosts" title="Permalink to this headline">¶</a></h2>
+<p>Caravel has a number of processes.  These can be split onto several hosts or all run
+on a single host.</p>
+<div class="section" id="capture-format-and-push">
+<h3>Capture, Format and Push<a class="headerlink" href="#capture-format-and-push" title="Permalink to this headline">¶</a></h3>
+<p>Some &#8220;source&#8221; host runs the LogCapture or HRT-Log-Tail application (or similar) to capture
+the real-time data from SpySocket.log.</p>
+<p>There are both Java and Python implementations to permit flexibility.</p>
+<p>See <a class="reference internal" href="operations/log_capture.html#ops-rtc"><em>Real-Time Capture</em></a>.</p>
+<p>The captured data must be reformatted and pushed to a couch database.</p>
+<p>This can be done on a single host.</p>
+<p>Or the capture can be on one host and the format-and-push can be on a separate host.</p>
+</div>
+<div class="section" id="mappings">
+<h3>Mappings<a class="headerlink" href="#mappings" title="Permalink to this headline">¶</a></h3>
+<p>Additionally, the mappings must also be captured.  This uses the same log capture
+application, but it can be run on a desktop or on one of the servers that has the real-time
+capture components installed.</p>
+<p>See <a class="reference internal" href="operations/mappings_upload.html#ops-map"><em>Mappings Upload</em></a>.</p>
+</div>
+<div class="section" id="builder">
+<h3>Builder<a class="headerlink" href="#builder" title="Permalink to this headline">¶</a></h3>
+<p>The Builder host runs the Caravel application to analyze the mappings, feeds,
+and transit data and build the required status updates.</p>
+<p>This is &#8211; generally &#8211; a separate host which does only couchdb processing.</p>
+<p>See <a class="reference internal" href="operations/status_build.html#ops-sb"><em>Status Builder</em></a>.</p>
+</div>
+</div>
+<div class="section" id="components-and-tech-stack">
+<h2>Components and Tech Stack<a class="headerlink" href="#components-and-tech-stack" title="Permalink to this headline">¶</a></h2>
+<p>The essential features of the implementation include the following:</p>
+<ul>
+<li><p class="first">CouchDB.  <a class="reference external" href="http://couchdb.apache.org">http://couchdb.apache.org</a>.</p>
+<p>For hosting, see <a class="reference external" href="http://www.iriscouch.com/">http://www.iriscouch.com/</a> and <a class="reference external" href="https://cloudant.com/">https://cloudant.com/</a></p>
+</li>
+<li><p class="first">Python 2.7.  <a class="reference external" href="http://www.python.org">http://www.python.org</a></p>
+<ul class="simple">
+<li>couchdbkit.  <a class="reference external" href="http://couchdbkit.org/">http://couchdbkit.org/</a>.  This has Django compatibility.</li>
+<li>fsmonitor.  <a class="reference external" href="https://github.com/shaurz/fsmonitor">https://github.com/shaurz/fsmonitor</a></li>
+<li>pywin32.  <a class="reference external" href="http://sourceforge.net/projects/pywin32/">http://sourceforge.net/projects/pywin32/</a></li>
+</ul>
+</li>
+</ul>
+<p>There are several alternative couch implementations.</p>
+<ul class="simple">
+<li>couchdb-Python 0.8.  <a class="reference external" href="http://packages.python.org/CouchDB/index.html">http://packages.python.org/CouchDB/index.html</a>
+Small and simple.</li>
+</ul>
+<p>There are several alternative FSMonitor implementations.</p>
+<ul class="simple">
+<li>watchdog.
+<a class="reference external" href="http://packages.python.org/watchdog/">http://packages.python.org/watchdog/</a>
+It does more and has a more complex installation
+and dependencies.</li>
+<li>For Win32 <strong>only</strong>.
+<a class="reference external" href="http://timgolden.me.uk/python/win32_how_do_i/watch_directory_for_changes.html">http://timgolden.me.uk/python/win32_how_do_i/watch_directory_for_changes.html</a></li>
+<li>For Linux2 <strong>only</strong>.
+<a class="reference external" href="http://pyinotify.sourceforge.net/">http://pyinotify.sourceforge.net/</a></li>
+</ul>
+<p>For background and more details, see</p>
+<blockquote>
+<div><p><a class="reference external" href="http://wiki.apache.org/couchdb/Getting_started_with_Python">http://wiki.apache.org/couchdb/Getting_started_with_Python</a></p>
+<p><a class="reference external" href="http://blog.philippklaus.de/2011/08/watching-directories-for-changes-using-python_-_an-overview/">http://blog.philippklaus.de/2011/08/watching-directories-for-changes-using-python_-_an-overview/</a></p>
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="caravel.html">
+              <img class="logo" src="_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h3><a href="caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Architecture</a><ul>
+<li><a class="reference internal" href="#data-and-processing">Data and Processing</a></li>
+<li><a class="reference internal" href="#schedule-and-operations">Schedule and Operations</a></li>
+<li><a class="reference internal" href="#network-hosts">Network Hosts</a><ul>
+<li><a class="reference internal" href="#capture-format-and-push">Capture, Format and Push</a></li>
+<li><a class="reference internal" href="#mappings">Mappings</a></li>
+<li><a class="reference internal" href="#builder">Builder</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#components-and-tech-stack">Components and Tech Stack</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="design/route_details.html"
+                        title="previous chapter">Route Discovery</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="implementation/index.html"
+                        title="next chapter">Implementation</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/architecture.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="implementation/index.html" title="Implementation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="design/route_details.html" title="Route Discovery"
+             >previous</a> |</li>
+        <li><a href="caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

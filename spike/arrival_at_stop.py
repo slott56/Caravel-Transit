@@ -95,12 +95,13 @@ import csv
 import os
 import glob
 import caravel.report
-import caravel.transit_system
+import caravel.transit_system.load
 import caravel.LogCapture.ftp_acquire
 import pprint
 import logging
 import sys
 import argparse
+import math
 
 logger= logging.getLogger( __name__ )
 
@@ -115,14 +116,209 @@ class NoStopFound( Exception ):
     """
     pass
 
+Candidate = namedtuple('Candidate', ['distance', 'time', 'stop', 'stop_time'] )
+
+def radians( degrees ):
+    return math.pi*degrees/180
+
+def degrees( radians ):
+    return 180*radians/math.pi
+
+def dist_approx( p1, p2 ):
+    """The Equirectangular Approximation for distance between two coordinates.
+    Fast and reasonably accurate.
+
+    See :ref:`design.distance` for details.
+
+    :param p1: (lat,lon) 2-tuple
+    :param p2: (lat,lon) 2-tuple
+    :returns: distance in statute miles.
+    """
+    lat1, lon1 = map( radians, p1 )
+    lat2, lon2 = map( radians, p2 )
+    x = (lon2-lon1) * math.cos((lat1+lat2)/2)
+    y = (lat2-lat1)
+    c = math.hypot(x,y)
+    return 3961.3*c # 3440.07 for nm, 3961.3 for statute miles, 6378.1 for km, 20915664.0 for feet
+
+def time_parse( text ):
+    """Transform HH:MM:SS string into seconds past midnight.
+    Unlike :mod:`datetime`, this does not mind times >= 24:00:00.
+
+    :param string: String of the form HH:MM:SS
+    :return: seconds past midnight
+    """
+    hh, mm, ss = map(int, text.split(':'))
+    return (hh*60+mm)*60+ss
+
+class MockDB( object ):
+    """A database-like structure for transit system queries."""
+    weekday_name = 'monday,tuesday,wednesday,thursday,friday,saturday,sunday'.split(',')
+    def __init__( self, accessor ):
+        self.accessor= accessor
+        if self.accessor:
+            # load various working tables.
+            with self.accessor.open( 'calendar.txt' ) as source:
+                rdr= csv.DictReader( source )
+                self._load_calendar(rdr)
+            with self.accessor.open( 'calendar_dates.txt' ) as source:
+                rdr= csv.DictReader( source )
+                self._load_calendar_dates(rdr)
+            with self.accessor.open( 'routes.txt' ) as source:
+                rdr= csv.DictReader( source )
+                self._load_routes(rdr)
+            with self.accessor.open('stops.txt' ) as source:
+                rdr= csv.DictReader( source )
+                self._load_stops(rdr)
+            with self.accessor.open( 'trips.txt' ) as source:
+                rdr= csv.DictReader( source )
+                self._load_trips(rdr)
+            with self.accessor.open('stop_times.txt' ) as source:
+                rdr= csv.DictReader( source )
+                self._load_stop_times(rdr)
+    def _load_calendar(self, rdr):
+        services_by_date= defaultdict(set)
+        for row in rdr:
+            start_date= datetime.datetime.strptime( row['start_date'], '%Y%m%d' ).date()
+            end_date= datetime.datetime.strptime( row['end_date'], '%Y%m%d' ).date()
+            for d in xrange((end_date-start_date).days+1):
+                date= start_date + datetime.timedelta(days=d)
+                day_name= self.weekday_name[date.weekday()]
+                if row[day_name] == '1':
+                    services_by_date[date].add(row['service_id'])
+        self.services_by_date= services_by_date
+    def _load_calendar_dates(self, rdr):
+        for row in rdr:
+            date= datetime.datetime.strptime( row['date'], '%Y%m%d' ).date()
+            serv= self.services_by_date[date]
+            if serv:
+                if row['exception_type'] == '1': # Add
+                    serv.add( row['service_id'])
+                elif row['exception_type'] == '2' and row['service_id'] in serv: # Remove
+                    serv.remove( row['service_id'])
+                elif row['exception_type'] == '2' and row['service_id'] not in serv:
+                    # Wasn't there to begin with?  Weird.
+                    pass
+                else:
+                    raise GTFException( "Unknown Calendar Date {0!r}".format(row) )
+            else:
+                # Missing date?  Weird.
+                pass
+    def _load_routes(self, rdr):
+        self.routes= {}
+        for row in rdr:
+            row['trips']= {}
+            self.routes[row['route_id']]= row
+    def _load_stops(self, rdr):
+        self.stops= {}
+        for row in rdr:
+            row['stop_lat']= float(row['stop_lat'])
+            row['stop_lon']= float(row['stop_lon'])
+            row['trips']= {}
+            self.stops[row['stop_id']]= row
+    def _load_trips(self, rdr):
+        self.trip= {}
+        self.trip_by_route= defaultdict(list)
+        for row in rdr:
+            self.trip[ row['trip_id'] ]= row
+            self.trip_by_route[ row['route_id'] ].append( row )
+    def _load_stop_times(self, rdr):
+        for row in rdr:
+            row['arrival_time']= time_parse(row['arrival_time'])
+            row['departure_time']= time_parse(row['departure_time'])
+
+            trip= self.trip[row['trip_id']]
+
+            route= self.routes[trip['route_id']]
+            if trip['service_id'] not in route['trips']:
+                route['trips'][ trip['service_id'] ]= {}
+            if trip['trip_id'] not in route['trips'][trip['service_id']]:
+                route['trips'][ trip['service_id'] ][trip['trip_id']] = dict(
+                        direction_id= trip['direction_id'],
+                        block_id= trip['block_id'],
+                        stops= [], )
+            route_trip= route['trips'][ trip['service_id'] ][trip['trip_id']]
+            route_trip['stops'].append( row )
+
+            stop = self.stops[row['stop_id']]
+            if trip['service_id'] not in stop['trips']:
+                stop['trips'][ trip['service_id'] ]= {}
+            if trip['trip_id'] not in stop['trips'][trip['service_id']]:
+                stop['trips'][ trip['service_id'] ][trip['trip_id']] = dict(
+                        direction_id= trip['direction_id'],
+                        block_id= trip['block_id'],
+                        route= trip['route_id'],
+                        times= [], )
+            stop_trip= stop['trips'][ trip['service_id'] ][trip['trip_id']]
+            stop_trip['times'].append( row )
+
+    def get_services_today( self, date ):
+        return self.services_by_date[date]
+
+    def get_closest_times_in_service( self, stop_id, time, services, min_time=None, max_time=None ):
+        stop= self.stops[stop_id]
+        trips = []
+        for svc in services:
+            trips.extend( stop['trips'].get(svc,{}).values() )
+        times = ( (st['arrival_time']-time, st)
+            for t in trips
+            for st in t['times']
+            )
+        if min_time is not None:
+            times = ( (time,stop) for time,stop in times if time >= min_time )
+        if max_time is not None:
+            times = ( (time,stop) for time,stop in times if time < max_time )
+        return sorted(times, key=lambda x: abs(x[0]) )
+
+    def get_closest_stops( self, lat_lon, max_dist=None ):
+        distances= ( (dist_approx( lat_lon, (s['stop_lat'],s['stop_lon']) ), s)
+            for s in self.stops.values() )
+        if max_dist is not None:
+            distances = ( (dist,stop) for dist,stop in distances if dist < max_dist )
+        return sorted(distances)
+
+    def get_candidate_stops( self, lat_lon, time, services, max_dist=None, min_time=None, max_time=None, count=6 ):
+        if max_dist is None: max_dist = 0.1 # subjective break between continuous and sparse
+        if min_time is None: min_time = -(96.2+92.4*1)
+        if max_time is None: max_time = 96.2+92.4*3
+        distances= self.get_closest_stops( lat_lon, max_dist=max_dist )
+        for distance, stop in distances:
+            h= 0
+            for delta, stop_time in self.get_closest_times_in_service( stop['stop_id'], time, services, min_time=min_time, max_time=max_time ):
+                h= 1
+                yield Candidate(int(distance*5280), delta, stop, stop_time)
+            count -= h
+            if count == 0: break
+    def get_route_from_stop_time( self, candidate ):
+        ##print( "get_route_from_stop_time", candidate )
+        trip= self.trip[ candidate['trip_id'] ]
+        return self.routes[trip['route_id']]
+    def get_trip_from_stop_time( self, candidate ):
+        ##print( "get_trip_from_stop_time", candidate )
+        trip= self.trip[ candidate['trip_id'] ]
+        return self.trip[trip['trip_id']]
+    def get_next_stop_time( self, candidate, services ):
+        ##print( "get_next_stop_time", candidate )
+        # Given trip_id, get trip.
+        trip= self.trip[ candidate['trip_id'] ]
+        route= self.routes[ trip['route_id'] ]
+        # Given stop sequence, find next step
+        for svc in services:
+            stops= route['trips'].get(svc,{})
+            if stops:
+                for dir in stops.values():
+                    for s in dir['stops']:
+                        if s['stop_sequence'] > candidate['stop_sequence']:
+                            yield s
+
 class StopFinder( object ):
     """The Stop-Finder algorithm."""
     def __init__( self, connection ):
-        """Build a StopFinder for a given :class:`caravel.transit_system.Connection`.
+        """Build a StopFinder for a given :class:`caravel.transit_system.load.Accessor`.
 
-        :param connection: open :class:`caravel.transit_system.Connection`.
+        :param connection: open :class:`caravel.transit_system.load.Accessor`.
         """
-        self.connection= connection
+        self.connection= MockDB(connection)
     def process_report( self, report ):
         """Process a single Arrival or Dwell report.
 
@@ -139,16 +335,16 @@ class StopFinder( object ):
         if not (report and report.rte): # Arrival or Dwell
             raise InvalidReport( report )
 
-        services= tuple( caravel.transit_system.get_services_today( self.connection, report.timestamp.date() ) )
+        services= tuple( self.connection.get_services_today( report.timestamp.date() ) )
         if not services:
             raise NoStopFound( "Bad Date" )
 
         # Some analysis seems to indicate that 528 feet is far enough away.
-        candidates = list( caravel.transit_system.get_candidate_stops(self.connection, (report.lat, report.lon), report.time, services, max_dist=0.10) )
+        candidates = list( self.connection.get_candidate_stops( (report.lat, report.lon), report.time, services, max_dist=0.10) )
 
         if len(candidates) == 0:
             wider= 0.5 # # Search out as far as 2640 feet away.
-            candidates = list( caravel.transit_system.get_candidate_stops(self.connection, (report.lat, report.lon), report.time, services, max_dist=wider) )
+            candidates = list( self.connection.get_candidate_stops( (report.lat, report.lon), report.time, services, max_dist=wider) )
             try:
                 dist_fit= min( candidates, key=lambda x: x.distance )
                 time_fit= min( candidates, key=lambda x: abs(x.time) )
@@ -171,12 +367,12 @@ class StopFinder( object ):
         """Return headings which match the return value from :meth:`supplement`."""
         return ( caravel.report.headings
         + [ 'distance', 'time', ]
-        + prefix_fields('stop', caravel.transit_system.Stop)
-        + prefix_fields('stop_time', caravel.transit_system.Stop_Time) )
+        + prefix_fields('stop', 'stop_id,stop_name,stop_lat,stop_lon'.split(',') )
+        + prefix_fields('stop_time', 'trip_id,arrival_time,departure_time,stop_id,stop_sequence,timepoint'.split(',') ) )
     def supplement( self, candidate ):
         """Fold in supplemental data.  The superclass does nothing extra.
 
-        :param best_fit: a :class:`caravel.transit_system.Candidate` instance.
+        :param best_fit: a :class:`Candidate` instance.
         :returns: a new Best_Fit instance or possibly the unmodified candidate.
         """
         return candidate
@@ -191,18 +387,18 @@ class StopFinder_Route_Trip( StopFinder ):
     def heading( ):
         """Return headings which match the return value from :meth:`supplement`."""
         return ( StopFinder.heading()
-        + prefix_fields('route', caravel.transit_system.Route)
-        + prefix_fields('trip', caravel.transit_system.Trip) )
+        + prefix_fields('route', 'route_id,route_short_name,route_long_name,route_desc,route_type,route_url'.split(','))
+        + prefix_fields('trip', 'route_id,service_id,trip_id,direction_id,block_id'.split(',')) )
 
     def supplement( self, best_fit ):
         """Fold in some extra data, the route and trip that apply to this stop.
 
-        :param best_fit: :class:`caravel.transit_system.Candidate` object
+        :param best_fit: :class:`Candidate` object
         :returns: a :class:`StopFinder_Route_Trip.Best_Fit` instance.
         """
         row= super( StopFinder_Route_Trip, self ).supplement( best_fit )
-        route= caravel.transit_system.get_route_from_stop_time( self.connection, best_fit.stop_time )
-        trip= caravel.transit_system.get_trip_from_stop_time( self.connection, best_fit.stop_time )
+        route= self.connection.get_route_from_stop_time( best_fit.stop_time )
+        trip= self.connection.get_trip_from_stop_time( best_fit.stop_time )
 
         return StopFinder_Route_Trip.Best_Fit( row.distance, row.time, row.stop, row.stop_time, route, trip )
 
@@ -215,36 +411,42 @@ class StopFinder_Next_Stop( StopFinder ):
     def heading( ):
         """Return headings which match the return value from :meth:`supplement`."""
         return ( StopFinder.heading()
-        + prefix_fields('route', caravel.transit_system.Route)
-        + prefix_fields('next', caravel.transit_system.Stop) )
+        + prefix_fields('route', 'route_id,route_short_name,route_long_name,route_desc,route_type,route_url'.split(',') )
+        + prefix_fields('next', 'stop_id,stop_name,stop_lat,stop_lon'.split(',')) )
 
     def supplement( self, best_fit ):
         """Fold in some extra data, the next scheduled stop.
 
-        :param best_fit: :class:`caravel.transit_system.Candidate` object
+        :param best_fit: :class:`Candidate` object
         :returns: a :class:`StopFinder_Next_Stop.Best_Fit` instance.
         """
         row= super( StopFinder_Next_Stop, self ).supplement( best_fit )
-        next_stops= caravel.transit_system.get_next_stop_time( self.connection, best_fit.stop_time, self.services )
+        next_stops= self.connection.get_next_stop_time( best_fit.stop_time, self.services )
         try:
             single_next= next( next_stops )
         except StopIteration:
             # Empty List!
-            trip= caravel.transit_system.get_trip_from_stop_time( self.connection, best_fit.stop_time )
+            trip= self.connection.get_trip_from_stop_time( best_fit.stop_time )
             logger.error( 'No Next Stop for {0!r} on {1!r}'.format( best_fit, trip ) )
             raise NoStopFound( "No Next", best_fit, None )
 
-        route= caravel.transit_system.get_route_from_stop_time( self.connection, best_fit.stop_time )
+        route= self.connection.get_route_from_stop_time( best_fit.stop_time )
         return StopFinder_Next_Stop.Best_Fit( row.distance, row.time, row.stop, row.stop_time, route, single_next )
 
-def prefix_fields( prefix, nt_class ):
-    """Return the list of field names from a namedtuple with a prefix."""
-    return list(prefix+'_'+f for f in nt_class._fields)
+def prefix_fields( prefix, fieldnames ):
+    """Return the list of field names with a prefix."""
+    return list(prefix+'_'+f for f in fieldnames)
 
-def prefix_dict( prefix, nt_obj ):
+def prefix_nt( prefix, nt_obj ):
     """Create a dictionary from a namedtuple applying a prefix to the field names."""
     return dict(
         (prefix+'_'+f,getattr(nt_obj,f)) for f in nt_obj._fields
+    )
+
+def prefix_dict( prefix, dict_obj ):
+    """Flatten a dictionary from a dictionary applying a prefix to the field names."""
+    return dict(
+        (prefix+'_'+f,dict_obj[f]) for f in dict_obj
     )
 
 class WriteStop( Callable ):
@@ -280,26 +482,24 @@ class WriteStop( Callable ):
         """Write a row to the stop file.
 
         :param report: :class:`caravel.report.Report` object
-        :param services: sevice id's appropriate to the report
-        :param best_fit: :class:`caravel.transit_system.Candidate` object
+        :param best_fit: :class:`Candidate` object
         """
         row= report.as_dict()
         for name in best_fit._fields:
             value= getattr(best_fit, name)
-            if isinstance(value, Sequence):
+            if isinstance(value, dict):
                 row.update( prefix_dict(name, value) )
             else:
                 row[name]= value
-        #print( self.heading )
-        #print( row )
+        ##print( "WriteStop", self.heading )
+        ##print( "         ", row )
         self.wtr.writerow( row )
         self.count += 1
 
 class WriteNoStop( Callable ):
     """A callable writer for reports that have been matched to a stop.
     This creates a CSV-format file attributes from
-    :class:`caravel.report.Report`, and
-    :class:`caravel.transit_system.Stop`.
+    :class:`caravel.report.Report` and the stop definitions.
 
     How to create an object usable a callback with :func:`arrival_at_stop`.
     ::
@@ -311,8 +511,8 @@ class WriteNoStop( Callable ):
     """
     heading= ( ['status']
         + caravel.report.headings
-        + prefix_fields('candidate_1', caravel.transit_system.Candidate)
-        + prefix_fields('candidate_2', caravel.transit_system.Candidate)
+        + prefix_fields('candidate_1', Candidate._fields)
+        + prefix_fields('candidate_2', Candidate._fields)
         )
     def __init__( self, target=None ):
         """Create the CSV writer around the target file.
@@ -327,8 +527,8 @@ class WriteNoStop( Callable ):
 
         :param message: Short string explanation
         :param report: :class:`caravel.report.Report` object
-        :param candidate_1: :class:`caravel.transit_system.Stop` object or ``None``
-        :param candidate_2: :class:`caravel.transit_system.Stop` object or ``None``
+        :param dist_fit: ``Stop`` object or ``None``
+        :param time_fit: ``Stop`` object or ``None``
         """
         row= report.as_dict()
         row['status']= status
@@ -366,7 +566,7 @@ def arrival_at_stop( reader, stop_finder, files, no_stop=print, stop=print ):
             reliably to a stop.
 
             :param report: :class:`caravel.report.Report` object
-            :param best_fit: :class:`caravel.transit_system.Candidate` object
+            :param best_fit: :class:`Candidate` object
 
     :param reader: An object of :class:`caravel.report.ReportReader`.
     :param stop_finder: An  :class:`StopFinder` instance.
@@ -422,7 +622,7 @@ if __name__ == "__main__":
     if args.debug:
         logging.getLogger().setLevel( logging.DEBUG )
     if args.acquire:
-        caravel.transit_system.get_source_data()
+        caravel.transit_system.load.get_source_data()
         latest= caravel.LogCapture.ftp_acquire.get_report_files()
         files= [latest] + args.files
     else:
@@ -435,8 +635,7 @@ if __name__ == "__main__":
         }
     reader= rdr_class[args.format]()
 
-    conn= caravel.transit_system.Connection( )
-    conn.open( args.transit )
+    conn= caravel.transit_system.load.AccessZip( args.transit )
 
     stop_finder= StopFinder_Next_Stop( conn )
 

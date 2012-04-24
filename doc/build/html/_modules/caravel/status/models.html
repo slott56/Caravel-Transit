@@ -1,0 +1,163 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.status.models &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.status.models</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel Status object definitions.</span>
+
+<span class="sd">..  autoclass:: Route</span>
+
+<span class="sd">..  autoclass:: RouteStop</span>
+
+<span class="sd">..  autoclass:: Stop</span>
+
+<span class="sd">..  autoclass:: Vehicle</span>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">schema</span>
+
+<span class="n">logger</span><span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span> <span class="n">__name__</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="Route"><a class="viewcode-back" href="../../../implementation/database.html#caravel.status.models.Route">[docs]</a><span class="k">class</span> <span class="nc">Route</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Stop Reports along this route.&quot;&quot;&quot;</span>
+    <span class="n">date</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateProperty</span><span class="p">()</span>
+    <span class="n">route</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">direction</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">ListProperty</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="s">&quot;{0.route}-{0.direction}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span> <span class="n">Route</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span> <span class="o">**</span><span class="n">params</span> <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Route(date={0.date}, route={0.route}, direction={0.direction}, history={0.history})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RouteStop"><a class="viewcode-back" href="../../../implementation/database.html#caravel.status.models.RouteStop">[docs]</a><span class="k">class</span> <span class="nc">RouteStop</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Reports for a Stop (and associated Route).&quot;&quot;&quot;</span>
+    <span class="n">date</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateProperty</span><span class="p">()</span>
+    <span class="n">route</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">direction</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">stop</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">ListProperty</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="s">&quot;{0.route}-{0.direction}-{0.stop}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span> <span class="n">RouteStop</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span> <span class="o">**</span><span class="n">params</span> <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;RouteStop(date={0.date}, route={0.route}, direction={0.direction}, stop={0.stop}, history={0.history})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Stop"><a class="viewcode-back" href="../../../implementation/database.html#caravel.status.models.Stop">[docs]</a><span class="k">class</span> <span class="nc">Stop</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;History of this stop.&quot;&quot;&quot;</span>
+    <span class="n">date</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateProperty</span><span class="p">()</span>
+    <span class="n">stop</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">ListProperty</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="s">&quot;{0.stop}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span> <span class="n">Stop</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span> <span class="o">**</span><span class="n">params</span> <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Stop(date={0.date}, stop={0.stop}, history={0.history})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Vehicle"><a class="viewcode-back" href="../../../implementation/database.html#caravel.status.models.Vehicle">[docs]</a><span class="k">class</span> <span class="nc">Vehicle</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;History of this vehicle.&quot;&quot;&quot;</span>
+    <span class="n">date</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateProperty</span><span class="p">()</span>
+    <span class="n">vehicle</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">ListProperty</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">save</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">params</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_id</span> <span class="o">=</span> <span class="s">&quot;{0.vehicle}&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+        <span class="nb">super</span><span class="p">(</span> <span class="n">Vehicle</span><span class="p">,</span> <span class="bp">self</span> <span class="p">)</span><span class="o">.</span><span class="n">save</span><span class="p">(</span> <span class="o">**</span><span class="n">params</span> <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Vehicle(date={0.date}, vehicle={0.vehicle}, history={0.history})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

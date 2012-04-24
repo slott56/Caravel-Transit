@@ -8,9 +8,6 @@ Data Flow and Processing
 There are several processing steps.  This leads to a number of data stores
 reflecting the persistent results of the various processing steps.
 
-Also, see :ref:`design.document` for database design considerations based
-simply on the structure of the data, independent of the processing.
-
 1.  Acquire Feed.  See :ref:`design.position`.
     This is parsed and (in effect) put into a processing queue.
 
@@ -64,6 +61,9 @@ This leads to several tiers of storage.
 #.  Long-Term History.  The overall history of route/direction/stop arrival
     times effectively describes the actual routes and schedules.
     This is simply a collection of days.
+
+Also, see :ref:`design.document` for database design considerations based
+simply on the structure of the data, independent of the processing.
 
 Stop Status FIFO
 ------------------

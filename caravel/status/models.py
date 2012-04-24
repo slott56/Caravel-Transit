@@ -1,6 +1,14 @@
 #!/usr/bin/env python2.7
 """Caravel Status object definitions.
 
+..  autoclass:: Route
+
+..  autoclass:: RouteStop
+
+..  autoclass:: Stop
+
+..  autoclass:: Vehicle
+
 
 """
 from __future__ import print_function, division

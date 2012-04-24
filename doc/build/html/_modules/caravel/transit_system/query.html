@@ -1,0 +1,456 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.transit_system.query &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../../index.html" />
+    <link rel="up" title="caravel.transit_system" href="../transit_system.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../transit_system.html" accesskey="U">caravel.transit_system</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.transit_system.query</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel Transit System Database Queries.</span>
+
+
+<span class="sd">Query Functions</span>
+<span class="sd">=================</span>
+
+<span class="sd">..  autofunction:: get_services_today</span>
+<span class="sd">..  autofunction:: get_closest_stops</span>
+<span class="sd">..  autofunction:: get_closest_times_in_service</span>
+<span class="sd">..  autofunction:: get_candidate_stops</span>
+<span class="sd">..  autofunction:: get_route_from_stop_time</span>
+<span class="sd">..  autofunction:: get_next_stop_time</span>
+<span class="sd">..  autofunction:: get_route</span>
+<span class="sd">..  autofunction:: get_stop</span>
+<span class="sd">..  autofunction:: get_route_stops</span>
+<span class="sd">..  autofunction:: get_stop_times</span>
+<span class="sd">..  autofunction:: get_closest_stops_filtered</span>
+<span class="sd">..  autofunction:: get_closest_routes_filtered</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">caravel.transit_system.models</span> <span class="kn">import</span> <span class="n">Service</span><span class="p">,</span> <span class="n">Stop_Definition</span><span class="p">,</span> <span class="n">Route_Definition</span><span class="p">,</span> <span class="n">dist_approx</span>
+
+<span class="kn">from</span> <span class="nn">caravel.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+
+<span class="n">Candidate</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;Candidate&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s">&#39;distance&#39;</span><span class="p">,</span> <span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="s">&#39;stop&#39;</span><span class="p">,</span> <span class="s">&#39;stop_time&#39;</span><span class="p">]</span> <span class="p">)</span>
+
+<div class="viewcode-block" id="get_services_today"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_services_today">[docs]</a><span class="k">def</span> <span class="nf">get_services_today</span><span class="p">(</span> <span class="n">today</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the Service ID applicable today.</span>
+<span class="sd">    Examines calendar and calendar dates.</span>
+
+<span class="sd">    :param today: A :class:`datetime.date` object.</span>
+<span class="sd">        If omitted, the current date is used.</span>
+<span class="sd">    :returns: A sequence of service id strings that apply to this date.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Service</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span><span class="n">settings</span><span class="o">.</span><span class="n">db</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">today</span><span class="p">:</span>
+        <span class="n">today</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+    <span class="n">svc</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Service</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/bydate&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">today</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="s">&quot;%Y-%m-</span><span class="si">%d</span><span class="s">&quot;</span><span class="p">))</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">svc</span><span class="p">:</span> <span class="k">return</span> <span class="p">[]</span>
+    <span class="k">return</span> <span class="n">svc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">services</span>
+</div>
+<div class="viewcode-block" id="get_closest_stops"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_closest_stops">[docs]</a><span class="k">def</span> <span class="nf">get_closest_stops</span><span class="p">(</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a lat/lon pair, locate nearby stops.</span>
+
+<span class="sd">    :param lat_lon: A (lat,lon) 2-tuple</span>
+<span class="sd">    :param max_dist: An upper limit on distances to examine</span>
+<span class="sd">    :return: iterator over (distance,stop) pairs ordered from nearest to</span>
+<span class="sd">        the specified max_dist value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="n">distances</span><span class="o">=</span> <span class="p">(</span> <span class="p">(</span><span class="n">dist_approx</span><span class="p">(</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">stop_lat</span><span class="p">,</span><span class="n">s</span><span class="o">.</span><span class="n">stop_lon</span><span class="p">)</span> <span class="p">),</span> <span class="n">s</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;service/stop&#39;</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_dist</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">distances</span> <span class="o">=</span> <span class="p">(</span> <span class="p">(</span><span class="n">dist</span><span class="p">,</span><span class="n">stop</span><span class="p">)</span> <span class="k">for</span> <span class="n">dist</span><span class="p">,</span><span class="n">stop</span> <span class="ow">in</span> <span class="n">distances</span> <span class="k">if</span> <span class="n">dist</span> <span class="o">&lt;</span> <span class="n">max_dist</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="get_closest_times_in_service"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_closest_times_in_service">[docs]</a><span class="k">def</span> <span class="nf">get_closest_times_in_service</span><span class="p">(</span> <span class="n">stop_id</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">min_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a stop and a time, locate the scheduled stop_time closest to this.</span>
+
+<span class="sd">    :param stop_id: The id for a stop</span>
+<span class="sd">    :param time: The seconds-after-midnight time</span>
+<span class="sd">    :param services: The iterable sequence of services applicable</span>
+<span class="sd">    :param min_time: The lower limit on seconds prior to the scheduled time.</span>
+<span class="sd">        Usually, this is a negative number.</span>
+<span class="sd">    :param max_time: The upper limit on seconds after the the scheduled time.</span>
+<span class="sd">        This is a positive number.</span>
+<span class="sd">    :returns: iterator over (time,stop_time) pairs ordered from closest in time</span>
+<span class="sd">        to the max_time value.  The absolute magnitude is used for sorting</span>
+<span class="sd">        so early and late times will be intermixed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># get StopTimes based on Stop.  Need a view of key=Stop, value=stop time</span>
+    <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="n">stop</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;service/stop&#39;</span><span class="p">)</span> <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">trips</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">svc</span> <span class="ow">in</span> <span class="n">services</span><span class="p">:</span>
+        <span class="n">trips</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="p">)</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="p">(</span> <span class="p">(</span><span class="n">st</span><span class="p">[</span><span class="s">&#39;arrival_time&#39;</span><span class="p">]</span><span class="o">-</span><span class="n">time</span><span class="p">,</span> <span class="n">st</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">trips</span>
+        <span class="k">for</span> <span class="n">st</span> <span class="ow">in</span> <span class="n">t</span><span class="p">[</span><span class="s">&#39;times&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">min_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="p">(</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span><span class="n">stop</span><span class="p">)</span> <span class="k">for</span> <span class="n">time</span><span class="p">,</span><span class="n">stop</span> <span class="ow">in</span> <span class="n">times</span> <span class="k">if</span> <span class="n">time</span> <span class="o">&gt;=</span> <span class="n">min_time</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_time</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">times</span> <span class="o">=</span> <span class="p">(</span> <span class="p">(</span><span class="n">time</span><span class="p">,</span><span class="n">stop</span><span class="p">)</span> <span class="k">for</span> <span class="n">time</span><span class="p">,</span><span class="n">stop</span> <span class="ow">in</span> <span class="n">times</span> <span class="k">if</span> <span class="n">time</span> <span class="o">&lt;</span> <span class="n">max_time</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="get_candidate_stops"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_candidate_stops">[docs]</a><span class="k">def</span> <span class="nf">get_candidate_stops</span><span class="p">(</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">min_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_time</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">6</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the most likely stops to match a report&#39;s lat/lon and time.</span>
+<span class="sd">    This will use :meth:`get_closest_stops` to locate a collection of likely stops.</span>
+<span class="sd">    For each stop, :meth:`get_closest_times_in_service` is used to locate the</span>
+<span class="sd">    most likely scheduled time before or after the reported time.</span>
+
+<span class="sd">    Initial surveys of the data provided guidance on the upper bounds</span>
+<span class="sd">    for time and distance matching.</span>
+
+<span class="sd">    :param lat_lon: A (lat,lon) tuple from a :class:`caravel.report.Report` instance.</span>
+<span class="sd">    :param time: A time (seconds past midnight) from a :class:`caravel.report.Report` instance.</span>
+<span class="sd">    :param services: The iterable sequence of services applicable</span>
+<span class="sd">    :param max_dist: An upper limit on distances to examine.  The default value is 0.1 mile.</span>
+<span class="sd">    :param min_time: The lower limit on seconds prior to the scheduled time.</span>
+<span class="sd">        Usually, this is a negative number.  The default is about -180 seconds.</span>
+<span class="sd">    :param max_time: The upper limit on seconds after the the scheduled time.</span>
+<span class="sd">        This is a positive number.  The default is about 360 seconds.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">max_dist</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="n">max_dist</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="c"># subjective break between continuous and sparse</span>
+    <span class="k">if</span> <span class="n">min_time</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="n">min_time</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mf">96.2</span><span class="o">+</span><span class="mf">92.4</span><span class="o">*</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">max_time</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span> <span class="n">max_time</span> <span class="o">=</span> <span class="mf">96.2</span><span class="o">+</span><span class="mf">92.4</span><span class="o">*</span><span class="mi">3</span>
+    <span class="n">distances</span><span class="o">=</span> <span class="n">get_closest_stops</span><span class="p">(</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="n">max_dist</span> <span class="p">)</span>
+    <span class="k">for</span> <span class="n">distance</span><span class="p">,</span> <span class="n">stop</span> <span class="ow">in</span> <span class="n">distances</span><span class="p">:</span>
+        <span class="n">h</span><span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">delta</span><span class="p">,</span> <span class="n">stop_time</span> <span class="ow">in</span> <span class="n">get_closest_times_in_service</span><span class="p">(</span> <span class="n">stop</span><span class="o">.</span><span class="n">stop_id</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">services</span><span class="p">,</span> <span class="n">min_time</span><span class="o">=</span><span class="n">min_time</span><span class="p">,</span> <span class="n">max_time</span><span class="o">=</span><span class="n">max_time</span> <span class="p">):</span>
+            <span class="n">h</span><span class="o">=</span> <span class="mi">1</span>
+            <span class="k">yield</span> <span class="n">Candidate</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">distance</span><span class="o">*</span><span class="mi">5280</span><span class="p">),</span> <span class="n">delta</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">)</span>
+        <span class="n">count</span> <span class="o">-=</span> <span class="n">h</span>
+        <span class="k">if</span> <span class="n">count</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">break</span>
+</div>
+<div class="viewcode-block" id="get_route_from_stop_time"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_route_from_stop_time">[docs]</a><span class="k">def</span> <span class="nf">get_route_from_stop_time</span><span class="p">(</span> <span class="n">stop_time</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Query the route that contains a given stop_time value.</span>
+<span class="sd">    This does a stop_times JOIN trips JOIN routes query.</span>
+
+<span class="sd">    This is ill-constrained, since it can provide lots of</span>
+<span class="sd">    routes all over the transit system.</span>
+
+<span class="sd">    :param stop_time: a :class:`Stop_Time` instance.</span>
+<span class="sd">    :return: a :class:`Route` instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Route_Definition</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Route_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/stop_time&#39;</span><span class="p">,</span> <span class="n">key_start</span><span class="o">=</span> <span class="n">stop_time</span> <span class="p">)</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="get_next_stop_time"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_next_stop_time">[docs]</a><span class="k">def</span> <span class="nf">get_next_stop_time</span><span class="p">(</span> <span class="n">stop</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">services</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a :class:`Stop_Definition` object, a time after midnight,</span>
+<span class="sd">    and specific classes of service,</span>
+<span class="sd">    locate the remaining sequence of stops.</span>
+
+<span class="sd">    :param stop: A :class:`Stop_Definition` object</span>
+<span class="sd">    :param time: A seconds-after-midnight arrival time to use as a filter</span>
+<span class="sd">    :param services: The iterable sequence of services applicable</span>
+<span class="sd">    :returns: sequence of dictionaries with stop time information.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">services</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">trip</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">s</span><span class="p">]:</span>
+                <span class="n">route_view</span><span class="o">=</span> <span class="n">Route_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;service/route&#39;</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">trip</span><span class="p">][</span><span class="s">&#39;route&#39;</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">route</span> <span class="ow">in</span> <span class="n">route_view</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">trip</span> <span class="ow">in</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">s</span><span class="p">]:</span>
+                        <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">s</span><span class="p">][</span><span class="n">trip</span><span class="p">][</span><span class="s">&#39;stops&#39;</span><span class="p">]:</span>
+                            <span class="k">if</span> <span class="n">t</span><span class="p">[</span><span class="s">&#39;arrival_time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">time</span><span class="p">:</span>
+                                <span class="k">yield</span> <span class="n">t</span>
+</div>
+<div class="viewcode-block" id="get_route"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_route">[docs]</a><span class="k">def</span> <span class="nf">get_route</span><span class="p">(</span> <span class="nb">id</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns route or list of routes.</span>
+
+<span class="sd">    If ``id`` is None, it returns all route definitions.</span>
+
+<span class="sd">    Otherwise, it returns the requested route definition.</span>
+
+<span class="sd">    :param id: Optional route id.  If no route id, all routes are returned.</span>
+<span class="sd">    :return: route definition or list of route definitions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Route_Definition</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">id</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Route_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/route&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">id</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">Route_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/route&#39;</span> <span class="p">))</span>
+</div>
+<div class="viewcode-block" id="get_stop"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_stop">[docs]</a><span class="k">def</span> <span class="nf">get_stop</span><span class="p">(</span> <span class="nb">id</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns stop or list of stops.</span>
+
+<span class="sd">    If ``id`` is None, it returns all stop definitions.</span>
+
+<span class="sd">    Otherwise, it returns the requested stop definition.</span>
+
+<span class="sd">    :param id: Optional stop id.  If no stop id, all stops are returned.</span>
+<span class="sd">    :return: stop definition or list of stop definitions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">id</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/stop&#39;</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="nb">id</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span> <span class="s">&#39;service/stop&#39;</span> <span class="p">)</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="get_route_stops"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_route_stops">[docs]</a><span class="k">def</span> <span class="nf">get_route_stops</span><span class="p">(</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a route with a list of stops on that route.</span>
+
+<span class="sd">    The route ID is required.</span>
+<span class="sd">    Either a direction or a date must be given to filter the stops</span>
+<span class="sd">    along the route.</span>
+
+<span class="sd">    If direction is given,</span>
+
+<span class="sd">        All stops in a particular direction along the route.  The direction is</span>
+<span class="sd">        more-or-less inoound or outbound, and is actually a foreign key to a direction</span>
+<span class="sd">        table.</span>
+
+<span class="sd">    If date is given,</span>
+
+<span class="sd">        All stops along the route filtered by services available on the given date.</span>
+<span class="sd">        Day of week is generally sufficient, but there are calendar overrides,</span>
+<span class="sd">        so full date is required.</span>
+
+<span class="sd">    :param id: route id.</span>
+<span class="sd">    :param dir: optional direction, codes are &#39;1&#39; and &#39;0&#39;.</span>
+<span class="sd">    :param date: a datetime.date object; the services available on this date</span>
+<span class="sd">        are used to filter the results.</span>
+
+<span class="sd">    :returns: a :class:`Route_Definition` instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Route_Definition</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="n">route</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Route_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;service/route&#39;</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="nb">id</span><span class="p">)</span> <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">date</span><span class="p">:</span>
+        <span class="n">services</span><span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">get_services_today</span><span class="p">(</span> <span class="n">date</span> <span class="p">))</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">services</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">dir</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">svc</span> <span class="ow">in</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">trip</span> <span class="ow">in</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">][</span><span class="n">trip</span><span class="p">][</span><span class="s">&#39;direction_id&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">dir</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">route</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">][</span><span class="n">trip</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">route</span>
+</div>
+<div class="viewcode-block" id="get_stop_times"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_stop_times">[docs]</a><span class="k">def</span> <span class="nf">get_stop_times</span><span class="p">(</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a stop with a list of stop times.</span>
+
+<span class="sd">    The stop ID is required.</span>
+<span class="sd">    Either a direction or a date must be given to filter the times</span>
+<span class="sd">    at this stop.</span>
+
+<span class="sd">    If a direction is given.</span>
+
+<span class="sd">        All stop times for this stop constrained by trip direction.</span>
+
+<span class="sd">    If a date is given.</span>
+
+<span class="sd">        All stop times for this stop constrained by services on the specific date.</span>
+
+<span class="sd">    :param id: stop id.</span>
+<span class="sd">    :param dir: optional route direction, codes are &#39;1&#39; and &#39;0&#39;.</span>
+<span class="sd">    :param date: a datetime.date object; the services available on this date</span>
+<span class="sd">        are used to filter the results.</span>
+<span class="sd">    :returns: a :class:`Stop_Definition` instance.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">set_db</span><span class="p">(</span> <span class="n">settings</span><span class="o">.</span><span class="n">db</span> <span class="p">)</span>
+    <span class="n">stop</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">Stop_Definition</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="s">&#39;service/stop&#39;</span><span class="p">,</span><span class="n">key</span><span class="o">=</span><span class="nb">id</span><span class="p">)</span> <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">date</span><span class="p">:</span>
+        <span class="n">services</span><span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">get_services_today</span><span class="p">(</span> <span class="n">date</span> <span class="p">))</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">s</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">services</span><span class="p">:</span>
+                <span class="k">del</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">s</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">dir</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">svc</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">trip</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">][</span><span class="n">trip</span><span class="p">][</span><span class="s">&#39;direction_id&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">dir</span><span class="p">:</span>
+                    <span class="k">del</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">][</span><span class="n">trip</span><span class="p">]</span>
+    <span class="k">return</span>  <span class="n">stop</span>
+</div>
+<span class="k">def</span> <span class="nf">filter_stops_by_dir</span><span class="p">(</span> <span class="n">stops</span><span class="p">,</span> <span class="nb">dir</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Pick only stops where the trip direction is the given direction.&quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">stop</span> <span class="ow">in</span> <span class="n">stops</span><span class="p">:</span>
+        <span class="n">any_dir</span><span class="o">=</span> <span class="nb">any</span><span class="p">(</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">][</span><span class="n">trip</span><span class="p">][</span><span class="s">&#39;direction_id&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="nb">dir</span>
+            <span class="k">for</span> <span class="n">svc</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span>
+            <span class="k">for</span> <span class="n">trip</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="n">any_dir</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">stop</span>
+
+<span class="k">def</span> <span class="nf">filter_stops_by_date</span><span class="p">(</span> <span class="n">stops</span><span class="p">,</span> <span class="n">date</span> <span class="p">):</span>
+    <span class="n">services</span><span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">get_services_today</span><span class="p">(</span> <span class="n">date</span> <span class="p">))</span>
+    <span class="k">for</span> <span class="n">stop</span> <span class="ow">in</span> <span class="n">stops</span><span class="p">:</span>
+        <span class="n">any_svc</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">services</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="n">any_svc</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">stop</span>
+
+<span class="k">def</span> <span class="nf">filter_stops_by_time</span><span class="p">(</span> <span class="n">stops</span><span class="p">,</span> <span class="n">time</span> <span class="p">):</span>
+    <span class="k">for</span> <span class="n">stop</span> <span class="ow">in</span> <span class="n">stops</span><span class="p">:</span>
+        <span class="n">any_time</span><span class="o">=</span> <span class="nb">any</span><span class="p">(</span> <span class="n">stop_time</span><span class="p">[</span><span class="s">&#39;arrival_time&#39;</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">time</span>
+            <span class="k">for</span> <span class="n">svc</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span>
+            <span class="k">for</span> <span class="n">trip</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">stop_time</span> <span class="ow">in</span> <span class="n">stop</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">][</span><span class="n">trip</span><span class="p">][</span><span class="s">&#39;times&#39;</span><span class="p">]</span> <span class="p">)</span>
+        <span class="k">if</span> <span class="n">any_time</span><span class="p">:</span>
+            <span class="k">yield</span> <span class="n">stop</span>
+
+<div class="viewcode-block" id="get_closest_stops_filtered"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_closest_stops_filtered">[docs]</a><span class="k">def</span> <span class="nf">get_closest_stops_filtered</span><span class="p">(</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a lat/lon pair, locate nearby stops.</span>
+
+<span class="sd">    Handles the following kinds of queries for a stop.</span>
+
+<span class="sd">    -   latlng=nn.nnnnnn,mm.mmmmmm and direction</span>
+
+<span class="sd">        This can find the nearest stops for all routes heading in this direction.</span>
+
+<span class="sd">    -   latlng=nn.nnnnnn,mm.mmmmmm and date</span>
+
+<span class="sd">        This finds the nearest stops with a service that is active on the given date.</span>
+
+<span class="sd">    -   atlng=nn.nnnnnn,mm.mmmmmm and time</span>
+
+<span class="sd">        This finds the nearest stops with a service that is active on the given date</span>
+<span class="sd">        and on or after the given time.</span>
+
+
+<span class="sd">    :param lat_lon: A (lat,lon) 2-tuple</span>
+<span class="sd">    :param dir: A trip direction_id</span>
+<span class="sd">    :param max_dist: An upper limit on distances to examine</span>
+<span class="sd">    :return: iterator over (distance,stop) pairs ordered from nearest to</span>
+<span class="sd">        the specified max_dist value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">stops</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">s</span> <span class="k">for</span> <span class="n">d</span><span class="p">,</span><span class="n">s</span> <span class="ow">in</span> <span class="n">get_closest_stops</span><span class="p">(</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">max_dist</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="c">#print( &quot;get_closest_stops_filtered&quot;, stops, dir, date, time )</span>
+    <span class="k">if</span> <span class="nb">dir</span><span class="p">:</span>
+        <span class="n">stops</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">filter_stops_by_dir</span><span class="p">(</span> <span class="n">stops</span><span class="p">,</span> <span class="nb">dir</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">date</span><span class="p">:</span>
+        <span class="n">stops</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">filter_stops_by_date</span><span class="p">(</span> <span class="n">stops</span><span class="p">,</span> <span class="n">date</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">time</span><span class="p">:</span>
+        <span class="n">stops</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="n">filter_stops_by_time</span><span class="p">(</span> <span class="n">stops</span><span class="p">,</span> <span class="n">time</span> <span class="p">)</span> <span class="p">)</span>
+    <span class="c">#print( &quot;get_closest_stops_filtered&quot;, stops )</span>
+    <span class="k">return</span> <span class="n">stops</span>
+</div>
+<div class="viewcode-block" id="get_closest_routes_filtered"><a class="viewcode-back" href="../../../implementation/domain.html#caravel.transit_system.query.get_closest_routes_filtered">[docs]</a><span class="k">def</span> <span class="nf">get_closest_routes_filtered</span><span class="p">(</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_dist</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">date</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="bp">None</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Given a lat/lon pair, locate nearby stops on a given route.</span>
+
+<span class="sd">    Handles the following kinds of queries for stops associated with a given route.</span>
+
+<span class="sd">    -   latlng=nn.nnnnnn,mm.mmmmmm</span>
+
+<span class="sd">        This can find the nearest stops on the given route to this coordinate.</span>
+
+<span class="sd">    -   latlng=nn.nnnnnn,mm.mmmmmm and direction</span>
+
+<span class="sd">        This can find the nearest stops on the given route and direction to this coordinate.</span>
+
+<span class="sd">    -   latlng=nn.nnnnnn,mm.mmmmmm, direction and date</span>
+
+<span class="sd">        This can find the nearest stops on the given route and direction to this coordinate</span>
+<span class="sd">        active on the given date.</span>
+
+<span class="sd">    -   latlng=nn.nnnnnn,mm.mmmmmm, direction, date and time</span>
+
+<span class="sd">        This can find the nearest stops on the given route and direction to this coordinate</span>
+<span class="sd">        active on the given date and on or after the given time.</span>
+
+<span class="sd">    :param lat_lon: A (lat,lon) 2-tuple</span>
+<span class="sd">    :paran id: route id</span>
+<span class="sd">    :param dir: A trip direction_id</span>
+<span class="sd">    :param max_dist: An upper limit on distances to examine</span>
+<span class="sd">    :return: iterator over (distance,stop) pairs ordered from nearest to</span>
+<span class="sd">        the specified max_dist value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">route</span><span class="o">=</span> <span class="n">get_route_stops</span><span class="p">(</span> <span class="nb">id</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">date</span> <span class="p">)</span>
+    <span class="n">route_stops</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span> <span class="n">s</span><span class="p">[</span><span class="s">&#39;stop_id&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">route</span><span class="o">.</span><span class="n">stops</span><span class="p">()</span> <span class="p">)</span>
+    <span class="c">#print( &quot;get_closest_routes_filtered&quot;, route, route_stops )</span>
+    <span class="n">closest_stops</span><span class="o">=</span> <span class="n">get_closest_stops_filtered</span><span class="p">(</span> <span class="n">lat_lon</span><span class="p">,</span> <span class="n">max_dist</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">date</span><span class="p">,</span> <span class="n">time</span> <span class="p">)</span>
+    <span class="c">#print( &quot;get_closest_routes_filtered&quot;, closest_stops )</span>
+
+    <span class="k">return</span> <span class="p">(</span> <span class="n">s</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">closest_stops</span> <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">stop_id</span> <span class="ow">in</span> <span class="n">route_stops</span> <span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../transit_system.html" >caravel.transit_system</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

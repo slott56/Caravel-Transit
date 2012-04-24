@@ -124,24 +124,30 @@ closest stop.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-caravel.transit_stats">
-<span id="transit-system-statistics"></span><h2>Transit System Statistics<a class="headerlink" href="#module-caravel.transit_stats" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-caravel.transit_system.transit_stats">
+<span id="transit-system-statistics"></span><h2>Transit System Statistics<a class="headerlink" href="#module-caravel.transit_system.transit_stats" title="Permalink to this headline">¶</a></h2>
 <p>Caravel Transit System Statistics</p>
 <p>This computes the overall average time between stops along all routes.</p>
 <p>It computes the overall average distance between stops along all routes.</p>
 <dl class="function">
-<dt id="caravel.transit_stats.route_size">
-<tt class="descclassname">caravel.transit_stats.</tt><tt class="descname">route_size</tt><big>(</big><em>conn</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_stats.html#route_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_stats.route_size" title="Permalink to this definition">¶</a></dt>
+<dt id="caravel.transit_system.transit_stats.route_size">
+<tt class="descclassname">caravel.transit_system.transit_stats.</tt><tt class="descname">route_size</tt><big>(</big><em>conn</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system/transit_stats.html#route_size"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.transit_stats.route_size" title="Permalink to this definition">¶</a></dt>
 <dd><p>Examine all stops to get the complete bounding rectangle
 of lat/lon coordinates.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="caravel.transit_stats.route_stop_stats">
-<tt class="descclassname">caravel.transit_stats.</tt><tt class="descname">route_stop_stats</tt><big>(</big><em>conn</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_stats.html#route_stop_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_stats.route_stop_stats" title="Permalink to this definition">¶</a></dt>
+<dt id="caravel.transit_system.transit_stats.route_stop_stats">
+<tt class="descclassname">caravel.transit_system.transit_stats.</tt><tt class="descname">route_stop_stats</tt><big>(</big><em>conn</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system/transit_stats.html#route_stop_stats"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.transit_stats.route_stop_stats" title="Permalink to this definition">¶</a></dt>
 <dd><p>These are simple descriptive statistics of distances
 between stops and distances between arrival times along
 the defined routes.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.transit_system.transit_stats.time">
+<tt class="descclassname">caravel.transit_system.transit_stats.</tt><tt class="descname">time</tt><big>(</big><em>text</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system/transit_stats.html#time"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.transit_stats.time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse HH:MM:SS that may go past 23:59:59.</p>
 </dd></dl>
 
 </div>
@@ -149,7 +155,7 @@ the defined routes.</p>
 <h2>Geospatial Stop Finder<a class="headerlink" href="#geospatial-stop-finder" title="Permalink to this headline">¶</a></h2>
 <p>This is an application-like analysis to use geospatial analysis
 to find stops.</p>
-<span class="target" id="module-caravel.arrival_at_stop"></span><p>From live Arrival and Dwell records, compute the closest stop.</p>
+<span class="target" id="module-spike.arrival_at_stop"></span><p>From live Arrival and Dwell records, compute the closest stop.</p>
 <p>Synopsis</p>
 <div class="highlight-python"><pre>python -m caraval.arrival_at_stop -t hrt_20120218_0425 *.rpt</pre>
 </div>
@@ -206,22 +212,22 @@ is written.</p>
 </div></blockquote>
 <p>Algorithm Components</p>
 <blockquote>
-<div><p>The core stop-finding algorithm is implemented via the <a class="reference internal" href="#caravel.arrival_at_stop.StopFinder" title="caravel.arrival_at_stop.StopFinder"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder</span></tt></a>
+<div><p>The core stop-finding algorithm is implemented via the <a class="reference internal" href="#spike.arrival_at_stop.StopFinder" title="spike.arrival_at_stop.StopFinder"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder</span></tt></a>
 class hierarchy.</p>
-<p>The <a class="reference internal" href="#caravel.arrival_at_stop.arrival_at_stop" title="caravel.arrival_at_stop.arrival_at_stop"><tt class="xref py py-func docutils literal"><span class="pre">arrival_at_stop()</span></tt></a> process applies this algorithm, and writes
-the successful results using a <a class="reference internal" href="#caravel.arrival_at_stop.WriteStop" title="caravel.arrival_at_stop.WriteStop"><tt class="xref py py-class docutils literal"><span class="pre">WriteStop</span></tt></a> instance.  The failures
-are written using a <a class="reference internal" href="#caravel.arrival_at_stop.WriteNoStop" title="caravel.arrival_at_stop.WriteNoStop"><tt class="xref py py-class docutils literal"><span class="pre">WriteNoStop</span></tt></a> instance.</p>
+<p>The <a class="reference internal" href="#spike.arrival_at_stop.arrival_at_stop" title="spike.arrival_at_stop.arrival_at_stop"><tt class="xref py py-func docutils literal"><span class="pre">arrival_at_stop()</span></tt></a> process applies this algorithm, and writes
+the successful results using a <a class="reference internal" href="#spike.arrival_at_stop.WriteStop" title="spike.arrival_at_stop.WriteStop"><tt class="xref py py-class docutils literal"><span class="pre">WriteStop</span></tt></a> instance.  The failures
+are written using a <a class="reference internal" href="#spike.arrival_at_stop.WriteNoStop" title="spike.arrival_at_stop.WriteNoStop"><tt class="xref py py-class docutils literal"><span class="pre">WriteNoStop</span></tt></a> instance.</p>
 <dl class="function">
-<dt id="caravel.arrival_at_stop.arrival_at_stop">
-<tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">arrival_at_stop</tt><big>(</big><em>reader</em>, <em>stop_finder</em>, <em>files</em>, <em>no_stop=&lt;built-in function print&gt;</em>, <em>stop=&lt;built-in function print&gt;</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#arrival_at_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.arrival_at_stop" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.arrival_at_stop">
+<tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">arrival_at_stop</tt><big>(</big><em>reader</em>, <em>stop_finder</em>, <em>files</em>, <em>no_stop=&lt;built-in function print&gt;</em>, <em>stop=&lt;built-in function print&gt;</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#arrival_at_stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.arrival_at_stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Locate closest stop to the Report objects in the given file(s).
 Create two outputs via callback functions.</p>
 <ul>
 <li><p class="first"><tt class="docutils literal"><span class="pre">no_stop</span></tt> is called with reports to which a stop could not be reliably assigned.
 This function is called with four positional parameters.</p>
 <dl class="function">
-<dt id="caravel.arrival_at_stop.no_stop">
-<tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">no_stop</tt><big>(</big><em>message</em>, <em>report</em>, <em>candidate_1</em>, <em>candidate_2</em><big>)</big><a class="headerlink" href="#caravel.arrival_at_stop.no_stop" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.no_stop">
+<tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">no_stop</tt><big>(</big><em>message</em>, <em>report</em>, <em>candidate_1</em>, <em>candidate_2</em><big>)</big><a class="headerlink" href="#spike.arrival_at_stop.no_stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function to write a report that could not be matched
 reliably to a stop.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -231,8 +237,8 @@ reliably to a stop.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>message</strong> &#8211; Short string explanation</li>
 <li><strong>report</strong> &#8211; <a class="reference internal" href="domain.html#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a> object</li>
-<li><strong>candidate_1</strong> &#8211; <a class="reference internal" href="domain.html#caravel.transit_system.Stop" title="caravel.transit_system.Stop"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop</span></tt></a> object or <tt class="docutils literal"><span class="pre">None</span></tt></li>
-<li><strong>candidate_2</strong> &#8211; <a class="reference internal" href="domain.html#caravel.transit_system.Stop" title="caravel.transit_system.Stop"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop</span></tt></a> object or <tt class="docutils literal"><span class="pre">None</span></tt></li>
+<li><strong>candidate_1</strong> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop</span></tt> object or <tt class="docutils literal"><span class="pre">None</span></tt></li>
+<li><strong>candidate_2</strong> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop</span></tt> object or <tt class="docutils literal"><span class="pre">None</span></tt></li>
 </ul>
 </td>
 </tr>
@@ -243,8 +249,8 @@ reliably to a stop.</p>
 </li>
 <li><p class="first"><tt class="docutils literal"><span class="pre">stop</span></tt> is called with the reports to which a stop could be assigned.</p>
 <dl class="function">
-<dt id="caravel.arrival_at_stop.stop">
-<tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">stop</tt><big>(</big><em>report</em>, <em>best_fit</em><big>)</big><a class="headerlink" href="#caravel.arrival_at_stop.stop" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.stop">
+<tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">stop</tt><big>(</big><em>report</em>, <em>best_fit</em><big>)</big><a class="headerlink" href="#spike.arrival_at_stop.stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Callback function to write a report was matched
 reliably to a stop.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -253,7 +259,7 @@ reliably to a stop.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>report</strong> &#8211; <a class="reference internal" href="domain.html#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a> object</li>
-<li><strong>best_fit</strong> &#8211; <a class="reference internal" href="domain.html#caravel.transit_system.Candidate" title="caravel.transit_system.Candidate"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Candidate</span></tt></a> object</li>
+<li><strong>best_fit</strong> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">Candidate</span></tt> object</li>
 </ul>
 </td>
 </tr>
@@ -269,7 +275,7 @@ reliably to a stop.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>reader</strong> &#8211; An object of <a class="reference internal" href="domain.html#caravel.report.ReportReader" title="caravel.report.ReportReader"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.ReportReader</span></tt></a>.</li>
-<li><strong>stop_finder</strong> &#8211; An  <a class="reference internal" href="#caravel.arrival_at_stop.StopFinder" title="caravel.arrival_at_stop.StopFinder"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder</span></tt></a> instance.</li>
+<li><strong>stop_finder</strong> &#8211; An  <a class="reference internal" href="#spike.arrival_at_stop.StopFinder" title="spike.arrival_at_stop.StopFinder"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder</span></tt></a> instance.</li>
 <li><strong>files</strong> &#8211; a sequence of report files.</li>
 <li><strong>no_stop</strong> &#8211; an open file to which 4-tuples are written.</li>
 <li><strong>stop</strong> &#8211; an open file to which 7-tuples are written.</li>
@@ -284,32 +290,32 @@ reliably to a stop.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="caravel.arrival_at_stop.InvalidReport">
-<em class="property">class </em><tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">InvalidReport</tt><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#InvalidReport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.InvalidReport" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.InvalidReport">
+<em class="property">class </em><tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">InvalidReport</tt><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#InvalidReport"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.InvalidReport" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Report was either a Location or invalid in some other way
 for locating a stop.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="caravel.arrival_at_stop.NoStopFound">
-<em class="property">class </em><tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">NoStopFound</tt><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#NoStopFound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.NoStopFound" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.NoStopFound">
+<em class="property">class </em><tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">NoStopFound</tt><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#NoStopFound"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.NoStopFound" title="Permalink to this definition">¶</a></dt>
 <dd><p>No stop could be found.  The arguments include
 a message, and up to two candidate stops.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="caravel.arrival_at_stop.StopFinder">
-<em class="property">class </em><tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">StopFinder</tt><big>(</big><em>connection</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder">
+<em class="property">class </em><tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">StopFinder</tt><big>(</big><em>connection</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Stop-Finder algorithm.</p>
 <dl class="staticmethod">
-<dt id="caravel.arrival_at_stop.StopFinder.heading">
-<em class="property">static </em><tt class="descname">heading</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder.heading"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder.heading" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return headings which match the return value from <a class="reference internal" href="#caravel.arrival_at_stop.StopFinder.supplement" title="caravel.arrival_at_stop.StopFinder.supplement"><tt class="xref py py-meth docutils literal"><span class="pre">supplement()</span></tt></a>.</p>
+<dt id="spike.arrival_at_stop.StopFinder.heading">
+<em class="property">static </em><tt class="descname">heading</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder.heading"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder.heading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return headings which match the return value from <a class="reference internal" href="#spike.arrival_at_stop.StopFinder.supplement" title="spike.arrival_at_stop.StopFinder.supplement"><tt class="xref py py-meth docutils literal"><span class="pre">supplement()</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="caravel.arrival_at_stop.StopFinder.process_report">
-<tt class="descname">process_report</tt><big>(</big><em>report</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder.process_report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder.process_report" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder.process_report">
+<tt class="descname">process_report</tt><big>(</big><em>report</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder.process_report"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder.process_report" title="Permalink to this definition">¶</a></dt>
 <dd><p>Process a single Arrival or Dwell report.</p>
 <ol class="arabic simple">
 <li>Get services available for this date.</li>
@@ -328,14 +334,14 @@ a message, and up to two candidate stops.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="caravel.arrival_at_stop.StopFinder.supplement">
-<tt class="descname">supplement</tt><big>(</big><em>candidate</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder.supplement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder.supplement" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder.supplement">
+<tt class="descname">supplement</tt><big>(</big><em>candidate</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder.supplement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder.supplement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fold in supplemental data.  The superclass does nothing extra.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>best_fit</strong> &#8211; a <a class="reference internal" href="domain.html#caravel.transit_system.Candidate" title="caravel.transit_system.Candidate"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Candidate</span></tt></a> instance.</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>best_fit</strong> &#8211; a <tt class="xref py py-class docutils literal"><span class="pre">Candidate</span></tt> instance.</td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a new Best_Fit instance or possibly the unmodified candidate.</td>
 </tr>
@@ -346,69 +352,69 @@ a message, and up to two candidate stops.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip">
-<em class="property">class </em><tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">StopFinder_Route_Trip</tt><big>(</big><em>connection</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder_Route_Trip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip">
+<em class="property">class </em><tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">StopFinder_Route_Trip</tt><big>(</big><em>connection</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder_Route_Trip"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Stop-Finder algorithm.  This folds in route and trip
 supplemental data.</p>
 <dl class="class">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit">
-<em class="property">class </em><tt class="descname">Best_Fit</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit">
+<em class="property">class </em><tt class="descname">Best_Fit</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Best_Fit(distance, time, stop, stop_time, route, trip)</p>
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.distance">
-<tt class="descname">distance</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.distance" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.distance">
+<tt class="descname">distance</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.distance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 0</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.route">
-<tt class="descname">route</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.route" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.route">
+<tt class="descname">route</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.route" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 4</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop">
-<tt class="descname">stop</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop">
+<tt class="descname">stop</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 2</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop_time">
-<tt class="descname">stop_time</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop_time" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop_time">
+<tt class="descname">stop_time</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.stop_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 3</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.time">
-<tt class="descname">time</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.time" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.time">
+<tt class="descname">time</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 1</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.trip">
-<tt class="descname">trip</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.trip" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.trip">
+<tt class="descname">trip</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit.trip" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 5</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="staticmethod">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip.heading">
-<em class="property">static </em><tt class="descclassname">StopFinder_Route_Trip.</tt><tt class="descname">heading</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder_Route_Trip.heading"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.heading" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return headings which match the return value from <a class="reference internal" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.supplement" title="caravel.arrival_at_stop.StopFinder_Route_Trip.supplement"><tt class="xref py py-meth docutils literal"><span class="pre">supplement()</span></tt></a>.</p>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip.heading">
+<em class="property">static </em><tt class="descclassname">StopFinder_Route_Trip.</tt><tt class="descname">heading</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder_Route_Trip.heading"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip.heading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return headings which match the return value from <a class="reference internal" href="#spike.arrival_at_stop.StopFinder_Route_Trip.supplement" title="spike.arrival_at_stop.StopFinder_Route_Trip.supplement"><tt class="xref py py-meth docutils literal"><span class="pre">supplement()</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="caravel.arrival_at_stop.StopFinder_Route_Trip.supplement">
-<tt class="descclassname">StopFinder_Route_Trip.</tt><tt class="descname">supplement</tt><big>(</big><em>best_fit</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder_Route_Trip.supplement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.supplement" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Route_Trip.supplement">
+<tt class="descclassname">StopFinder_Route_Trip.</tt><tt class="descname">supplement</tt><big>(</big><em>best_fit</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder_Route_Trip.supplement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Route_Trip.supplement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fold in some extra data, the route and trip that apply to this stop.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>best_fit</strong> &#8211; <a class="reference internal" href="domain.html#caravel.transit_system.Candidate" title="caravel.transit_system.Candidate"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Candidate</span></tt></a> object</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>best_fit</strong> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">Candidate</span></tt> object</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a <a class="reference internal" href="#caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit" title="caravel.arrival_at_stop.StopFinder_Route_Trip.Best_Fit"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder_Route_Trip.Best_Fit</span></tt></a> instance.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a <a class="reference internal" href="#spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit" title="spike.arrival_at_stop.StopFinder_Route_Trip.Best_Fit"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder_Route_Trip.Best_Fit</span></tt></a> instance.</td>
 </tr>
 </tbody>
 </table>
@@ -417,69 +423,69 @@ supplemental data.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop">
-<em class="property">class </em><tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">StopFinder_Next_Stop</tt><big>(</big><em>connection</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder_Next_Stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop">
+<em class="property">class </em><tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">StopFinder_Next_Stop</tt><big>(</big><em>connection</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder_Next_Stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>The Stop-Finder algorithm.  This folds in route and next stop_time
 supplemental data.</p>
 <dl class="class">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit">
-<em class="property">class </em><tt class="descname">Best_Fit</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit">
+<em class="property">class </em><tt class="descname">Best_Fit</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Best_Fit(distance, time, stop, stop_time, route, next)</p>
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.distance">
-<tt class="descname">distance</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.distance" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.distance">
+<tt class="descname">distance</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.distance" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 0</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.next">
-<tt class="descname">next</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.next" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.next">
+<tt class="descname">next</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.next" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 5</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.route">
-<tt class="descname">route</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.route" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.route">
+<tt class="descname">route</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.route" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 4</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop">
-<tt class="descname">stop</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop">
+<tt class="descname">stop</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 2</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop_time">
-<tt class="descname">stop_time</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop_time" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop_time">
+<tt class="descname">stop_time</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.stop_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 3</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.time">
-<tt class="descname">time</tt><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.time" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.time">
+<tt class="descname">time</tt><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit.time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 1</p>
 </dd></dl>
 
 </dd></dl>
 
 <dl class="staticmethod">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop.heading">
-<em class="property">static </em><tt class="descclassname">StopFinder_Next_Stop.</tt><tt class="descname">heading</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder_Next_Stop.heading"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.heading" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return headings which match the return value from <a class="reference internal" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.supplement" title="caravel.arrival_at_stop.StopFinder_Next_Stop.supplement"><tt class="xref py py-meth docutils literal"><span class="pre">supplement()</span></tt></a>.</p>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop.heading">
+<em class="property">static </em><tt class="descclassname">StopFinder_Next_Stop.</tt><tt class="descname">heading</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder_Next_Stop.heading"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop.heading" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return headings which match the return value from <a class="reference internal" href="#spike.arrival_at_stop.StopFinder_Next_Stop.supplement" title="spike.arrival_at_stop.StopFinder_Next_Stop.supplement"><tt class="xref py py-meth docutils literal"><span class="pre">supplement()</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="caravel.arrival_at_stop.StopFinder_Next_Stop.supplement">
-<tt class="descclassname">StopFinder_Next_Stop.</tt><tt class="descname">supplement</tt><big>(</big><em>best_fit</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#StopFinder_Next_Stop.supplement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.supplement" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.StopFinder_Next_Stop.supplement">
+<tt class="descclassname">StopFinder_Next_Stop.</tt><tt class="descname">supplement</tt><big>(</big><em>best_fit</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#StopFinder_Next_Stop.supplement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.StopFinder_Next_Stop.supplement" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fold in some extra data, the next scheduled stop.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>best_fit</strong> &#8211; <a class="reference internal" href="domain.html#caravel.transit_system.Candidate" title="caravel.transit_system.Candidate"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Candidate</span></tt></a> object</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>best_fit</strong> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">Candidate</span></tt> object</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a <a class="reference internal" href="#caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit" title="caravel.arrival_at_stop.StopFinder_Next_Stop.Best_Fit"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder_Next_Stop.Best_Fit</span></tt></a> instance.</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">a <a class="reference internal" href="#spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit" title="spike.arrival_at_stop.StopFinder_Next_Stop.Best_Fit"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder_Next_Stop.Best_Fit</span></tt></a> instance.</td>
 </tr>
 </tbody>
 </table>
@@ -491,26 +497,26 @@ supplemental data.</p>
 <p>Output Components</p>
 <blockquote>
 <div><dl class="function">
-<dt id="caravel.arrival_at_stop.prefix_fields">
-<tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">prefix_fields</tt><big>(</big><em>prefix</em>, <em>nt_class</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#prefix_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.prefix_fields" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the list of field names from a namedtuple with a prefix.</p>
+<dt id="spike.arrival_at_stop.prefix_fields">
+<tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">prefix_fields</tt><big>(</big><em>prefix</em>, <em>fieldnames</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#prefix_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.prefix_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the list of field names with a prefix.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="caravel.arrival_at_stop.prefix_dict">
-<tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">prefix_dict</tt><big>(</big><em>prefix</em>, <em>nt_obj</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#prefix_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.prefix_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create a dictionary from a namedtuple applying a prefix to the field names.</p>
+<dt id="spike.arrival_at_stop.prefix_dict">
+<tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">prefix_dict</tt><big>(</big><em>prefix</em>, <em>dict_obj</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#prefix_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.prefix_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Flatten a dictionary from a dictionary applying a prefix to the field names.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="caravel.arrival_at_stop.WriteStop">
-<em class="property">class </em><tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">WriteStop</tt><big>(</big><em>stop_finder</em>, <em>target=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#WriteStop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.WriteStop" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.WriteStop">
+<em class="property">class </em><tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">WriteStop</tt><big>(</big><em>stop_finder</em>, <em>target=None</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#WriteStop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.WriteStop" title="Permalink to this definition">¶</a></dt>
 <dd><p>A callable writer for reports that have been matched to a stop.
 This creates a CSV-format file attributes from
 <a class="reference internal" href="domain.html#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a>,
-<a class="reference internal" href="domain.html#caravel.transit_system.Stop" title="caravel.transit_system.Stop"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop</span></tt></a>,
-<a class="reference internal" href="domain.html#caravel.transit_system.Stop_Time" title="caravel.transit_system.Stop_Time"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop_Time</span></tt></a></p>
-<p>How to create an object usable a callback with <a class="reference internal" href="#caravel.arrival_at_stop.arrival_at_stop" title="caravel.arrival_at_stop.arrival_at_stop"><tt class="xref py py-func docutils literal"><span class="pre">arrival_at_stop()</span></tt></a>.</p>
+<tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop</span></tt>,
+<tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop_Time</span></tt></p>
+<p>How to create an object usable a callback with <a class="reference internal" href="#spike.arrival_at_stop.arrival_at_stop" title="spike.arrival_at_stop.arrival_at_stop"><tt class="xref py py-func docutils literal"><span class="pre">arrival_at_stop()</span></tt></a>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">args</span><span class="o">.</span><span class="n">stop</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">stop_file</span><span class="p">:</span>
     <span class="n">stop</span><span class="o">=</span> <span class="n">Stop</span><span class="p">(</span> <span class="n">connection</span><span class="p">,</span> <span class="n">stop_file</span> <span class="p">)</span>
 </pre></div>
@@ -520,8 +526,8 @@ This creates a CSV-format file attributes from
 </pre></div>
 </div>
 <dl class="method">
-<dt id="caravel.arrival_at_stop.WriteStop.__call__">
-<tt class="descname">__call__</tt><big>(</big><em>report</em>, <em>best_fit</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#WriteStop.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.WriteStop.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.WriteStop.__call__">
+<tt class="descname">__call__</tt><big>(</big><em>report</em>, <em>best_fit</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#WriteStop.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.WriteStop.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a row to the stop file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -529,8 +535,7 @@ This creates a CSV-format file attributes from
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>report</strong> &#8211; <a class="reference internal" href="domain.html#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a> object</li>
-<li><strong>services</strong> &#8211; sevice id&#8217;s appropriate to the report</li>
-<li><strong>best_fit</strong> &#8211; <a class="reference internal" href="domain.html#caravel.transit_system.Candidate" title="caravel.transit_system.Candidate"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Candidate</span></tt></a> object</li>
+<li><strong>best_fit</strong> &#8211; <tt class="xref py py-class docutils literal"><span class="pre">Candidate</span></tt> object</li>
 </ul>
 </td>
 </tr>
@@ -539,15 +544,15 @@ This creates a CSV-format file attributes from
 </dd></dl>
 
 <dl class="method">
-<dt id="caravel.arrival_at_stop.WriteStop.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>stop_finder</em>, <em>target=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#WriteStop.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.WriteStop.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.WriteStop.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>stop_finder</em>, <em>target=None</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#WriteStop.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.WriteStop.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create the CSV writer around the target file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>stop_finder</strong> &#8211; <a class="reference internal" href="#caravel.arrival_at_stop.StopFinder" title="caravel.arrival_at_stop.StopFinder"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder</span></tt></a> object.</li>
+<li><strong>stop_finder</strong> &#8211; <a class="reference internal" href="#spike.arrival_at_stop.StopFinder" title="spike.arrival_at_stop.StopFinder"><tt class="xref py py-class docutils literal"><span class="pre">StopFinder</span></tt></a> object.</li>
 <li><strong>target</strong> &#8211; file-like object suitable to CSV writer.</li>
 </ul>
 </td>
@@ -559,21 +564,20 @@ This creates a CSV-format file attributes from
 </dd></dl>
 
 <dl class="class">
-<dt id="caravel.arrival_at_stop.WriteNoStop">
-<em class="property">class </em><tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">WriteNoStop</tt><big>(</big><em>target=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#WriteNoStop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.WriteNoStop" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.WriteNoStop">
+<em class="property">class </em><tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">WriteNoStop</tt><big>(</big><em>target=None</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#WriteNoStop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.WriteNoStop" title="Permalink to this definition">¶</a></dt>
 <dd><p>A callable writer for reports that have been matched to a stop.
 This creates a CSV-format file attributes from
-<a class="reference internal" href="domain.html#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a>, and
-<a class="reference internal" href="domain.html#caravel.transit_system.Stop" title="caravel.transit_system.Stop"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop</span></tt></a>.</p>
-<p>How to create an object usable a callback with <a class="reference internal" href="#caravel.arrival_at_stop.arrival_at_stop" title="caravel.arrival_at_stop.arrival_at_stop"><tt class="xref py py-func docutils literal"><span class="pre">arrival_at_stop()</span></tt></a>.</p>
+<a class="reference internal" href="domain.html#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a> and the stop definitions.</p>
+<p>How to create an object usable a callback with <a class="reference internal" href="#spike.arrival_at_stop.arrival_at_stop" title="spike.arrival_at_stop.arrival_at_stop"><tt class="xref py py-func docutils literal"><span class="pre">arrival_at_stop()</span></tt></a>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="k">with</span> <span class="nb">open</span><span class="p">(</span> <span class="n">args</span><span class="o">.</span><span class="n">reject</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">no_stop_file</span><span class="p">:</span>
     <span class="n">no_stop</span><span class="o">=</span> <span class="n">NoStop</span><span class="p">(</span> <span class="n">no_stop_file</span> <span class="p">)</span>
 </pre></div>
 </div>
 <p>This creates a callable <tt class="docutils literal"><span class="pre">no_stop</span></tt> function.</p>
 <dl class="method">
-<dt id="caravel.arrival_at_stop.WriteNoStop.__call__">
-<tt class="descname">__call__</tt><big>(</big><em>status</em>, <em>report</em>, <em>dist_fit=None</em>, <em>time_fit=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#WriteNoStop.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.WriteNoStop.__call__" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.WriteNoStop.__call__">
+<tt class="descname">__call__</tt><big>(</big><em>status</em>, <em>report</em>, <em>dist_fit=None</em>, <em>time_fit=None</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#WriteNoStop.__call__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.WriteNoStop.__call__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Write a row to the no-stop file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -582,8 +586,8 @@ This creates a CSV-format file attributes from
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>message</strong> &#8211; Short string explanation</li>
 <li><strong>report</strong> &#8211; <a class="reference internal" href="domain.html#caravel.report.Report" title="caravel.report.Report"><tt class="xref py py-class docutils literal"><span class="pre">caravel.report.Report</span></tt></a> object</li>
-<li><strong>candidate_1</strong> &#8211; <a class="reference internal" href="domain.html#caravel.transit_system.Stop" title="caravel.transit_system.Stop"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop</span></tt></a> object or <tt class="docutils literal"><span class="pre">None</span></tt></li>
-<li><strong>candidate_2</strong> &#8211; <a class="reference internal" href="domain.html#caravel.transit_system.Stop" title="caravel.transit_system.Stop"><tt class="xref py py-class docutils literal"><span class="pre">caravel.transit_system.Stop</span></tt></a> object or <tt class="docutils literal"><span class="pre">None</span></tt></li>
+<li><strong>dist_fit</strong> &#8211; <tt class="docutils literal"><span class="pre">Stop</span></tt> object or <tt class="docutils literal"><span class="pre">None</span></tt></li>
+<li><strong>time_fit</strong> &#8211; <tt class="docutils literal"><span class="pre">Stop</span></tt> object or <tt class="docutils literal"><span class="pre">None</span></tt></li>
 </ul>
 </td>
 </tr>
@@ -592,8 +596,8 @@ This creates a CSV-format file attributes from
 </dd></dl>
 
 <dl class="method">
-<dt id="caravel.arrival_at_stop.WriteNoStop.__init__">
-<tt class="descname">__init__</tt><big>(</big><em>target=None</em><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#WriteNoStop.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.WriteNoStop.__init__" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.WriteNoStop.__init__">
+<tt class="descname">__init__</tt><big>(</big><em>target=None</em><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#WriteNoStop.__init__"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.WriteNoStop.__init__" title="Permalink to this definition">¶</a></dt>
 <dd><p>Create the CSV writer around the target file.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -608,8 +612,8 @@ This creates a CSV-format file attributes from
 </dd></dl>
 
 <dl class="function">
-<dt id="caravel.arrival_at_stop.get_args">
-<tt class="descclassname">caravel.arrival_at_stop.</tt><tt class="descname">get_args</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/caravel/arrival_at_stop.html#get_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.arrival_at_stop.get_args" title="Permalink to this definition">¶</a></dt>
+<dt id="spike.arrival_at_stop.get_args">
+<tt class="descclassname">spike.arrival_at_stop.</tt><tt class="descname">get_args</tt><big>(</big><big>)</big><a class="reference internal" href="../_modules/spike/arrival_at_stop.html#get_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#spike.arrival_at_stop.get_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parse command-line arguments.
 :returns: Arguments object.</p>
 </dd></dl>
@@ -714,7 +718,7 @@ The route is an OrderedDict, keyed by Route/Dir/Stop with sequence of arrival ti
 <li><a class="reference internal" href="#">Analysis and Profiling</a><ul>
 <li><a class="reference internal" href="#module-caravel.statistics">Statistics</a></li>
 <li><a class="reference internal" href="#module-caravel.arrival_stats">Arrival Statistics</a></li>
-<li><a class="reference internal" href="#module-caravel.transit_stats">Transit System Statistics</a></li>
+<li><a class="reference internal" href="#module-caravel.transit_system.transit_stats">Transit System Statistics</a></li>
 <li><a class="reference internal" href="#geospatial-stop-finder">Geospatial Stop Finder</a></li>
 <li><a class="reference internal" href="#module-caravel.route_discovery">Route Discovery</a></li>
 </ul>

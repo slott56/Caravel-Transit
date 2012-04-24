@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Real-Time Feed &mdash; Caravel-Transit 1.2 documentation</title>
+    <title>Real-Time Capture &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -26,8 +26,8 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
     <link rel="up" title="User’s Guide" href="index.html" />
-    <link rel="next" title="Route Capture" href="route_capture.html" />
-    <link rel="prev" title="Mappings Upload" href="mappings_upload.html" /> 
+    <link rel="next" title="Mappings Upload" href="mappings_upload.html" />
+    <link rel="prev" title="Configuration" href="configuration.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,10 +40,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="route_capture.html" title="Route Capture"
+          <a href="mappings_upload.html" title="Mappings Upload"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="mappings_upload.html" title="Mappings Upload"
+          <a href="configuration.html" title="Configuration"
              accesskey="P">previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
@@ -55,24 +55,31 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="real-time-feed">
-<h1>Real-Time Feed<a class="headerlink" href="#real-time-feed" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="real-time-capture">
+<span id="ops-rtc"></span><h1>Real-Time Capture<a class="headerlink" href="#real-time-capture" title="Permalink to this headline">¶</a></h1>
 <p>The  log capture application is simply left running.  Forever.  It can be
 stopped or restarted as needed for system maintenance.  It uses a private
 cache file to record the size of the log so that it captures only the
 new data.</p>
-<p>There are two configurations.</p>
+<p>There are two configurations of the log capture.</p>
 <ul class="simple">
-<li>All-in-One.</li>
-<li>Separate Tail from Format-and-Push.</li>
+<li><a class="reference internal" href="#all-in-one-log-capture">All-In-One Log Capture</a>.  A single application (in Python or Java)
+does three things.  The application
+(1) tails the log, (2) formats it into CSV notation and then (3) pushes it into
+the couch database.</li>
+<li><a class="reference internal" href="#tail-only-log-extract">Tail Only Log Extract</a>.  Two separate applications are used.<ol class="arabic">
+<li>This does step (1), tail the spysocket log and copy the file to a separate host.</li>
+<li>Monitor a destination directory, and does things:
+(2) formats the extract into CSV notation and then (3) pushes it into
+the couch database.</li>
+</ol>
+</li>
 </ul>
-<p>In the <a class="reference internal" href="#all-in-one-log-capture">All-In-One Log Capture</a> configuration, a single application (in Python or Java)
-tails the log, formats it into CSV notation and the pushes it into
-the couch database.</p>
-<p>In the Separate hosts configuration, there are two applications, each
-on separate hosts.  The <a class="reference internal" href="#tail-only-log-extract">Tail Only Log Extract</a> command tails the log,
-and moves the extract to a separate host.  The <a class="reference internal" href="#monitor-capture">Monitor Capture</a> application formats
-the extract into CSV and pushes it to the couch database.</p>
+<p>While the all-in-one is simpler, it involves a slightly more complex installation
+that may involve unacceptable modifications to production servers.</p>
+<p>The tail-only requires two separate hosts.  The capture host has very, very
+simplex software.  The monitor host, however, is requires te complete
+installation.</p>
 <div class="section" id="all-in-one-log-capture">
 <h2>All-In-One Log Capture<a class="headerlink" href="#all-in-one-log-capture" title="Permalink to this headline">¶</a></h2>
 <p>The application is started from the command line</p>
@@ -84,35 +91,49 @@ to tail.</p>
 <div class="highlight-python"><pre>java -cp LogCapture/dist/LogCapture.jar org.hrva.capture.Capture
 ../HRT-Mock/simulated.log</pre>
 </div>
+<p>This requires a configuration file described in <em class="xref std std-ref">ops.config</em>.</p>
 </div>
 <div class="section" id="tail-only-log-extract">
 <h2>Tail Only Log Extract<a class="headerlink" href="#tail-only-log-extract" title="Permalink to this headline">¶</a></h2>
-<p>The Tail-only configuration requires a tail process on one host.
-The format and puch processing runs on a separate host, using the <a class="reference internal" href="#monitor-capture">Monitor Capture</a>
-application.</p>
-<p>The application is started from the command line</p>
+<p>The Tail-only configuration requires two hosts.</p>
+<ul class="simple">
+<li>The <a class="reference internal" href="#tail-process">tail process</a> runs on one host.</li>
+<li>The <a class="reference internal" href="#format-and-push-process">format and push process</a> runs on a separate host.</li>
+</ul>
+<div class="section" id="tail-process">
+<h3>Tail Process<a class="headerlink" href="#tail-process" title="Permalink to this headline">¶</a></h3>
+<p>The Python implementation of the tail process uses the <tt class="xref py py-mod docutils literal"><span class="pre">caravel.LogCapture</span></tt> application.
+This is started from the command line</p>
 <div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.log_capture -t Tail_Only ../HRT-Mock/simulated.log</pre>
 </div>
 <p>The positional argument (<tt class="file docutils literal"><span class="pre">../HRT-Mock/simulated.log</span></tt>) names the log file
 to tail.</p>
-<p>The Java implementation is similar.</p>
+<p>The Java implementation of the tail processes uses the Java <tt class="docutils literal"><span class="pre">org.hrva.capture.Capture</span></tt>
+application.  This is started from the command line</p>
 <div class="highlight-python"><pre>java -cp LogCapture/dist/LogCapture.jar org.hrva.capture.Capture -t Tail_Only
 ../HRT-Mock/simulated.log</pre>
 </div>
 <p>The extracts are copied to a separate host where a separate application processes
 them for upload.</p>
+<p>This requires a configuration file described in <em class="xref std std-ref">ops.config</em>.</p>
 </div>
-<div class="section" id="monitor-capture">
-<h2>Monitor Capture<a class="headerlink" href="#monitor-capture" title="Permalink to this headline">¶</a></h2>
-<p>This is used to complete the processing started by the <a class="reference internal" href="#tail-only-log-extract">Tail Only Log Extract</a>.</p>
-<p>This application monitors a directory for the extract file.  When the file is
-created, this application immediately loads it to the Couch database.</p>
+<div class="section" id="format-and-push-process">
+<h3>Format and Push Process<a class="headerlink" href="#format-and-push-process" title="Permalink to this headline">¶</a></h3>
+<p>This is used to complete the processing started by the <a class="reference internal" href="#tail-process">Tail Process</a>.</p>
+<p>This application monitors a directory for the extract file.  Each time the
+extract file is created, this application immediately does two things.</p>
+<ol class="arabic simple">
+<li>It reformats the file into CSV.</li>
+<li>It pushes the file to the Couch database.</li>
+</ol>
 <p>The application is started from the command line</p>
 <div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.monitor_capture ../HRT-Mock</pre>
 </div>
 <p>The positional argument (<tt class="file docutils literal"><span class="pre">../HRT-Mock</span></tt>) names the directory to examine
 for the extract file.</p>
 <p>There is no Java version of this.</p>
+<p>This requires the Python <tt class="file docutils literal"><span class="pre">settings.py</span></tt> file described in <em class="xref std std-ref">ops.config</em>.</p>
+</div>
 </div>
 </div>
 
@@ -127,20 +148,23 @@ for the extract file.</p>
             </a></p>
   <h3><a href="../caravel.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Real-Time Feed</a><ul>
+<li><a class="reference internal" href="#">Real-Time Capture</a><ul>
 <li><a class="reference internal" href="#all-in-one-log-capture">All-In-One Log Capture</a></li>
-<li><a class="reference internal" href="#tail-only-log-extract">Tail Only Log Extract</a></li>
-<li><a class="reference internal" href="#monitor-capture">Monitor Capture</a></li>
+<li><a class="reference internal" href="#tail-only-log-extract">Tail Only Log Extract</a><ul>
+<li><a class="reference internal" href="#tail-process">Tail Process</a></li>
+<li><a class="reference internal" href="#format-and-push-process">Format and Push Process</a></li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="mappings_upload.html"
-                        title="previous chapter">Mappings Upload</a></p>
+  <p class="topless"><a href="configuration.html"
+                        title="previous chapter">Configuration</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="route_capture.html"
-                        title="next chapter">Route Capture</a></p>
+  <p class="topless"><a href="mappings_upload.html"
+                        title="next chapter">Mappings Upload</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/operations/log_capture.txt"
@@ -173,10 +197,10 @@ for the extract file.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="route_capture.html" title="Route Capture"
+          <a href="mappings_upload.html" title="Mappings Upload"
              >next</a> |</li>
         <li class="right" >
-          <a href="mappings_upload.html" title="Mappings Upload"
+          <a href="configuration.html" title="Configuration"
              >previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User&#8217;s Guide</a> &raquo;</li> 

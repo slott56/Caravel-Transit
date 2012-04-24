@@ -59,8 +59,6 @@
 <span id="design-flow"></span><h1>Data Flow and Processing<a class="headerlink" href="#data-flow-and-processing" title="Permalink to this headline">¶</a></h1>
 <p>There are several processing steps.  This leads to a number of data stores
 reflecting the persistent results of the various processing steps.</p>
-<p>Also, see <a class="reference internal" href="document_model.html#design-document"><em>CouchDB Document Model</em></a> for database design considerations based
-simply on the structure of the data, independent of the processing.</p>
 <ol class="arabic">
 <li><p class="first">Acquire Feed.  See <a class="reference internal" href="report_data.html#design-position"><em>Position Data Acquisition</em></a>.
 This is parsed and (in effect) put into a processing queue.</p>
@@ -116,6 +114,8 @@ times effectively describes the actual routes and schedules.
 This is simply a collection of days.</p>
 </li>
 </ol>
+<p>Also, see <a class="reference internal" href="document_model.html#design-document"><em>CouchDB Document Model</em></a> for database design considerations based
+simply on the structure of the data, independent of the processing.</p>
 <div class="section" id="stop-status-fifo">
 <h2>Stop Status FIFO<a class="headerlink" href="#stop-status-fifo" title="Permalink to this headline">¶</a></h2>
 <p>Each Route/Direction FIFO contains the last stop&#8217;s Dwell or Arrival report followed by

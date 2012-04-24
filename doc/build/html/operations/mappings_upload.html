@@ -26,8 +26,8 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
     <link rel="up" title="User’s Guide" href="index.html" />
-    <link rel="next" title="Real-Time Feed" href="log_capture.html" />
-    <link rel="prev" title="Configuration" href="configuration.html" /> 
+    <link rel="next" title="Route Capture" href="route_capture.html" />
+    <link rel="prev" title="Real-Time Capture" href="log_capture.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,10 +40,10 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="log_capture.html" title="Real-Time Feed"
+          <a href="route_capture.html" title="Route Capture"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="configuration.html" title="Configuration"
+          <a href="log_capture.html" title="Real-Time Capture"
              accesskey="P">previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
@@ -56,13 +56,22 @@
           <div class="body">
             
   <div class="section" id="mappings-upload">
-<h1>Mappings Upload<a class="headerlink" href="#mappings-upload" title="Permalink to this headline">¶</a></h1>
-<p>There are three species of mappings:</p>
+<span id="ops-map"></span><h1>Mappings Upload<a class="headerlink" href="#mappings-upload" title="Permalink to this headline">¶</a></h1>
+<p>There are two versions of the transit system vehicle, route and stop identifiers.</p>
 <ul class="simple">
-<li>Vehicle</li>
-<li>Route</li>
-<li>Stop</li>
+<li>The real-time GPS feed.</li>
+<li>The Google Transit System data.  (This is the Google Transit Feed Specification, GTFS).</li>
 </ul>
+<p>There are three species of mappings that associate real-time data with GTFS:</p>
+<ul class="simple">
+<li>Vehicle ID</li>
+<li>Route ID</li>
+<li>Stop ID</li>
+</ul>
+<p>Each mapping must be prepared and uploaded.  See <a class="reference internal" href="#mapping-preparation">Mapping Preparation</a>
+and <a class="reference internal" href="#mapping-upload">Mapping Upload</a>.</p>
+<div class="section" id="mapping-preparation">
+<h2>Mapping Preparation<a class="headerlink" href="#mapping-preparation" title="Permalink to this headline">¶</a></h2>
 <p>The mappings are prepared through a multi-step process.</p>
 <ol class="arabic">
 <li><p class="first">Query the data.</p>
@@ -101,9 +110,11 @@
 </table>
 <p>Yes, the upper-case/lower-case rules are inconsistent.</p>
 </li>
-<li><p class="first">Push the file with an appropriate effective date.</p>
-</li>
 </ol>
+</div>
+<div class="section" id="mapping-upload">
+<h2>Mapping Upload<a class="headerlink" href="#mapping-upload" title="Permalink to this headline">¶</a></h2>
+<p>Each mapping must be pushed with an appropriate effective date.</p>
 <p>The <a class="reference internal" href="../implementation/etl.html#module-caravel.LogCapture.couch_push" title="caravel.LogCapture.couch_push"><tt class="xref py py-mod docutils literal"><span class="pre">caravel.LogCapture.couch_push</span></tt></a> program is used to push each
 mapping.</p>
 <div class="highlight-python"><pre>python2.7 -m caravel.LogCapture.couch_push --mapping_type type --effective_date date [--verbose] source.csv</pre>
@@ -116,6 +127,8 @@ mapping.</p>
 python2.7 -m caravel.LogCapture.couch_push -m stop -e 2012-03-12 stop.csv
 python2.7 -m caravel.LogCapture.couch_push -m vehicle -e 2012-03-12 vehicle.csv</pre>
 </div>
+<p>This requires a configuration file described in <em class="xref std std-ref">ops.config</em>.</p>
+</div>
 </div>
 
 
@@ -127,12 +140,21 @@ python2.7 -m caravel.LogCapture.couch_push -m vehicle -e 2012-03-12 vehicle.csv<
             <p class="logo"><a href="../caravel.html">
               <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
             </a></p>
+  <h3><a href="../caravel.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Mappings Upload</a><ul>
+<li><a class="reference internal" href="#mapping-preparation">Mapping Preparation</a></li>
+<li><a class="reference internal" href="#mapping-upload">Mapping Upload</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
-  <p class="topless"><a href="configuration.html"
-                        title="previous chapter">Configuration</a></p>
-  <h4>Next topic</h4>
   <p class="topless"><a href="log_capture.html"
-                        title="next chapter">Real-Time Feed</a></p>
+                        title="previous chapter">Real-Time Capture</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="route_capture.html"
+                        title="next chapter">Route Capture</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/operations/mappings_upload.txt"
@@ -165,10 +187,10 @@ python2.7 -m caravel.LogCapture.couch_push -m vehicle -e 2012-03-12 vehicle.csv<
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="log_capture.html" title="Real-Time Feed"
+          <a href="route_capture.html" title="Route Capture"
              >next</a> |</li>
         <li class="right" >
-          <a href="configuration.html" title="Configuration"
+          <a href="log_capture.html" title="Real-Time Capture"
              >previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" >User&#8217;s Guide</a> &raquo;</li> 

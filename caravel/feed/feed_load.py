@@ -2,9 +2,6 @@
 """Caravel ETL of real-time-feed with mappings
 from source encodings to GTFS keys.
 
-Load New Feeds
-===================
-
 1.  Get the next unprocessed feed.
 
     -   Discard unreadable feeds.

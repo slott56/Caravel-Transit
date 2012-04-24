@@ -182,7 +182,7 @@ def upload_mapping( mapping_type, effective_date, filename ):
         effective_date= effective_date,
         mapping_type= mapping_type,
     )
-    db.save_doc( mapping )
+    settings.db.save_doc( mapping )
     with open(filename,'r') as source:
         mapping.put_attachment( source, name="content", content_type="text/csv" )
     return mapping

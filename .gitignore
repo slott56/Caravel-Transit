@@ -16,11 +16,19 @@ doc/build/doctrees/*.doctree
 
 doc/build/.doctrees/*.doctree
 
-
-caravel/LogCapture/*.pyc
-
 caravel/StatusBuilder/*.pyc
 
 caravel/conf/*.pyc
 
 caravel/status/*.pyc
+
+caravel/feed/*.pyc
+
+caravel/transit_system/*.pyc
+
+test/*.pyc
+
+spike/*.pyc
+
+
+caravel/status/models.pyc

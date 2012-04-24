@@ -1,0 +1,157 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Operational Overview &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
+    <link rel="up" title="User’s Guide" href="index.html" />
+    <link rel="next" title="Configuration" href="configuration.html" />
+    <link rel="prev" title="User’s Guide" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="configuration.html" title="Configuration"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="User’s Guide"
+             accesskey="P">previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" accesskey="U">User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="operational-overview">
+<h1>Operational Overview<a class="headerlink" href="#operational-overview" title="Permalink to this headline">¶</a></h1>
+<p>There are three separate pieces of information which are integrated to
+provide a complete, accessible view of the transit system status.</p>
+<ol class="arabic simple">
+<li>The real-time GPS position reports.  This is a tail from the spysocket.log.
+It is captured each minbute and pushed to a database.</li>
+<li>The Google Transit System (GTS) files.  These describe stops, routes,
+trips, and stop times.  These change slowly.</li>
+<li>Mappings from the real-time position reports to the GTS routes,
+stops and vehicles.  These change frequently, but aren&#8217;t real-time
+data sources.</li>
+</ol>
+<p>The objective is to integrate this data into a single database so that
+various applications can extract it and use it.</p>
+<p>Because of the variety of origins, there are several capture processes.</p>
+<ol class="arabic simple">
+<li>The <tt class="xref py py-mod docutils literal"><span class="pre">caravel.LogCapture</span></tt> application.  See <a class="reference internal" href="log_capture.html#ops-rtc"><em>Real-Time Capture</em></a>.
+This monitors the spysocket log for size changes.
+It captures only the changed data and pushes it to the database.
+There are two versions of this.<ul>
+<li>Java.</li>
+<li>Python.</li>
+</ul>
+</li>
+<li>Mappings Upload.  See <a class="reference internal" href="mappings_upload.html#ops-map"><em>Mappings Upload</em></a>.  This must be done manually,
+based on transit system schedule and route changes.  The
+<tt class="xref py py-mod docutils literal"><span class="pre">caravel.LogCapture</span></tt> application is used for mapping upload.</li>
+</ol>
+<ol class="arabic simple" start="2">
+<li>The <tt class="xref py py-mod docutils literal"><span class="pre">caravel.StatusBuilder</span></tt> application.  See <a class="reference internal" href="status_build.html#ops-sb"><em>Status Build</em></a>.
+This monitors the database for changes.
+When a change occurs (i.e., a tail from the log is pushed) it will
+check for mapping changes, check for GTS changes, and update the database
+to describe all the new vehicle, route and trip status.</li>
+</ol>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../caravel.html">
+              <img class="logo" src="../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">User&#8217;s Guide</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="configuration.html"
+                        title="next chapter">Configuration</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="../_sources/operations/overview.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="configuration.html" title="Configuration"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="User’s Guide"
+             >previous</a> |</li>
+        <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="index.html" >User&#8217;s Guide</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

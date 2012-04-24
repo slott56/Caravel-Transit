@@ -17,7 +17,7 @@ Arrival Statistics
 Transit System Statistics
 ============================
 
-..  automodule:: caravel.transit_stats
+..  automodule:: caravel.transit_system.transit_stats
 
 
 Geospatial Stop Finder
@@ -27,7 +27,7 @@ This is an application-like analysis to use geospatial analysis
 to find stops.
 
 
-..  automodule:: caravel.arrival_at_stop
+..  automodule:: spike.arrival_at_stop
 
 
 Route Discovery

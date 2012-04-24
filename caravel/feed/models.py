@@ -2,6 +2,10 @@
 """HRT Couch DB LogCapture Feed Models.
 
 This describes the data pushed by LogCapture.
+
+..  autoclass:: Feed
+
+..  autoclass:: Mapping
 """
 from __future__ import print_function
 from couchdbkit import Server

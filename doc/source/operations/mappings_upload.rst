@@ -1,13 +1,27 @@
+..  _ops.map:
+
 Mappings Upload
 ==================
 
-There are three species of mappings:
+There are two versions of the transit system vehicle, route and stop identifiers.
 
--   Vehicle
+-   The real-time GPS feed.
 
--   Route
+-   The Google Transit System data.  (This is the Google Transit Feed Specification, GTFS).
 
--   Stop
+There are three species of mappings that associate real-time data with GTFS:
+
+-   Vehicle ID
+
+-   Route ID
+
+-   Stop ID
+
+Each mapping must be prepared and uploaded.  See `Mapping Preparation`_
+and `Mapping Upload`_.
+
+Mapping Preparation
+---------------------
 
 The mappings are prepared through a multi-step process.
 
@@ -27,7 +41,10 @@ The mappings are prepared through a multi-step process.
 
     Yes, the upper-case/lower-case rules are inconsistent.
 
-3.  Push the file with an appropriate effective date.
+Mapping Upload
+----------------
+
+Each mapping must be pushed with an appropriate effective date.
 
 The :mod:`caravel.LogCapture.couch_push` program is used to push each
 mapping.
@@ -50,3 +67,5 @@ Examples
     python2.7 -m caravel.LogCapture.couch_push -m route -e 2012-03-12 route.csv
     python2.7 -m caravel.LogCapture.couch_push -m stop -e 2012-03-12 stop.csv
     python2.7 -m caravel.LogCapture.couch_push -m vehicle -e 2012-03-12 vehicle.csv
+
+This requires a configuration file described in :ref:`ops.config`.

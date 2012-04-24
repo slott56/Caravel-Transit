@@ -1,0 +1,199 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>caravel.transit_system.models &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../../index.html" />
+    <link rel="up" title="caravel.transit_system" href="../transit_system.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../transit_system.html" accesskey="U">caravel.transit_system</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for caravel.transit_system.models</h1><div class="highlight"><pre>
+<span class="c">#!/usr/bin/env python2.7</span>
+<span class="sd">&quot;&quot;&quot;Caravel Transit System &quot;database&quot;.</span>
+
+
+<span class="sd">Transit Objects</span>
+<span class="sd">=================</span>
+
+<span class="sd">..  autoclass:: Service</span>
+<span class="sd">..  autoclass:: Route_Definition</span>
+<span class="sd">..  autoclass:: Stop_Definition</span>
+
+<span class="sd">..  autofunction:: radians</span>
+<span class="sd">..  autofunction:: degrees</span>
+<span class="sd">..  autofunction:: dist_approx</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">Document</span>
+<span class="kn">from</span> <span class="nn">couchdbkit</span> <span class="kn">import</span> <span class="n">schema</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">caravel.conf</span> <span class="kn">import</span> <span class="n">settings</span>
+
+<div class="viewcode-block" id="Service"><a class="viewcode-back" href="../../../implementation/database.html#caravel.transit_system.models.Service">[docs]</a><span class="k">class</span> <span class="nc">Service</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
+    <span class="n">date</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DateProperty</span><span class="p">()</span>
+    <span class="n">day_of_week</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">services</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">ListProperty</span><span class="p">()</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Service(date={0.date}, day_of_week={0.day_of_week}, services={0.services})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Route_Definition"><a class="viewcode-back" href="../../../implementation/database.html#caravel.transit_system.models.Route_Definition">[docs]</a><span class="k">class</span> <span class="nc">Route_Definition</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
+    <span class="n">route_id</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">route_short_name</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">route_long_name</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">route_desc</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">route_type</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">route_url</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">trips</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DictProperty</span><span class="p">()</span> <span class="c"># Service is required to identify a given trip.</span>
+    <span class="c"># Trip is { trip_id:..., direction_id:..., block_id:..., stops:{ ... } }</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s">&quot;Route_Definition( route_id={0.route_id}, &quot;</span>
+                <span class="s">&quot;route_short_name= {0.route_short_name}, &quot;</span>
+                <span class="s">&quot;route_long_name= {0.route_long_name}, &quot;</span>
+                <span class="s">&quot;route_desc= {0.route_desc}, &quot;</span>
+                <span class="s">&quot;route_type= {0.route_type}, &quot;</span>
+                <span class="s">&quot;route_url= {0.route_url}, &quot;</span>
+                <span class="s">&quot;trips= {0.trips!r} )&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">stops</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Flat list of stops on this route.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">svc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trips</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">trip</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trips</span><span class="p">[</span><span class="n">svc</span><span class="p">][</span><span class="n">trip</span><span class="p">][</span><span class="s">&#39;stops&#39;</span><span class="p">]:</span>
+                    <span class="k">yield</span> <span class="n">s</span>
+</div>
+<div class="viewcode-block" id="Stop_Definition"><a class="viewcode-back" href="../../../implementation/database.html#caravel.transit_system.models.Stop_Definition">[docs]</a><span class="k">class</span> <span class="nc">Stop_Definition</span><span class="p">(</span> <span class="n">Document</span> <span class="p">):</span>
+    <span class="n">stop_id</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">stop_name</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">StringProperty</span><span class="p">()</span>
+    <span class="n">stop_lat</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">FloatProperty</span><span class="p">()</span>
+    <span class="n">stop_lon</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">FloatProperty</span><span class="p">()</span>
+    <span class="n">trips</span><span class="o">=</span> <span class="n">schema</span><span class="o">.</span><span class="n">DictProperty</span><span class="p">()</span> <span class="c"># Service is required to identify a given trip.</span>
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span> <span class="bp">self</span> <span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s">&quot;Stop_Definition( stop_id={0.stop_id}, &quot;</span>
+                <span class="s">&quot;stop_name= {0.stop_name}, &quot;</span>
+                <span class="s">&quot;stop_lat= {0.stop_lat}, &quot;</span>
+                <span class="s">&quot;stop_lon= {0.stop_lon}, &quot;</span>
+                <span class="s">&quot;trips= {0.trips!r} )&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span> <span class="bp">self</span> <span class="p">)</span>
+    <span class="k">def</span> <span class="nf">distance_from</span><span class="p">(</span> <span class="bp">self</span><span class="p">,</span> <span class="n">lat</span><span class="p">,</span> <span class="n">lon</span> <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Distance from a given point, in miles.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">dist_approx</span><span class="p">(</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stop_lat</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_lon</span><span class="p">),</span> <span class="p">(</span><span class="n">lat</span><span class="p">,</span><span class="n">lon</span><span class="p">)</span> <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="radians"><a class="viewcode-back" href="../../../implementation/database.html#caravel.transit_system.models.radians">[docs]</a><span class="k">def</span> <span class="nf">radians</span><span class="p">(</span> <span class="n">degrees</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert Lat/Lon degrees to radians.</span>
+
+<span class="sd">    :param degrees: Latitude or Longitude</span>
+<span class="sd">    :returns: Radians</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">degrees</span><span class="o">/</span><span class="mi">180</span>
+</div>
+<div class="viewcode-block" id="degrees"><a class="viewcode-back" href="../../../implementation/database.html#caravel.transit_system.models.degrees">[docs]</a><span class="k">def</span> <span class="nf">degrees</span><span class="p">(</span> <span class="n">radians</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Convert radians to Lat/Lon degrees.</span>
+
+<span class="sd">    :param radians: angle in radians, usually from a distance calculation</span>
+<span class="sd">    :returns: Degrees</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="mi">180</span><span class="o">*</span><span class="n">radians</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span>
+</div>
+<div class="viewcode-block" id="dist_approx"><a class="viewcode-back" href="../../../implementation/database.html#caravel.transit_system.models.dist_approx">[docs]</a><span class="k">def</span> <span class="nf">dist_approx</span><span class="p">(</span> <span class="n">p1</span><span class="p">,</span> <span class="n">p2</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The Equirectangular Approximation for distance between two coordinates.</span>
+<span class="sd">    Fast and reasonably accurate.</span>
+
+<span class="sd">    See :ref:`design.distance` for details.</span>
+
+<span class="sd">    :param p1: (lat,lon) 2-tuple</span>
+<span class="sd">    :param p2: (lat,lon) 2-tuple</span>
+<span class="sd">    :returns: distance in statute miles.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lat1</span><span class="p">,</span> <span class="n">lon1</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span> <span class="n">radians</span><span class="p">,</span> <span class="n">p1</span> <span class="p">)</span>
+    <span class="n">lat2</span><span class="p">,</span> <span class="n">lon2</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span> <span class="n">radians</span><span class="p">,</span> <span class="n">p2</span> <span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="p">(</span><span class="n">lon2</span><span class="o">-</span><span class="n">lon1</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">((</span><span class="n">lat1</span><span class="o">+</span><span class="n">lat2</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">lat2</span><span class="o">-</span><span class="n">lat1</span><span class="p">)</span>
+    <span class="n">c</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">hypot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="mf">3961.3</span><span class="o">*</span><span class="n">c</span> <span class="c"># 3440.07 for nm, 3961.3 for statute miles, 6378.1 for km, 20915664.0 for feet</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../../caravel.html">
+              <img class="logo" src="../../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../transit_system.html" >caravel.transit_system</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

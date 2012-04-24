@@ -74,20 +74,142 @@ This is preferred, since CouchDB is so simple to work with.</li>
 <h2>Feed and Mappings<a class="headerlink" href="#feed-and-mappings" title="Permalink to this headline">¶</a></h2>
 <p>The acquisition side of the database is the real-time feed plus the mappings
 from source to GTF.</p>
-<p>Feed</p>
-<p>Mapping</p>
+<span class="target" id="module-caravel.feed.models"></span><p>HRT Couch DB LogCapture Feed Models.</p>
+<p>This describes the data pushed by LogCapture.</p>
+<dl class="class">
+<dt id="caravel.feed.models.Feed">
+<em class="property">class </em><tt class="descclassname">caravel.feed.models.</tt><tt class="descname">Feed</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/models.html#Feed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.models.Feed" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Feed file; the &#8220;feed&#8221; attachment is the raw CSV feed data.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="caravel.feed.models.Mapping">
+<em class="property">class </em><tt class="descclassname">caravel.feed.models.</tt><tt class="descname">Mapping</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/caravel/feed/models.html#Mapping"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.feed.models.Mapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Mapping file; the &#8220;content&#8221; attachment is the raw CSV mapping data.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Variables:</th><td class="field-body"><ul class="first last simple">
+<li><strong>timestamp</strong> &#8211; The file&#8217;s modified time; used to locate newest version.</li>
+<li><strong>effective_date</strong> &#8211; The first date on which to use this mapping.</li>
+<li><strong>ending_date</strong> &#8211; The first date to <strong>not</strong> use this mapping.
+This should match the effective date of the next mapping to use.</li>
+<li><strong>mapping_type</strong> &#8211; One of &#8220;vehicle&#8221;, &#8220;route&#8221;, &#8220;stop&#8221;.</li>
+<li><strong>status</strong> &#8211; <tt class="docutils literal"><span class="pre">None</span></tt> for new mappings.
+After validation is can be an error message
+Or &#8220;valid&#8221; for a valid mapping.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 <div class="section" id="transit-system">
 <h2>Transit System<a class="headerlink" href="#transit-system" title="Permalink to this headline">¶</a></h2>
 <p>The Transit System is described by GTF data.</p>
-<p>TBD</p>
+<span class="target" id="module-caravel.transit_system.models"></span><p>Caravel Transit System &#8220;database&#8221;.</p>
+<dl class="class">
+<dt id="caravel.transit_system.models.Service">
+<em class="property">class </em><tt class="descclassname">caravel.transit_system.models.</tt><tt class="descname">Service</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system/models.html#Service"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.models.Service" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="caravel.transit_system.models.Route_Definition">
+<em class="property">class </em><tt class="descclassname">caravel.transit_system.models.</tt><tt class="descname">Route_Definition</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system/models.html#Route_Definition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.models.Route_Definition" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="caravel.transit_system.models.Stop_Definition">
+<em class="property">class </em><tt class="descclassname">caravel.transit_system.models.</tt><tt class="descname">Stop_Definition</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system/models.html#Stop_Definition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.models.Stop_Definition" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="caravel.transit_system.models.radians">
+<tt class="descclassname">caravel.transit_system.models.</tt><tt class="descname">radians</tt><big>(</big><em>degrees</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system/models.html#radians"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.models.radians" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert Lat/Lon degrees to radians.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>degrees</strong> &#8211; Latitude or Longitude</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Radians</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.transit_system.models.degrees">
+<tt class="descclassname">caravel.transit_system.models.</tt><tt class="descname">degrees</tt><big>(</big><em>radians</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system/models.html#degrees"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.models.degrees" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert radians to Lat/Lon degrees.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>radians</strong> &#8211; angle in radians, usually from a distance calculation</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Degrees</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="caravel.transit_system.models.dist_approx">
+<tt class="descclassname">caravel.transit_system.models.</tt><tt class="descname">dist_approx</tt><big>(</big><em>p1</em>, <em>p2</em><big>)</big><a class="reference internal" href="../_modules/caravel/transit_system/models.html#dist_approx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.transit_system.models.dist_approx" title="Permalink to this definition">¶</a></dt>
+<dd><p>The Equirectangular Approximation for distance between two coordinates.
+Fast and reasonably accurate.</p>
+<p>See <a class="reference internal" href="../design/distance.html#design-distance"><em>Distance Calculations</em></a> for details.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>p1</strong> &#8211; (lat,lon) 2-tuple</li>
+<li><strong>p2</strong> &#8211; (lat,lon) 2-tuple</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">distance in statute miles.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
 </div>
 <div class="section" id="status">
 <h2>Status<a class="headerlink" href="#status" title="Permalink to this headline">¶</a></h2>
 <p>The status part of the system is built from analysis of the Feed and Mappings.</p>
-<p>Vehicle</p>
-<p>Route</p>
-<p>Report</p>
+<span class="target" id="module-caravel.status.models"></span><p>Caravel Status object definitions.</p>
+<dl class="class">
+<dt id="caravel.status.models.Route">
+<em class="property">class </em><tt class="descclassname">caravel.status.models.</tt><tt class="descname">Route</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/models.html#Route"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.models.Route" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop Reports along this route.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="caravel.status.models.RouteStop">
+<em class="property">class </em><tt class="descclassname">caravel.status.models.</tt><tt class="descname">RouteStop</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/models.html#RouteStop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.models.RouteStop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reports for a Stop (and associated Route).</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="caravel.status.models.Stop">
+<em class="property">class </em><tt class="descclassname">caravel.status.models.</tt><tt class="descname">Stop</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/models.html#Stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.models.Stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>History of this stop.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="caravel.status.models.Vehicle">
+<em class="property">class </em><tt class="descclassname">caravel.status.models.</tt><tt class="descname">Vehicle</tt><big>(</big><em>_d=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="../_modules/caravel/status/models.html#Vehicle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#caravel.status.models.Vehicle" title="Permalink to this definition">¶</a></dt>
+<dd><p>History of this vehicle.</p>
+</dd></dl>
+
 </div>
 </div>
 

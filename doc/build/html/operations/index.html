@@ -25,7 +25,7 @@
     <script type="text/javascript" src="../_static/underscore.js"></script>
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
-    <link rel="next" title="Configuration" href="configuration.html" />
+    <link rel="next" title="Operational Overview" href="overview.html" />
     <link rel="prev" title="Use Cases" href="../usecase/index.html" /> 
   </head>
   <body>
@@ -39,7 +39,7 @@
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="configuration.html" title="Configuration"
+          <a href="overview.html" title="Operational Overview"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="../usecase/index.html" title="Use Cases"
@@ -54,21 +54,30 @@
           <div class="body">
             
   <div class="section" id="user-s-guide">
-<h1>User&#8217;s Guide<a class="headerlink" href="#user-s-guide" title="Permalink to this headline">¶</a></h1>
+<span id="ops"></span><h1>User&#8217;s Guide<a class="headerlink" href="#user-s-guide" title="Permalink to this headline">¶</a></h1>
 <p>There are several operational parts to gathering and processing transit
 system data to create the current vehicle status.</p>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a></li>
-<li class="toctree-l1"><a class="reference internal" href="mappings_upload.html">Upload Stop, Route and Vehicle mappings</a></li>
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Operational Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="configuration.html">Configuration</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#python-log-capture">Python Log Capture</a></li>
+<li class="toctree-l2"><a class="reference internal" href="configuration.html#java-log-capture">Java Log Capture</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="log_capture.html">Capture the real-time position reports</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="log_capture.html#all-in-one-log-capture">All-In-One Log Capture</a></li>
 <li class="toctree-l2"><a class="reference internal" href="log_capture.html#tail-only-log-extract">Tail Only Log Extract</a></li>
-<li class="toctree-l2"><a class="reference internal" href="log_capture.html#monitor-capture">Monitor Capture</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="route_capture.html">Capture the Google GTF definitions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="mappings_upload.html">Upload Stop, Route and Vehicle mappings</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mappings_upload.html#mapping-preparation">Mapping Preparation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mappings_upload.html#mapping-upload">Mapping Upload</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="route_capture.html">Capture the Google GTFS definitions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="status_build.html">Build the current transit system status</a></li>
+<li class="toctree-l1"><a class="reference internal" href="demo.html">Demonstration</a></li>
 </ul>
 </div>
 </div>
@@ -86,8 +95,8 @@ system data to create the current vehicle status.</p>
   <p class="topless"><a href="../usecase/index.html"
                         title="previous chapter">Use Cases</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="configuration.html"
-                        title="next chapter">Configuration</a></p>
+  <p class="topless"><a href="overview.html"
+                        title="next chapter">Operational Overview</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="../_sources/operations/index.txt"
@@ -120,7 +129,7 @@ system data to create the current vehicle status.</p>
           <a href="../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="configuration.html" title="Configuration"
+          <a href="overview.html" title="Operational Overview"
              >next</a> |</li>
         <li class="right" >
           <a href="../usecase/index.html" title="Use Cases"

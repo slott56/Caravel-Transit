@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Status Build &mdash; Caravel-Transit 1.2 documentation</title>
+    <title>Status Builder &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -55,14 +55,18 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="status-build">
-<h1>Status Build<a class="headerlink" href="#status-build" title="Permalink to this headline">¶</a></h1>
-<p>The status build application listens for update notifications in
-the CouchDB.  It responds two two kinds o notifications.</p>
+  <div class="section" id="status-builder">
+<span id="ops-sb"></span><h1>Status Builder<a class="headerlink" href="#status-builder" title="Permalink to this headline">¶</a></h1>
+<p>The status build application (<tt class="xref py py-mod docutils literal"><span class="pre">caravel.StatusBuilder</span></tt>)
+listens for update notifications in
+the CouchDB.  It responds two two kinds of notifications.</p>
 <ol class="arabic simple">
 <li>Mappings.  This is a change to one of the mappings that provides
-GTF values for the feed.</li>
-<li>Feeds.  This is a one-minute tail of the position log.</li>
+GTFS values for the feed.  These are prepared and pushed
+manually.  See <a class="reference internal" href="mappings_upload.html#ops-map"><em>Mappings Upload</em></a>.</li>
+<li>Feeds.  This is the one-minute tail of the position log.
+These are prepared and pushed by the log capture
+application.  See <a class="reference internal" href="log_capture.html#ops-rtc"><em>Real-Time Capture</em></a>.</li>
 </ol>
 <p>The  status build application is simply left running.  Forever.  It can be
 stopped or restarted as needed for system maintenance.  It uses a private
@@ -70,7 +74,7 @@ cache file to record the last change sequence number in the database.</p>
 <div class="highlight-python"><pre>python2.7 -m caravel.StatusBuilder.change_notification</pre>
 </div>
 <p>Since this works entirely inside the database, it doesn&#8217;t need any
-additional configuration beyond the settings file described above.</p>
+additional configuration beyond the settings file described in <a class="reference internal" href="configuration.html#ops-config"><em>Configuration</em></a>.</p>
 </div>
 
 

@@ -7,7 +7,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>RESTful API for Transit Resources &mdash; Caravel-Transit 1.2 documentation</title>
+    <title>RESTful API for Transit Service Definitions &mdash; Caravel-Transit 1.2 documentation</title>
     
     <link rel="stylesheet" href="../_static/nature.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
@@ -27,7 +27,7 @@
     <link rel="top" title="Caravel-Transit 1.2 documentation" href="../index.html" />
     <link rel="up" title="Design Notes" href="index.html" />
     <link rel="next" title="Distance Calculations" href="distance.html" />
-    <link rel="prev" title="RESTful API for Reports" href="RESTapi1.html" /> 
+    <link rel="prev" title="RESTful API for Feed and Mapping" href="RESTapi1.html" /> 
   </head>
   <body>
     <div class="related">
@@ -43,7 +43,7 @@
           <a href="distance.html" title="Distance Calculations"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="RESTapi1.html" title="RESTful API for Reports"
+          <a href="RESTapi1.html" title="RESTful API for Feed and Mapping"
              accesskey="P">previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" accesskey="U">Design Notes</a> &raquo;</li> 
@@ -55,8 +55,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="restful-api-for-transit-resources">
-<span id="design-transit-resource"></span><h1>RESTful API for Transit Resources<a class="headerlink" href="#restful-api-for-transit-resources" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="restful-api-for-transit-service-definitions">
+<span id="design-transit-resource"></span><h1>RESTful API for Transit Service Definitions<a class="headerlink" href="#restful-api-for-transit-service-definitions" title="Permalink to this headline">¶</a></h1>
 <p>The central use case expands into a few closely-related scenarios.</p>
 <ol class="arabic">
 <li><p class="first">User picks route and stop from a menu.</p>
@@ -64,17 +64,19 @@
 they are.  Or, they is getting ready to go outside to wait
 for a bus.</p>
 </li>
-<li><p class="first">User is relying on smartphone GPS to pick nearest route and stop.</p>
+<li><p class="first">User is relying on smartphone GPS to pick nearest route and stop.
+This is a bit more complex, since it requires a geospatial query.</p>
 </li>
 <li><p class="first">User has a destination in mind and needs to know closest stop
 relevant to a route that gets to the desired destination.  This means
 that alterantive stops, routes, transfers and run times all need
-to be calculated.  This is rather complex.</p>
+to be calculated.  This is quite complex.  This is best
+handed off to Google.</p>
 </li>
 </ol>
 <div class="section" id="data-model">
 <h2>Data Model<a class="headerlink" href="#data-model" title="Permalink to this headline">¶</a></h2>
-<p>Stops are identified by a name and GPS coordinates.</p>
+<p>Stops are identified by an ID as well as GPS coordinates.</p>
 <p>A stop is associated with a route via two intermediate relationships:
 stop-time and trip.</p>
 <p>A stop is associated a stop_time.  A stop_time is associated with a trip.</p>
@@ -85,84 +87,57 @@ kinds of service (usually day-of-week).</p>
 the data structure, but not interesting to a person trying to catch
 the bus.</p>
 </div>
-<div class="section" id="route-access">
-<h2>Route Access<a class="headerlink" href="#route-access" title="Permalink to this headline">¶</a></h2>
-<p>Some candidate RESTful requests for route information.</p>
-<p>Given a date, the subset of allowed trips can be located.
-From the subset of allowed trips in the future only, the distinct routes
-can be determined as well as the distinct stops.</p>
-<p><tt class="samp docutils literal"><span class="pre">/route/</span></tt></p>
-<blockquote>
-<div>The route list.  All 70.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span></tt></p>
-<blockquote>
-<div>All stops along the route, each stop decorated with direction and service.
-The time-of-day details for a given trip are not provided; they are associated
-with a specific stop.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span><em><span class="pre">dir</span></em><span class="pre">/</span></tt></p>
-<blockquote>
-<div>All stops in a particular direction along the route.  The direction is
-more-or-less inoound or outbound, and is actually a foreign key to a direction
-table.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/?date=</span><em><span class="pre">date</span></em></tt></p>
-<blockquote>
-<div>All stops along the route filtered by services available on the given date.
-Day of week is generally sufficient, but there are calendar overrides,
-so full date is required.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/?date=</span><em><span class="pre">date</span></em><span class="pre">&amp;time=</span><em><span class="pre">time</span></em></tt></p>
-<blockquote>
-<div>All stops along the route, filtered by services available on the given date
-on or after the given time.  If these are ordered by distance (along the route&#8217;s
-direction) it should provide a tidy summary of the route.</div></blockquote>
+<div class="section" id="services">
+<h2>Services<a class="headerlink" href="#services" title="Permalink to this headline">¶</a></h2>
+<p>Here are some couch db view and list definitions.</p>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="cm">/* Service Calendar/Schedule Documents */</span>
+<span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">){</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">doc_type</span><span class="o">==</span><span class="s1">&#39;Service&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">emit</span><span class="p">(</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">date</span><span class="p">,</span> <span class="nx">doc</span> <span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</pre></div>
 </div>
-<div class="section" id="stop-access">
-<h2>Stop Access<a class="headerlink" href="#stop-access" title="Permalink to this headline">¶</a></h2>
-<p>Some candidate RESTful requests for stop information.</p>
-<p><tt class="samp docutils literal"><span class="pre">/stop/</span></tt></p>
-<blockquote>
-<div>All stops.  3210 of &#8216;em.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/stop/</span><em><span class="pre">id</span></em><span class="pre">/</span></tt></p>
-<blockquote>
-<div>A specific stop.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/stop/</span><em><span class="pre">id</span></em><span class="pre">/?date=</span><em><span class="pre">date</span></em></tt></p>
-<blockquote>
-<div>All stop times for this stop constrained by services on the specific date.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/stop/</span><em><span class="pre">id</span></em><span class="pre">/?date=</span><em><span class="pre">date</span></em><span class="pre">&amp;time=</span><em><span class="pre">time</span></em></tt></p>
-<blockquote>
-<div>All stop times at this stop, filtered by services available on the given date
-on or after the given time</div></blockquote>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="cm">/* Service Route Definition Documents */</span>
+<span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">){</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">doc_type</span><span class="o">==</span><span class="s1">&#39;Route_Definition&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">emit</span><span class="p">(</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">route_id</span><span class="p">,</span> <span class="nx">doc</span> <span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</pre></div>
 </div>
-<div class="section" id="position-search">
-<h2>Position Search<a class="headerlink" href="#position-search" title="Permalink to this headline">¶</a></h2>
-<p>Given a GPS coordinates (and an optional date), the closest stop can be located irrespective
-of bus schedule.</p>
-<p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em></tt></p>
-<blockquote>
-<div>This can find the nearest stops to this coordinate.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;dir=</span><em><span class="pre">dir</span></em></tt></p>
-<blockquote>
-<div>This can find the nearest stops for all routes heading in this direction.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;date=</span><em><span class="pre">date</span></em></tt></p>
-<blockquote>
-<div>This finds the nearest stops with a service that is active on the given date.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/stop/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;time=</span><em><span class="pre">time</span></em></tt></p>
-<blockquote>
-<div>This finds the nearest stops with a service that is active on the given date
-and on or after the given time.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em></tt></p>
-<blockquote>
-<div>This can find the nearest stops on the given route to this coordinate.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span><em><span class="pre">dir</span></em><span class="pre">/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em></tt></p>
-<blockquote>
-<div>This can find the nearest stops on the given route and direction to this coordinate.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span><em><span class="pre">dir</span></em><span class="pre">/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;date=</span><em><span class="pre">date</span></em></tt></p>
-<blockquote>
-<div>This can find the nearest stops on the given route and direction to this coordinate
-active on the given date.</div></blockquote>
-<p><tt class="samp docutils literal"><span class="pre">/route/</span><em><span class="pre">id</span></em><span class="pre">/</span><em><span class="pre">dir</span></em><span class="pre">/?latlng=</span><em><span class="pre">nn.nnnnnn,mm.mmmmmm</span></em><span class="pre">&amp;date=</span><em><span class="pre">date</span></em><span class="pre">&amp;time=</span><em><span class="pre">time</span></em></tt></p>
-<blockquote>
-<div>This can find the nearest stops on the given route and direction to this coordinate
-active on the given date and on or after the given time.</div></blockquote>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="cm">/* Service Stop Definition Documents */</span>
+<span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">){</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">doc_type</span><span class="o">==</span><span class="s1">&#39;Stop_Definition&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nx">emit</span><span class="p">(</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">stop_id</span><span class="p">,</span> <span class="nx">doc</span> <span class="p">)</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="cm">/* Service Route Definition Documents Organized by arrival times at a stop */</span>
+<span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">){</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">doc_type</span><span class="o">==</span><span class="s1">&#39;Route_Definition&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span><span class="p">(</span><span class="nx">svc</span> <span class="k">in</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">trips</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">for</span><span class="p">(</span><span class="nx">trip</span> <span class="k">in</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">trips</span><span class="p">[</span><span class="nx">svc</span><span class="p">])</span> <span class="p">{</span>
+                <span class="k">for</span><span class="p">(</span> <span class="nx">i</span> <span class="k">in</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">trips</span><span class="p">[</span><span class="nx">svc</span><span class="p">][</span><span class="nx">trip</span><span class="p">].</span><span class="nx">stops</span> <span class="p">)</span> <span class="p">{</span>
+                    <span class="nx">emit</span><span class="p">(</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">trips</span><span class="p">[</span><span class="nx">svc</span><span class="p">][</span><span class="nx">trip</span><span class="p">].</span><span class="nx">stops</span><span class="p">[</span><span class="nx">i</span><span class="p">].</span><span class="nx">arrival_time</span><span class="p">,</span> <span class="nx">doc</span> <span class="p">)</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="cm">/* Service Route Definition Documents Organized by Trip_ID */</span>
+<span class="kd">function</span><span class="p">(</span><span class="nx">doc</span><span class="p">){</span>
+    <span class="k">if</span><span class="p">(</span><span class="nx">doc</span><span class="p">.</span><span class="nx">doc_type</span><span class="o">==</span><span class="s1">&#39;Route_Definition&#39;</span><span class="p">)</span> <span class="p">{</span>
+        <span class="k">for</span><span class="p">(</span><span class="nx">t</span> <span class="k">in</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">trips</span> <span class="p">)</span> <span class="p">{</span>
+            <span class="nx">emit</span><span class="p">(</span> <span class="nx">doc</span><span class="p">.</span><span class="nx">trips</span><span class="p">[</span><span class="nx">t</span><span class="p">].</span><span class="nx">trip_id</span><span class="p">,</span> <span class="nx">doc</span> <span class="p">)</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -177,18 +152,16 @@ active on the given date and on or after the given time.</div></blockquote>
             </a></p>
   <h3><a href="../caravel.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">RESTful API for Transit Resources</a><ul>
+<li><a class="reference internal" href="#">RESTful API for Transit Service Definitions</a><ul>
 <li><a class="reference internal" href="#data-model">Data Model</a></li>
-<li><a class="reference internal" href="#route-access">Route Access</a></li>
-<li><a class="reference internal" href="#stop-access">Stop Access</a></li>
-<li><a class="reference internal" href="#position-search">Position Search</a></li>
+<li><a class="reference internal" href="#services">Services</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="RESTapi1.html"
-                        title="previous chapter">RESTful API for Reports</a></p>
+                        title="previous chapter">RESTful API for Feed and Mapping</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="distance.html"
                         title="next chapter">Distance Calculations</a></p>
@@ -227,7 +200,7 @@ active on the given date and on or after the given time.</div></blockquote>
           <a href="distance.html" title="Distance Calculations"
              >next</a> |</li>
         <li class="right" >
-          <a href="RESTapi1.html" title="RESTful API for Reports"
+          <a href="RESTapi1.html" title="RESTful API for Feed and Mapping"
              >previous</a> |</li>
         <li><a href="../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
           <li><a href="index.html" >Design Notes</a> &raquo;</li> 

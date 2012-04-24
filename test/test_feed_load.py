@@ -25,7 +25,8 @@ def setUpModule():
 
 def tearDownModule():
     global connection
-    del connection['couchdbkit_test']
+    if 'couchdbkit_test' in connection:
+        del connection['couchdbkit_test']
 
 class Test_Damaged_Feed_Doc(unittest.TestCase ):
     def setUp( self ):

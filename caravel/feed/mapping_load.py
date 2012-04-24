@@ -2,9 +2,6 @@
 """Caravel ETL of real-time-feed with mappings
 from source encodings to GTFS keys.
 
-Load New Mappings
-======================
-
 1.  Get any new mapping.
 
 #.  Validate the mapping.
@@ -19,11 +16,9 @@ Load New Mappings
 #.  Cache the current mapping chosen from the set of valid mappings.
     It's helpful to keep this in memory to save time.
 
-Components
-============
 
 Attachment Handling
---------------------
+====================
 
 ..  autoclass:: Invalid_Mapping
 ..  autoclass:: CSV_Attachment
@@ -34,7 +29,7 @@ Attachment Handling
 ..  autofunction:: mapping_attachment
 
 Mapping Processing
---------------------
+====================
 
 ..  autofunction:: validate
 ..  autofunction:: validate_new

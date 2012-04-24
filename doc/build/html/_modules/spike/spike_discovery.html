@@ -1,0 +1,415 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>spike.spike_discovery &mdash; Caravel-Transit 1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Caravel-Transit 1.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for spike.spike_discovery</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Spike the three-tier stats model.</span>
+
+<span class="sd">-   History of route arrivals.</span>
+
+<span class="sd">-   Daily adjustment.</span>
+
+<span class="sd">-   Last-Stop FIFO.</span>
+
+<span class="sd">Live Data</span>
+<span class="sd">==========</span>
+
+<span class="sd">Here&#39;s a typical sequence of data.</span>
+<span class="sd">This listing has a number of ``route, direction, stop (&#39;time dwell&#39;,...)`` instances.</span>
+
+
+<span class="sd">::</span>
+
+<span class="sd">    26 1  31 (&#39;07:04:56 97&#39;, &#39;14:04:28 104&#39;)</span>
+<span class="sd">    26 1  45 (&#39;07:20:15 None&#39;,)</span>
+<span class="sd">    26 1 134 (&#39;09:21:32 561&#39;,)</span>
+<span class="sd">    26 1 140 (&#39;09:31:27 10&#39;,)</span>
+<span class="sd">    26 2  46 (&#39;07:20:24 9&#39;,)</span>
+<span class="sd">    26 2 221 (&#39;11:13:57 None&#39;,)</span>
+<span class="sd">    27 1 381 (&#39;09:45:47 None&#39;,)</span>
+<span class="sd">    27 1 458 (&#39;10:46:38 11&#39;,)</span>
+<span class="sd">    27 1 1188 (&#39;19:53:29 None&#39;,)</span>
+<span class="sd">    27 2 147 (&#39;07:05:26 44&#39;,)</span>
+<span class="sd">    27 2 333 (&#39;09:21:18 442&#39;,)</span>
+<span class="sd">    27 2 335 (&#39;09:20:34 None&#39;, &#39;09:20:34 None&#39;)</span>
+<span class="sd">    27 2 481 (&#39;11:12:17 56&#39;,)</span>
+<span class="sd">    27 2 717 (&#39;14:04:46 45&#39;,)</span>
+
+<span class="sd">This shows three features.</span>
+
+<span class="sd">-   Route 26, direction 1, stop 31 was visited twice.  This is a scheduled stop.</span>
+<span class="sd">    Each day, the approximate sequence times will repeat.</span>
+
+<span class="sd">-   Route 27, direction 2, stop 335 got duplicate reports.  This happens.</span>
+
+<span class="sd">-   Route 26, direction 1, stop 45 (among many others) was missing.</span>
+<span class="sd">    In this case,</span>
+<span class="sd">    the various samples analyzed had time gaps.  Pragmatically, missing</span>
+<span class="sd">    data must be tolerated.</span>
+
+<span class="sd">Sample Data</span>
+<span class="sd">================</span>
+
+<span class="sd">We&#39;ll use a stand-in for Dwell/Arrival reports, :class:`Report`.</span>
+
+<span class="sd">We&#39;ll use a considerably simpler collection of routes with just 4 stops each.</span>
+<span class="sd">This gives us a first, last and two middle stops on each route.</span>
+
+<span class="sd">We&#39;ll fabricate a schedule that cycles just four times through the stops.</span>
+<span class="sd">This allows each cycle to omit a stop, leading to a matrix with gaps.</span>
+<span class="sd">It also means that we have a very small statistical base for computing mean</span>
+<span class="sd">arrival times.</span>
+
+<span class="sd">There are :math:`4! = 24` permutations of 4 stops.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">print_function</span><span class="p">,</span> <span class="n">division</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span><span class="p">,</span> <span class="n">defaultdict</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span><span class="p">,</span> <span class="n">tee</span>
+<span class="kn">import</span> <span class="nn">datetime</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">pprint</span>
+
+<span class="n">Report</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span> <span class="s">&quot;Report&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s">&quot;id&quot;</span><span class="p">,</span> <span class="s">&quot;time&quot;</span><span class="p">,</span> <span class="s">&quot;rte&quot;</span><span class="p">,</span> <span class="s">&quot;dir&quot;</span><span class="p">,</span> <span class="s">&quot;stop&quot;</span><span class="p">)</span> <span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">sample_data_iter</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;A snapshot of some output.&quot;&quot;&quot;</span>
+    <span class="n">stops_output</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s"> 26 1  31 (&#39;07:04:56 97&#39;, &#39;14:04:28 104&#39;)</span>
+<span class="s"> 26 1  45 (&#39;07:20:15 None&#39;,)</span>
+<span class="s"> 26 1 134 (&#39;09:21:32 561&#39;,)</span>
+<span class="s"> 26 1 140 (&#39;09:31:27 10&#39;,)</span>
+<span class="s"> 26 2  46 (&#39;07:20:24 9&#39;,)</span>
+<span class="s"> 26 2 221 (&#39;11:13:57 None&#39;,)</span>
+<span class="s"> 27 1 381 (&#39;09:45:47 None&#39;,)</span>
+<span class="s"> 27 1 458 (&#39;10:46:38 11&#39;,)</span>
+<span class="s"> 27 1 1188 (&#39;19:53:29 None&#39;,)</span>
+<span class="s"> 27 2 147 (&#39;07:05:26 44&#39;,)</span>
+<span class="s"> 27 2 333 (&#39;09:21:18 442&#39;,)</span>
+<span class="s"> 27 2 335 (&#39;09:20:34 None&#39;, &#39;09:20:34 None&#39;)</span>
+<span class="s"> 27 2 481 (&#39;11:12:17 56&#39;,)</span>
+<span class="s"> 27 2 717 (&#39;14:04:46 45&#39;,)</span>
+<span class="s">&quot;&quot;&quot;</span>
+
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="p">(</span><span class="n">l</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">stops_output</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">line</span><span class="p">:</span> <span class="k">continue</span>
+        <span class="n">head</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">tail</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39;(&#39;</span><span class="p">)</span>
+        <span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">stop</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span> <span class="nb">int</span><span class="p">,</span> <span class="n">head</span><span class="o">.</span><span class="n">split</span><span class="p">()</span> <span class="p">)</span>
+        <span class="k">for</span> <span class="n">time_dwell</span> <span class="ow">in</span> <span class="n">tail</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;,&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">time_dwell</span><span class="p">:</span> <span class="k">continue</span>
+            <span class="n">time</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">dwell</span> <span class="o">=</span> <span class="n">time_dwell</span><span class="o">.</span><span class="n">strip</span><span class="p">()[</span><span class="mi">1</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s">&#39; &#39;</span><span class="p">)</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span> <span class="n">time</span><span class="p">,</span> <span class="s">&quot;%H:%M:%S&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+            <span class="n">rpt</span><span class="o">=</span> <span class="n">Report</span><span class="p">(</span> <span class="s">&#39;1111&#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">rte</span><span class="p">,</span> <span class="nb">dir</span><span class="p">,</span> <span class="n">stop</span> <span class="p">)</span>
+            <span class="k">yield</span> <span class="n">rpt</span>
+
+<div class="viewcode-block" id="synth_data_iter"><a class="viewcode-back" href="../../design/route_details.html#spike.spike_discovery.synth_data_iter">[docs]</a><span class="k">def</span> <span class="nf">synth_data_iter</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Synthesize data for route discovery.</span>
+
+<span class="sd">    This generates data for two routes.  Each route will have four stops.</span>
+<span class="sd">    Data is generated over 24 &quot;days&quot;, each day has a different</span>
+<span class="sd">    permutation of omitted Arrival data in the schedule.</span>
+
+<span class="sd">    For a given route, 24 days of data are generated; each day has a different</span>
+<span class="sd">    permutation of missing data.</span>
+
+<span class="sd">    For a given day of a given route, four cycles are generated. This assures</span>
+<span class="sd">    that all permutations are used.  More cycles would repeat permutations.</span>
+<span class="sd">    Fewer cycles would omit permutations.</span>
+
+<span class="sd">    The stop id number orders are randomized.  For each route, both directions</span>
+<span class="sd">    are created.  For this example, they are precise reciprocals.</span>
+
+<span class="sd">    The arrival times are generally about 10 minutes (600 seconds) apart.</span>
+<span class="sd">    A random factor of :math:`\pm 60` is used to make sure times aren&#39;t simple</span>
+<span class="sd">    repeats.</span>
+
+<span class="sd">    :returns: iterator over Report instances.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_stops</span><span class="o">=</span> <span class="mi">4</span>
+    <span class="n">num_routes</span><span class="o">=</span> <span class="mi">2</span>
+    <span class="n">base_date</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">today</span><span class="p">()</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+    <span class="k">print</span><span class="p">(</span> <span class="n">base_date</span> <span class="p">)</span>
+    <span class="k">for</span> <span class="n">route</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_routes</span><span class="p">):</span>
+        <span class="n">stop_id</span> <span class="o">=</span> <span class="p">[</span> <span class="n">random</span><span class="o">.</span><span class="n">randrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">256</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_stops</span><span class="p">)</span> <span class="p">]</span>
+        <span class="k">for</span> <span class="n">day</span><span class="p">,</span> <span class="n">gaps</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">permutations</span><span class="p">(</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_stops</span><span class="p">)</span> <span class="p">)):</span>
+            <span class="n">base_time</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span> <span class="n">base_date</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">route</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+            <span class="k">for</span> <span class="n">cycle</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span> <span class="c"># number of stops; uses all permutations once</span>
+                <span class="nb">dir</span><span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_stops</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">stop</span> <span class="o">==</span> <span class="n">gaps</span><span class="p">[</span><span class="n">cycle</span><span class="p">]:</span> <span class="k">continue</span>
+                    <span class="n">sequence</span> <span class="o">=</span> <span class="n">stop</span> <span class="o">+</span> <span class="n">num_stops</span><span class="o">*</span><span class="nb">dir</span> <span class="o">+</span> <span class="n">cycle</span><span class="o">*</span><span class="n">num_stops</span><span class="o">*</span><span class="mi">2</span>
+                    <span class="n">offset</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">*</span><span class="mi">600</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">randrange</span><span class="p">(</span> <span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">60</span> <span class="p">)</span>
+                    <span class="n">td</span><span class="o">=</span> <span class="n">base_time</span><span class="o">+</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span> <span class="n">days</span><span class="o">=</span> <span class="n">day</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="n">offset</span> <span class="p">)</span>
+                    <span class="k">yield</span> <span class="n">Report</span><span class="p">(</span> <span class="nb">id</span><span class="o">=</span><span class="s">&#39;1111&#39;</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">td</span><span class="p">,</span> <span class="n">rte</span><span class="o">=</span><span class="n">route</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="nb">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop_id</span><span class="p">[</span><span class="n">stop</span><span class="p">]</span> <span class="p">)</span>
+                <span class="nb">dir</span><span class="o">=</span> <span class="mi">1</span>
+                <span class="k">for</span> <span class="n">stop</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_stops</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">stop</span> <span class="o">==</span> <span class="n">gaps</span><span class="p">[</span><span class="n">cycle</span><span class="p">]:</span> <span class="k">continue</span>
+                    <span class="n">sequence</span> <span class="o">=</span> <span class="n">stop</span> <span class="o">+</span> <span class="n">num_stops</span><span class="o">*</span><span class="nb">dir</span> <span class="o">+</span> <span class="n">cycle</span><span class="o">*</span><span class="n">num_stops</span><span class="o">*</span><span class="mi">2</span>
+                    <span class="n">offset</span> <span class="o">=</span> <span class="n">sequence</span><span class="o">*</span><span class="mi">600</span> <span class="o">+</span> <span class="n">random</span><span class="o">.</span><span class="n">randrange</span><span class="p">(</span> <span class="o">-</span><span class="mi">60</span><span class="p">,</span> <span class="mi">60</span> <span class="p">)</span>
+                    <span class="n">td</span><span class="o">=</span> <span class="n">base_time</span><span class="o">+</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span> <span class="n">days</span><span class="o">=</span> <span class="n">day</span><span class="p">,</span> <span class="n">seconds</span><span class="o">=</span><span class="n">offset</span> <span class="p">)</span>
+                    <span class="k">yield</span> <span class="n">Report</span><span class="p">(</span> <span class="nb">id</span><span class="o">=</span><span class="s">&#39;1111&#39;</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">td</span><span class="p">,</span> <span class="n">rte</span><span class="o">=</span><span class="n">route</span><span class="p">,</span> <span class="nb">dir</span><span class="o">=</span><span class="nb">dir</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">stop_id</span><span class="p">[</span><span class="o">-</span><span class="n">stop</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+</div>
+<span class="k">def</span> <span class="nf">count</span><span class="p">(</span> <span class="n">samples</span> <span class="p">):</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">samples</span> <span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">mean</span><span class="p">(</span> <span class="n">samples</span> <span class="p">):</span>
+    <span class="n">s_iter</span><span class="p">,</span> <span class="n">c_iter</span> <span class="o">=</span> <span class="n">tee</span><span class="p">(</span> <span class="n">samples</span><span class="p">,</span> <span class="mi">2</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">s_iter</span><span class="p">)</span> <span class="o">/</span> <span class="n">count</span><span class="p">(</span><span class="n">c_iter</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">stddev</span><span class="p">(</span> <span class="n">samples</span> <span class="p">):</span>
+    <span class="n">m_iter</span><span class="p">,</span> <span class="n">sd_iter</span><span class="p">,</span> <span class="n">c_iter</span> <span class="o">=</span> <span class="n">tee</span><span class="p">(</span> <span class="n">samples</span><span class="p">,</span> <span class="mi">3</span> <span class="p">)</span>
+    <span class="n">m</span><span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">m_iter</span><span class="p">)</span>
+    <span class="n">sumsq</span><span class="o">=</span> <span class="nb">sum</span><span class="p">(</span> <span class="p">(</span><span class="n">x</span><span class="o">-</span><span class="n">m</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">sd_iter</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">sumsq</span><span class="o">/</span><span class="n">count</span><span class="p">(</span><span class="n">c_iter</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+<div class="viewcode-block" id="group_by_rte_dir_stop"><a class="viewcode-back" href="../../design/route_details.html#spike.spike_discovery.group_by_rte_dir_stop">[docs]</a><span class="k">def</span> <span class="nf">group_by_rte_dir_stop</span><span class="p">(</span> <span class="n">data</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Since the GPS reports are in time order, we need to parition them</span>
+<span class="sd">    by route/direction/stop and date.</span>
+
+<span class="sd">    This creates a RDS (Route/Direction/Stop) dictionay that</span>
+<span class="sd">    contains each day&#39;s times.</span>
+
+<span class="sd">    ::</span>
+
+<span class="sd">        { (1,2,3): { 10/11/12: (7:08, 8:09, 9:10), 10/12/12: (7:09, 8:08) },</span>
+<span class="sd">          (1,2,4): { 10/11/12: (7:18, 8:19, 9:20), 10/12/12: (7:19, 8:18) },</span>
+<span class="sd">        }</span>
+
+<span class="sd">    :param data: An iterable of :class:`Report` instances.  Usually :func:`synth_data_iter`.</span>
+<span class="sd">    :returns: Dictionary keyed by Route/Direction/Stop.  Each value in that</span>
+<span class="sd">        is a dictionary keyed by day.  Each value is a time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">reports</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">set</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">for</span> <span class="n">rpt</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+        <span class="n">reports</span><span class="p">[</span><span class="n">rpt</span><span class="o">.</span><span class="n">rte</span><span class="p">,</span> <span class="n">rpt</span><span class="o">.</span><span class="n">dir</span><span class="p">,</span> <span class="n">rpt</span><span class="o">.</span><span class="n">stop</span><span class="p">][</span><span class="n">rpt</span><span class="o">.</span><span class="n">time</span><span class="o">.</span><span class="n">date</span><span class="p">()]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span> <span class="n">rpt</span><span class="o">.</span><span class="n">time</span> <span class="p">)</span>
+    <span class="k">return</span> <span class="n">reports</span>
+</div>
+<div class="viewcode-block" id="cluster_times"><a class="viewcode-back" href="../../design/route_details.html#spike.spike_discovery.cluster_times">[docs]</a><span class="k">def</span> <span class="nf">cluster_times</span><span class="p">(</span> <span class="n">reports</span><span class="p">,</span> <span class="n">epsilon</span><span class="o">=</span><span class="mi">480</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Correlate arrival times across the various days in the data set to</span>
+<span class="sd">    create a cluster of times for each R/D/S with a minimal deviation.</span>
+
+<span class="sd">    For a given route/direction/stop, step through each day&#39;s arrival</span>
+<span class="sd">    times at that stop.  These times are spread throughout the day, based</span>
+<span class="sd">    on various trips around the route.</span>
+
+<span class="sd">    Assume that the first day&#39;s reported times reflect the scheduled visit times.</span>
+<span class="sd">    Build a &quot;visits&quot; sequence.  Each element of this sequence is a sublist</span>
+<span class="sd">    of actual times.  Initially, the sublists only have a sigle time.</span>
+
+<span class="sd">    For each day after the first:</span>
+
+<span class="sd">    -   For each stop in that day:</span>
+
+<span class="sd">        *   For each cluster of assumed visit times (initially based on the first day).</span>
+<span class="sd">            (Note that this is inefficient; we should use just a few adjacent clusters).</span>
+
+<span class="sd">            +   Compute the standad deviation of the cluster of assumed visit times,</span>
+<span class="sd">                using the new stop as the mean time.</span>
+
+<span class="sd">        *   The cluster of assumed visit times which has the smallest deviation</span>
+<span class="sd">            gets this new time assigned to it.</span>
+
+<span class="sd">        *   If the deviations are all &quot;large&quot;, then this is a new visit time that</span>
+<span class="sd">            doesn&#39;t correlate with any of the times seen so far.</span>
+<span class="sd">            (For example, the first day was incomplete.)</span>
+<span class="sd">            Create a new assumed visit time for this</span>
+<span class="sd">            stop.  The cluster has this outlier time in it.</span>
+
+<span class="sd">    When all days have been examined for a given R/D/S combination, the sequence</span>
+<span class="sd">    of visit times has clusters that *should* match the official bus schedule.</span>
+
+<span class="sd">    Each cluster is reduced to a mean and a standard deviation.  This shows the</span>
+<span class="sd">    &quot;expected&quot; arrival time and provides a statistical window for boundary times.</span>
+
+<span class="sd">    This sequence of expected arrival and standard deviations form the schedule for</span>
+<span class="sd">    a given Route/Direction/Stop during the day.</span>
+
+<span class="sd">    ..  todo:: Day-of-Week.</span>
+
+<span class="sd">        Separate by day-of-week to allow weekend schedules to vary from</span>
+<span class="sd">        weekday schedules.</span>
+
+<span class="sd">    :param reports: A dictionary of dictionaries.  The top key is R/D/S.  Each</span>
+<span class="sd">        inner dictionary is keyed by date and has a list of times.</span>
+<span class="sd">        See :func:`group_by_rte_dir_stop`.</span>
+
+<span class="sd">    :returns: A sequence of ((R/D/S), Time Sequence) tuples.  The Time Sequence</span>
+<span class="sd">        contains an ordered list of (mean, standard deviation) 2-tuples for each</span>
+<span class="sd">        arrival time at the route/direction/stop.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">r</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">reports</span><span class="p">:</span>
+        <span class="n">arrivals</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">date_iter</span> <span class="o">=</span> <span class="nb">iter</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span> <span class="n">reports</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">s</span><span class="p">]</span> <span class="p">))</span>
+
+        <span class="n">date_current</span><span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">date_iter</span><span class="p">)</span>
+        <span class="n">datetime_current</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span> <span class="n">date_current</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+        <span class="n">visits</span><span class="o">=</span> <span class="nb">list</span><span class="p">(</span> <span class="nb">sorted</span><span class="p">(</span> <span class="p">[(</span><span class="n">dt</span><span class="o">-</span><span class="n">datetime_current</span><span class="p">)</span><span class="o">.</span><span class="n">seconds</span><span class="p">]</span> <span class="k">for</span> <span class="n">dt</span> <span class="ow">in</span> <span class="n">reports</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">s</span><span class="p">][</span><span class="n">date_current</span><span class="p">]</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="c">##print( date_current, visits )</span>
+
+        <span class="k">for</span> <span class="n">date_current</span> <span class="ow">in</span> <span class="n">date_iter</span><span class="p">:</span>
+            <span class="n">datetime_current</span><span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">combine</span><span class="p">(</span> <span class="n">date_current</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">)</span>
+            <span class="n">stops</span><span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span> <span class="nb">sorted</span><span class="p">(</span> <span class="p">(</span><span class="n">r</span><span class="o">-</span><span class="n">datetime_current</span><span class="p">)</span><span class="o">.</span><span class="n">seconds</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">reports</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">s</span><span class="p">][</span><span class="n">date_current</span><span class="p">]</span> <span class="p">)</span> <span class="p">)</span>
+            <span class="c">##print( r, d, s, date_current, stops )</span>
+            <span class="k">for</span> <span class="n">stop</span> <span class="ow">in</span> <span class="n">stops</span><span class="p">:</span>
+                <span class="n">deltas</span> <span class="o">=</span> <span class="p">[</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="nb">sum</span><span class="p">(</span> <span class="p">(</span><span class="n">v</span><span class="o">-</span><span class="n">stop</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">visits</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">visits</span><span class="p">[</span><span class="n">i</span><span class="p">])),</span> <span class="n">i</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">visits</span><span class="p">))]</span>
+                <span class="n">min_value</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">deltas</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">min_value</span> <span class="o">&lt;</span> <span class="n">epsilon</span><span class="p">:</span>
+                    <span class="n">visits</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stop</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">visits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">[</span><span class="n">stop</span><span class="p">]</span> <span class="p">)</span>
+                    <span class="n">visits</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+            <span class="c">##print( date_current, visits )</span>
+
+        <span class="k">for</span> <span class="n">candidate_times</span> <span class="ow">in</span> <span class="n">visits</span><span class="p">:</span>
+            <span class="n">m_time</span> <span class="o">=</span> <span class="n">mean</span><span class="p">(</span><span class="n">candidate_times</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidate_times</span><span class="p">)</span><span class="o">&gt;</span><span class="mi">2</span><span class="p">:</span>
+                <span class="n">s_time</span><span class="o">=</span> <span class="n">stddev</span><span class="p">(</span><span class="n">candidate_times</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">s_time</span><span class="o">=</span> <span class="bp">None</span>
+            <span class="n">hh</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m_time</span><span class="o">//</span><span class="mi">3600</span><span class="p">)</span>
+            <span class="n">mm</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="n">m_time</span><span class="o">-</span><span class="mi">3600</span><span class="o">*</span><span class="n">hh</span><span class="p">)</span><span class="o">//</span><span class="mi">60</span><span class="p">)</span>
+            <span class="n">ss</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">m_time</span><span class="o">-</span><span class="p">(</span><span class="mi">60</span><span class="o">*</span><span class="n">hh</span><span class="o">+</span><span class="n">mm</span><span class="p">)</span><span class="o">*</span><span class="mi">60</span><span class="p">)</span>
+            <span class="n">arrivals</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span> <span class="n">datetime</span><span class="o">.</span><span class="n">time</span><span class="p">(</span><span class="n">hh</span><span class="p">,</span><span class="n">mm</span><span class="p">,</span><span class="n">ss</span><span class="p">),</span> <span class="n">s_time</span> <span class="p">)</span> <span class="p">)</span>
+        <span class="n">arrivals</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+        <span class="k">yield</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span><span class="n">d</span><span class="p">,</span><span class="n">s</span><span class="p">),</span> <span class="n">arrivals</span>
+</div>
+<div class="viewcode-block" id="build_route"><a class="viewcode-back" href="../../design/route_details.html#spike.spike_discovery.build_route">[docs]</a><span class="k">def</span> <span class="nf">build_route</span><span class="p">(</span> <span class="n">schedule</span> <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Build the route/direction summary as a sequence of stops throughout</span>
+<span class="sd">    the day.  This is a small reorganization of the R/D/S schedule</span>
+<span class="sd">    information to be a dictionary, keyed by R/D with a sequence of time-ordered stops.</span>
+
+<span class="sd">    :param schedule: An iterator over 2-tuples of (R,D,S) and ( (time,std), (time,std), ... )</span>
+<span class="sd">    :return: A dictionary with keys of (R,D) and values of ( (S,Time,Std), ... )</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">route</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">rds</span><span class="p">,</span> <span class="n">arrivals</span> <span class="ow">in</span> <span class="n">schedule</span><span class="p">:</span>
+        <span class="n">r</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">rds</span>
+        <span class="k">for</span> <span class="n">time_0</span><span class="p">,</span> <span class="n">std_time</span> <span class="ow">in</span>  <span class="n">arrivals</span><span class="p">:</span>
+            <span class="n">route</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="n">d</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span><span class="n">time_0</span><span class="p">,</span><span class="n">std_time</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">for</span> <span class="n">r</span><span class="p">,</span><span class="n">d</span> <span class="ow">in</span> <span class="n">route</span><span class="p">:</span>
+        <span class="n">route</span><span class="p">[</span><span class="n">r</span><span class="p">,</span><span class="n">d</span><span class="p">]</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">t</span><span class="p">:</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">route</span>
+</div>
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../design/route_details.html#spike.spike_discovery.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Demonstrate the essential three-step route discovery algorithm.</span>
+
+<span class="sd">    1.  Organize raw data by route/direction/stop.  :func:`group_by_rte_dir_stop`.</span>
+
+<span class="sd">    2.  Correlate times to discover repeat visits to a stop.  :func:`cluster_times`.</span>
+
+<span class="sd">    3.  Transform to a route/direction structure with a time-ordered</span>
+<span class="sd">        sequence of stops that spans the entire day.  :func:`build_route`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Step 1.  Organize raw data by route/direction/stop.</span>
+    <span class="n">reports</span> <span class="o">=</span> <span class="n">group_by_rte_dir_stop</span><span class="p">(</span> <span class="n">synth_data_iter</span><span class="p">()</span> <span class="p">)</span>
+    <span class="c">##pprint.pprint( dict(reports) )</span>
+
+    <span class="c"># Step 2.  Correlate times to discover repeat visits to a stop.</span>
+    <span class="n">schedule_iter</span><span class="o">=</span> <span class="n">cluster_times</span><span class="p">(</span> <span class="n">reports</span> <span class="p">)</span>
+    <span class="c">#schedule= dict( schedule_iter )</span>
+    <span class="c">#pprint.pprint( schedule )</span>
+    <span class="c">#schedule_iter= schedule.items()</span>
+
+    <span class="c"># Step 3.  Transform to a route/direction structure with a time-ordered</span>
+    <span class="c"># sequence of stops that spans the entire day.</span>
+    <span class="n">route</span><span class="o">=</span> <span class="n">build_route</span><span class="p">(</span> <span class="n">schedule_iter</span> <span class="p">)</span>
+
+    <span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span> <span class="nb">dict</span><span class="p">(</span> <span class="n">route</span> <span class="p">)</span> <span class="p">)</span>
+
+    <span class="c">## Given the routes, we can then do a search based on stop and current time</span>
+    <span class="c">## to locate next stop.</span>
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="../../caravel.html">
+              <img class="logo" src="../../_static/Caravel2_(PSF).png" alt="Logo"/>
+            </a></p>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../caravel.html">Caravel-Transit 1.2 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2012, S.Lott.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

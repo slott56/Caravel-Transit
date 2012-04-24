@@ -4,7 +4,7 @@
 
 #Couch Push
 #Test Database
-db_url= "http://localhost:5984/couchdbkit_test"
+db_url= "http://127.0.0.1:5984/couchdbkit_test"
 #Production Database
 #db_url= "http://hrt.iriscouch.com:5984/feed"
 
